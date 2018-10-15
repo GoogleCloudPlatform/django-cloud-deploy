@@ -1,0 +1,15 @@
+[flake8]
+
+# E111: indentation is not a multiple of four
+# E114: indentation is not a multiple of four (comment)
+# We use 2 spaces for indentation
+ignore = E111, E114
+
+exclude =
+  # nox
+  .nox
+
+  # Standard linting exemptions.
+  __pycache__,
+  .git,
+  *.pyc,

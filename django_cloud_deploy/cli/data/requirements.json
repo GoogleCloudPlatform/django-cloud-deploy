@@ -1,0 +1,20 @@
+[
+  {
+    "requirement": "gcloud",
+    "requirement_msg": "Gcloud SDK",
+    "raise_error": false,
+    "download_link": "https://cloud.google.com/sdk/install"
+  },
+  {
+    "requirement": "docker",
+    "requirement_msg": "Docker CLI",
+    "raise_error": false,
+    "download_link": "https://docs.docker.com/install/linux/docker-ce/ubuntu/"
+  },
+  {
+    "requirement": "kubectl",
+    "requirement_msg": "Kubernetes CLI",
+    "raise_error": false,
+    "download_link": "https://cloud.google.com/kubernetes-engine/docs/quickstart#choosing_a_shell"
+  }
+]

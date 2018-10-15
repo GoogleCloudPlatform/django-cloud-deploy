@@ -1,0 +1,48 @@
+{
+  "cluster": {
+    "name": "{{ cluster_name }}",
+    "master_auth": {
+      "username": "admin",
+      "client_certificate_config": {
+        "issue_client_certificate": true
+      }
+    },
+    "logging_service": "logging.googleapis.com",
+    "monitoring_service": "monitoring.googleapis.com",
+    "network": "projects/{{ project_id }}/global/networks/default",
+    "addons_config": {
+      "http_load_balancing": {},
+      "kubernetes_dashboard": {}
+    },
+    "subnetwork": "projects/{{ project_id }}/regions/{{ region }}/subnetworks/default",
+    "node_pools": [
+      {
+        "name": "default-pool",
+        "config": {
+          "machine_type": "n1-standard-1",
+          "disk_size_gb": 100,
+          "oauth_scopes": [
+            "https://www.googleapis.com/auth/compute",
+            "https://www.googleapis.com/auth/devstorage.read_only",
+            "https://www.googleapis.com/auth/logging.write",
+            "https://www.googleapis.com/auth/monitoring",
+            "https://www.googleapis.com/auth/servicecontrol",
+            "https://www.googleapis.com/auth/service.management.readonly",
+            "https://www.googleapis.com/auth/trace.append"
+          ],
+          "image_type": "COS"
+        },
+        "initial_node_count": 1,
+        "autoscaling": {},
+        "management": {
+          "auto_repair": true
+        },
+        "version": "{{ kubernetes_version }}"
+      }
+    ],
+    "network_policy": {},
+    "ip_allocation_policy": {},
+    "master_authorized_networks_config": {},
+    "initial_cluster_version": "{{ kubernetes_version }}"
+  }
+}

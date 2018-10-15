@@ -1,0 +1,22 @@
+[
+  {
+    "title": "Compute Engine API",
+    "name": "compute.googleapis.com"
+  },
+  {
+    "title": "Kubernetes Engine API",
+    "name": "container.googleapis.com"
+  },
+  {
+    "title": "Container Registry API",
+    "name": "containerregistry.googleapis.com"
+  },
+  {
+    "title": "Cloud SQL Admin API",
+    "name": "sqladmin.googleapis.com"
+  },
+  {
+    "title": "Stackdriver Logging API",
+    "name": "logging.googleapis.com"
+  }
+]
