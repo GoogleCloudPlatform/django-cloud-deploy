@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Integration tests for module django_gke.workflow."""
+"""Integration tests for module django_cloud_deploy.workflow."""
 
 import contextlib
 import json
@@ -30,7 +30,7 @@ from googleapiclient import discovery
 
 
 class EnableServiceWorkflowIntegrationTest(test_base.BaseTest):
-    """Integration test for django_gke.workflow._enable_service."""
+    """Integration test for django_cloud_deploy.workflow._enable_service."""
 
     # Google drive api is not already enabled on the GCP project for integration
     # test.
@@ -75,7 +75,7 @@ class EnableServiceWorkflowIntegrationTest(test_base.BaseTest):
 
 
 class ServiceAccountKeyGenerationWorkflowIntegrationTest(test_base.BaseTest):
-    """Integration test for django_gke.workflow._service_account."""
+    """Integration test for django_cloud_deploy.workflow._service_account."""
 
     ROLES = ('roles/cloudsql.client', 'roles/cloudsql.editor',
              'roles/cloudsql.admin')
@@ -192,7 +192,7 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(test_base.BaseTest):
 
 
 class DeploygkeWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest):
-    """Integration test for django_gke.workflow._deploygke."""
+    """Integration test for django_cloud_deploy.workflow._deploygke."""
 
     def setUp(self):
         super().setUp()

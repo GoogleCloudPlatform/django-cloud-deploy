@@ -132,7 +132,7 @@ class DeploygkeWorkflowTest(absltest.TestCase):
         'google.cloud.container_v1.ClusterManagerClient.get_cluster',
         autoSpec=True,
         return_value=MockGetClusterResponse())
-    @mock.patch(('django_gke.deploygke.deploygke.DeploygkeWorkflow.'
+    @mock.patch(('django_cloud_deploy.deploygke.deploygke.DeploygkeWorkflow.'
                  '_get_default_kubernetes_version'),
                 autoSpec=True)
     def test_create_cluster(self, mock_get_version, unused_mock_get_cluster,

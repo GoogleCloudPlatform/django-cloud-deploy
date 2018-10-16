@@ -13,7 +13,7 @@
 # limitations under the License.
 r"""Create a django app ready to be deployed to gke.
 
-Example: python -m django_gke.skeleton --project_name <project_name>
+Example: python -m django_cloud_deploy.skeleton --project_name <project_name>
          --app_names <app_name1> <app_name2> \
          --destination <destination_path>
 """

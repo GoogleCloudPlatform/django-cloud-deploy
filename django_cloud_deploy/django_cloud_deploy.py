@@ -34,7 +34,9 @@ from django_cloud_deploy.utils import workflow_io
 from django_cloud_deploy.workflow import _auth
 from django_cloud_deploy.workflow import _enable_service
 
-CONFIG_DIR = os.path.join(os.path.expanduser('~'), '.config', 'django_gke')
+CONFIG_DIR = os.path.join(os.path.expanduser('~'),
+                          '.config',
+                          'django_cloud_deploy')
 CONFIG_PATH = os.path.join(CONFIG_DIR, 'default_config')
 TOTAL_STEPS = 9
 
@@ -249,7 +251,7 @@ def main():
     update_parser = subparsers.add_parser(
         'update',
         description=('Deploys an Django project, previously created with '
-                     'django_gke, on Google Kubernetes Engine.'))
+                     'django_cloud_deploy, on Google Kubernetes Engine.'))
     update_parser.set_defaults(func=update)
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)

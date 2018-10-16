@@ -255,8 +255,8 @@ class ServiceAccountClientTestCase(absltest.TestCase):
         project_id = 'invalid'
 
         with mock.patch(
-            ('django_gke.cloudlib.service_account.ServiceAccountClient.'
-             '_get_iam_policy'),
+            ('django_cloud_deploy.cloudlib.service_account.'
+             'ServiceAccountClient._get_iam_policy'),
                 autoSpec=True) as mock_get_iam_policy:
             mock_get_iam_policy.return_value = INVALID_IAM_POLICY
             with self.assertRaises(service_account.ServiceAccountCreationError):

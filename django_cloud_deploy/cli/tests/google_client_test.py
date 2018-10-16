@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests for the django_gke.cli.google_client."""
+"""Tests for the django_cloud_deploy.cli.google_client."""
 
 from unittest import mock
 
@@ -24,7 +24,7 @@ from django_cloud_deploy.utils import workflow_io
 class GoogleClientTest(absltest.TestCase):
     """Tests for google_client.GoogleClient."""
 
-    @mock.patch('django_gke.cloudlib.project.ProjectClient')
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient')
     def test_create_project_workflow(self, ProjectClient):
         project_client = ProjectClient()
         answers = ['My Project']
