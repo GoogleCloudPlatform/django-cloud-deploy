@@ -194,7 +194,7 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
         self.assertIn('requirements.txt', files_list)
 
     def test_dependencies(self):
-        dependencies = ('Django==2.1.0', 'mysqlclient==1.3.13', 'wheel==0.31.1',
+        dependencies = ('Django==2.1.2', 'mysqlclient==1.3.13', 'wheel==0.31.1',
                         'gunicorn==19.9.0', 'psycopg2-binary==2.7.5')
         self._dependency_generator.generate(self._project_dir)
         dependency_file_path = os.path.join(self._project_dir,
