@@ -26,4 +26,4 @@ gcloud beta auth configure-docker
 
 cd $KOKORO_ARTIFACTS_DIR/github/django-cloud-deploy
 source kokoro/ubuntu/common.sh
-nox -f django-cloud-deploy/nox.py -s integration_test
+nox -f django_cloud_deploy/nox.py -s integration_test
