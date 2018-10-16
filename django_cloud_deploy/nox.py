@@ -38,27 +38,27 @@ PACKAGES = [
 @nox.session
 @nox.parametrize('python_version', ['3.5'])
 def unit_test(session, python_version):
-  """Run the unit test suite."""
+    """Run the unit test suite."""
 
-  # Run unit tests against all supported versions of Python.
-  session.interpreter = 'python{}'.format(python_version)
-  session.install(*PACKAGES)
-  session.run('pytest', '--ignore=integration_tests')
+    # Run unit tests against all supported versions of Python.
+    session.interpreter = 'python{}'.format(python_version)
+    session.install(*PACKAGES)
+    session.run('pytest', '--ignore=integration_tests')
 
 
 @nox.session
 def lint(session):
-  """Run linters."""
-  session.interpreter = 'python3.5'
-  session.install('flake8')
-  session.run('flake8')
+    """Run linters."""
+    session.interpreter = 'python3.5'
+    session.install('flake8')
+    session.run('flake8')
 
 
 @nox.session
 @nox.parametrize('python_version', ['3.5'])
 def integration_test(session, python_version):
-  """Run the unit test suite."""
+    """Run the unit test suite."""
 
-  session.interpreter = 'python{}'.format(python_version)
-  session.install(*PACKAGES)
-  session.run('pytest', 'integration_tests')
+    session.interpreter = 'python{}'.format(python_version)
+    session.install(*PACKAGES)
+    session.run('pytest', 'integration_tests')

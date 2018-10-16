@@ -1,9 +1,10 @@
 [flake8]
 
-# E111: indentation is not a multiple of four
-# E114: indentation is not a multiple of four (comment)
-# We use 2 spaces for indentation
-ignore = E111, E114
+import-order-style=google
+# Note: this forces all google imports to be in the third group. See
+# https://github.com/PyCQA/flake8-import-order/issues/111
+application-import-names=google
+max-line-length = 80
 
 exclude =
   # nox

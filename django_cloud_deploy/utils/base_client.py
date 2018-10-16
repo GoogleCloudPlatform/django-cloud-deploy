@@ -17,11 +17,11 @@ import subprocess
 
 class BaseClient(object):
 
-  def __init__(self, debug=False):
-    if debug:
-      # This will put outputs of subprocess calls in command line.
-      self._stdout = None
-      self._stderr = None
-    else:
-      self._stdout = subprocess.DEVNULL
-      self._stderr = subprocess.DEVNULL
+    def __init__(self, debug=False):
+        if debug:
+            # This will put outputs of subprocess calls in command line.
+            self._stdout = None
+            self._stderr = None
+        else:
+            self._stdout = subprocess.DEVNULL
+            self._stderr = subprocess.DEVNULL

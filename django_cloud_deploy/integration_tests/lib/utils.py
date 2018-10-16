@@ -19,9 +19,10 @@ import string
 TIMESTAMP_FORMAT = '%Y%m%d-%H%M%S'
 
 
-def get_resource_name(resource_type='', hash_len=4,
+def get_resource_name(resource_type='',
+                      hash_len=4,
                       timestamp_format=TIMESTAMP_FORMAT):
-  """Generate resource names as TYPE-YYYYMMDD-HHMMSS-HASH.
+    """Generate resource names as TYPE-YYYYMMDD-HHMMSS-HASH.
 
   This function is useful to avoid operations on the same resource when running
   integration tests simultaneously.
@@ -35,8 +36,9 @@ def get_resource_name(resource_type='', hash_len=4,
     Generated name with the format mentioned above.
   """
 
-  timestamp = datetime.datetime.utcnow().strftime(timestamp_format)
-  hash_str = ''.join(
-      [random.SystemRandom().choice(string.ascii_lowercase + string.digits)
-       for _ in range(hash_len)])
-  return '-'.join([resource_type, timestamp, hash_str])
+    timestamp = datetime.datetime.utcnow().strftime(timestamp_format)
+    hash_str = ''.join([
+        random.SystemRandom().choice(string.ascii_lowercase + string.digits)
+        for _ in range(hash_len)
+    ])
+    return '-'.join([resource_type, timestamp, hash_str])

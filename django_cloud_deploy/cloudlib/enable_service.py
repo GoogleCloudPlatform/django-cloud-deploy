@@ -19,21 +19,22 @@ from google.auth import credentials
 
 
 class EnableServiceError(Exception):
-  pass
+    pass
 
 
 class EnableServiceClient(object):
-  """A class for enabling GCP apis."""
+    """A class for enabling GCP apis."""
 
-  def __init__(self, service_usage_service: discovery.Resource):
-    self._service_usage_service = service_usage_service
+    def __init__(self, service_usage_service: discovery.Resource):
+        self._service_usage_service = service_usage_service
 
-  @classmethod
-  def from_credentials(cls, credentials: credentials.Credentials):
-    return cls(discovery.build('serviceusage', 'v1', credentials=credentials))
+    @classmethod
+    def from_credentials(cls, credentials: credentials.Credentials):
+        return cls(
+            discovery.build('serviceusage', 'v1', credentials=credentials))
 
-  def enable_service_sync(self, project_id: str, service: str):
-    """Enable a service for the given project.
+    def enable_service_sync(self, project_id: str, service: str):
+        """Enable a service for the given project.
 
     Args:
       project_id: GCP project id.
@@ -44,30 +45,32 @@ class EnableServiceClient(object):
       EnableServiceError: When it fails to enable a service.
     """
 
-    service_name = '/'.join(['projects', project_id, 'services', service])
-    request = self._service_usage_service.services().enable(name=service_name)
-    response = request.execute()
+        service_name = '/'.join(['projects', project_id, 'services', service])
+        request = self._service_usage_service.services().enable(
+            name=service_name)
+        response = request.execute()
 
-    # When the api call succeed, the response is a Service object.
-    # See
-    # https://cloud.google.com/service-usage/docs/reference/rest/v1/services/get
-    if 'name' not in response:
-      raise EnableServiceError(
-          'unexpected response enabling service "{}": {}'.format(
-              service_name, response))
+        # When the api call succeed, the response is a Service object.
+        # See
+        # https://cloud.google.com/service-usage/docs/reference/rest/v1/services/get
+        if 'name' not in response:
+            raise EnableServiceError(
+                'unexpected response enabling service "{}": {}'.format(
+                    service_name, response))
 
-    while True:
-      request = self._service_usage_service.services().get(name=service_name)
-      response = request.execute()
-      # Response format:
-      # https://cloud.google.com/service-usage/docs/reference/rest/v1/Service
-      if response['state'] == 'ENABLED':
-        return
-      elif response['state'] == 'DISABLED':
-        time.sleep(2)
-        continue
-      else:
-        # In 'STATE_UNSPECIFIED' state.
-        raise EnableServiceError(
-            'unexpected service status after enabling: {!r}: [{!r}]'.format(
-                response['status'], response))
+        while True:
+            request = self._service_usage_service.services().get(
+                name=service_name)
+            response = request.execute()
+            # Response format:
+            # https://cloud.google.com/service-usage/docs/reference/rest/v1/Service
+            if response['state'] == 'ENABLED':
+                return
+            elif response['state'] == 'DISABLED':
+                time.sleep(2)
+                continue
+            else:
+                # In 'STATE_UNSPECIFIED' state.
+                raise EnableServiceError(
+                    'unexpected service status after enabling: {!r}: [{!r}]'.
+                    format(response['status'], response))

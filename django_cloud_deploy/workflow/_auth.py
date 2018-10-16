@@ -18,15 +18,14 @@ from django_cloud_deploy.cloudlib import auth
 
 
 class AuthWorkflow(object):
-  """A class to control the workflow for authenticate GCP."""
+    """A class to control the workflow for authenticate GCP."""
 
-  def __init__(self,
-               auth_client: auth.AuthClient):
-    self._auth_client = auth_client
+    def __init__(self, auth_client: auth.AuthClient):
+        self._auth_client = auth_client
 
-  def get_credentials(self) -> credentials.Credentials:
-    self._auth_client.gcloud_login()
+    def get_credentials(self) -> credentials.Credentials:
+        self._auth_client.gcloud_login()
 
-    # Enable Docker to work with the Project
-    self._auth_client.authenticate_docker()
-    return self._auth_client.create_default_credentials()
+        # Enable Docker to work with the Project
+        self._auth_client.authenticate_docker()
+        return self._auth_client.create_default_credentials()

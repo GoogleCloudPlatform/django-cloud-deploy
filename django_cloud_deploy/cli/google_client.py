@@ -37,7 +37,7 @@ or whitespaces). Use [{}] by pressing enter:
 
 
 class GoogleClient(base_client.BaseClient):
-  """ Encapsulates the logic to set up a new GKE project on GCP.
+    """ Encapsulates the logic to set up a new GKE project on GCP.
 
   This class has the logic required for the workflow steps a user needs
   to go through to set up a new project on GCP. This is the "first half" for a
@@ -59,11 +59,11 @@ class GoogleClient(base_client.BaseClient):
                       environment.
   """
 
-  def __init__(self,
-               io: workflow_io.IO,
-               project_client: project.ProjectClient,
-               debug=False):
-    """
+    def __init__(self,
+                 io: workflow_io.IO,
+                 project_client: project.ProjectClient,
+                 debug=False):
+        """
     Will use the default application credentials. If they
     have not been generated, then they will be generated via google-auth.
     The resource_manager package will look for them in their default location.
@@ -74,12 +74,12 @@ class GoogleClient(base_client.BaseClient):
       application credentials. Also used to pass mocked creds.
       debug: Whether this client uses debug mode.
     """
-    super().__init__(debug)
-    self._project_client = project_client
-    self.workflow = workflow_io.Workflow(io)
+        super().__init__(debug)
+        self._project_client = project_client
+        self.workflow = workflow_io.Workflow(io)
 
-  def create_project_workflow(self, project_id=None) -> str:
-    """Starts the GCP Project creation workflow.
+    def create_project_workflow(self, project_id=None) -> str:
+        """Starts the GCP Project creation workflow.
 
     Makes API calls to GCP to create a project.
 
@@ -97,23 +97,23 @@ class GoogleClient(base_client.BaseClient):
       RuntimeError: If project does not exist after 9 seconds
        it throws an error
     """
-    self.workflow.tell(CREATE_GCP_PROJECT)
-    project_name = self._prompt_project_input()
-    self.workflow.tell('Please wait while project %s is being created'
-                       % project_name)
-    if project_id:
-      self._project_client.set_existing_project(project_id)
-    else:
-      project_id = self._generate_project_id(project_name)
-      self._project_client.create_and_set_project(
-          project_id, project_name)
-      self.workflow.tell('Project %s created. It\'s project id is %s'
-                         % (project_name, project_id))
-    return project_id
+        self.workflow.tell(CREATE_GCP_PROJECT)
+        project_name = self._prompt_project_input()
+        self.workflow.tell(
+            'Please wait while project %s is being created' % project_name)
+        if project_id:
+            self._project_client.set_existing_project(project_id)
+        else:
+            project_id = self._generate_project_id(project_name)
+            self._project_client.create_and_set_project(project_id,
+                                                        project_name)
+            self.workflow.tell('Project %s created. It\'s project id is %s' %
+                               (project_name, project_id))
+        return project_id
 
-  @staticmethod
-  def _generate_project_id(project_name: str) -> str:
-    """Generate a project id based on given project name.
+    @staticmethod
+    def _generate_project_id(project_name: str) -> str:
+        """Generate a project id based on given project name.
 
     The generated project id will replace whitespace and underscores with
     hyphens.
@@ -123,15 +123,15 @@ class GoogleClient(base_client.BaseClient):
     Returns:
       Generated project id.
     """
-    random_suffix = str(random.randint(100000, 999999))
-    project_id = project_name.lower().replace(' ', '-').replace('_', '-')
-    if project_id[-1] != '-':
-      project_id += '-'
-    return project_id + random_suffix
+        random_suffix = str(random.randint(100000, 999999))
+        project_id = project_name.lower().replace(' ', '-').replace('_', '-')
+        if project_id[-1] != '-':
+            project_id += '-'
+        return project_id + random_suffix
 
-  @staticmethod
-  def _is_valid_project_name(project_name: str) -> bool:
-    """Checks whether the input is a valid project id.
+    @staticmethod
+    def _is_valid_project_name(project_name: str) -> bool:
+        """Checks whether the input is a valid project id.
 
     A valid project id should be 6-30 characters long and only contains lower
     case ASCII, digits, or hyphens.
@@ -141,16 +141,16 @@ class GoogleClient(base_client.BaseClient):
     Returns:
       Whether the input string is a valid project id.
     """
-    return (len(project_name) and len(project_name) <= 24 and
-            re.fullmatch(r'^[\w\s]+$', project_name) is not None)
+        return (len(project_name) and len(project_name) <= 24 and
+                re.fullmatch(r'^[\w\s]+$', project_name) is not None)
 
-  # noinspection PyMethodMayBeStatic
-  def _prompt_project_input(self) -> str:
-    default_value = 'Djangogke Project'
-    project_name_prompt = PROJECT_NAME_PROMPT_TEMPLATE.format(default_value)
-    error_msg = (
-        'A valid project name should be 1-24 characters long and only '
-        'contains letters, digits, underscore or whitespaces. Please use '
-        'another name and try again')
-    return self.workflow.ask(project_name_prompt, default_value,
-                             self._is_valid_project_name, error_msg)
+    # noinspection PyMethodMayBeStatic
+    def _prompt_project_input(self) -> str:
+        default_value = 'Djangogke Project'
+        project_name_prompt = PROJECT_NAME_PROMPT_TEMPLATE.format(default_value)
+        error_msg = (
+            'A valid project name should be 1-24 characters long and only '
+            'contains letters, digits, underscore or whitespaces. Please use '
+            'another name and try again')
+        return self.workflow.ask(project_name_prompt, default_value,
+                                 self._is_valid_project_name, error_msg)

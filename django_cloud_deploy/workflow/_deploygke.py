@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Workflow for deploying a Django app to GKE."""
 
 import base64
@@ -28,28 +27,28 @@ from google.auth import credentials
 
 
 class DeployNewAppError(Exception):
-  """Exception raised in deploy new Django app."""
-  pass
+    """Exception raised in deploy new Django app."""
+    pass
 
 
 class DeploygkeWorkflow(object):
-  """A class to control the workflow for deploying an Django app to GKE."""
+    """A class to control the workflow for deploying an Django app to GKE."""
 
-  def __init__(self, credentials: credentials.Credentials):
-    self._container_client = container.ContainerClient.from_credentials(
-        credentials)
-    self._credentials = credentials
+    def __init__(self, credentials: credentials.Credentials):
+        self._container_client = container.ContainerClient.from_credentials(
+            credentials)
+        self._credentials = credentials
 
-  def deploy_new_app_sync(self,
-                          project_id: str,
-                          cluster_name: str,
-                          app_directory: str,
-                          app_name: str,
-                          image_name: str,
-                          secrets: Dict[str, str],
-                          region: str = 'us-west1',
-                          zone: str = 'us-west1-a') -> str:
-    """Deploy a Django app to gke.
+    def deploy_new_app_sync(self,
+                            project_id: str,
+                            cluster_name: str,
+                            app_directory: str,
+                            app_name: str,
+                            image_name: str,
+                            secrets: Dict[str, str],
+                            region: str = 'us-west1',
+                            zone: str = 'us-west1-a') -> str:
+        """Deploy a Django app to gke.
 
     Args:
       project_id: GCP project id.
@@ -69,50 +68,55 @@ class DeploygkeWorkflow(object):
       The admin site url of the deployed Django app.
     """
 
-    self._container_client.create_cluster_sync(
-        project_id, cluster_name, region, zone)
-    self._container_client.build_docker_image(image_name, app_directory)
-    self._container_client.push_docker_image(image_name)
-    yaml_file_path = os.path.join(app_directory, app_name + '.yaml')
-    with open(yaml_file_path) as yaml_file:
-      for data in yaml.load_all(yaml_file):
-        if data['kind'] == 'Deployment':
-          deployment_data = data
-        elif data['kind'] == 'Service':
-          service_data = data
+        self._container_client.create_cluster_sync(project_id, cluster_name,
+                                                   region, zone)
+        self._container_client.build_docker_image(image_name, app_directory)
+        self._container_client.push_docker_image(image_name)
+        yaml_file_path = os.path.join(app_directory, app_name + '.yaml')
+        with open(yaml_file_path) as yaml_file:
+            for data in yaml.load_all(yaml_file):
+                if data['kind'] == 'Deployment':
+                    deployment_data = data
+                elif data['kind'] == 'Service':
+                    service_data = data
 
-    # This happens if the generated Django app does not have a valid yaml file.
-    if not deployment_data or not service_data:
-      raise DeployNewAppError(
-          'Invalid kubernetes configuration file for Django app "{}" in "{}"'
-          .format(app_name, app_directory))
-    kube_config = self._container_client.create_kubernetes_configuration(
-        self._credentials, project_id, cluster_name, zone)
-    for secret_name, secret in secrets.items():
-      for key, value in secret.items():
-        if isinstance(value, str):
-          value = value.encode('utf-8')
+        # This happens if the generated Django app does not have a valid yaml
+        # file.
+        if not deployment_data or not service_data:
+            raise DeployNewAppError(
+                ('Invalid kubernetes configuration file for Django app '
+                 '"{}" in "{}"').format(app_name, app_directory))
+        kube_config = self._container_client.create_kubernetes_configuration(
+            self._credentials, project_id, cluster_name, zone)
+        for secret_name, secret in secrets.items():
+            for key, value in secret.items():
+                if isinstance(value, str):
+                    value = value.encode('utf-8')
 
-        # Kubernetes api only accepts base64 encoded strings.
-        # See https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1Secret.md  # noqa: E501
-        secret[key] = base64.standard_b64encode(value).decode('utf-8')
-      secret_data = kubernetes.client.V1Secret(
-          api_version='v1', data=secret, kind='Secret',
-          metadata={'name': secret_name})
-      self._container_client.create_secret(secret_data, kube_config)
-    self._container_client.create_deployment(deployment_data, kube_config)
-    self._wait_for_deployment_ready(
-        kube_config, project_id, cluster_name, app_name, zone)
-    self._container_client.create_service(service_data, kube_config)
-    ingress_url = self._get_ingress_url(
-        kube_config, project_id, cluster_name, zone)
-    admin_url = urllib.parse.urljoin(ingress_url, '/admin')
-    return admin_url
+                # Kubernetes api only accepts base64 encoded strings.
+                # See https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1Secret.md  # noqa: E501
+                secret[key] = base64.standard_b64encode(value).decode('utf-8')
+            secret_data = kubernetes.client.V1Secret(
+                api_version='v1',
+                data=secret,
+                kind='Secret',
+                metadata={'name': secret_name})
+            self._container_client.create_secret(secret_data, kube_config)
+        self._container_client.create_deployment(deployment_data, kube_config)
+        self._wait_for_deployment_ready(kube_config, project_id, cluster_name,
+                                        app_name, zone)
+        self._container_client.create_service(service_data, kube_config)
+        ingress_url = self._get_ingress_url(kube_config, project_id,
+                                            cluster_name, zone)
+        admin_url = urllib.parse.urljoin(ingress_url, '/admin')
+        return admin_url
 
-  def _get_ingress_url(self, kube_config: kubernetes.client.Configuration,
-                       project_id: str, cluster_name: str,
-                       zone: str = 'us-west1-a') -> str:
-    """Returns the URL that can be used to access the app.
+    def _get_ingress_url(self,
+                         kube_config: kubernetes.client.Configuration,
+                         project_id: str,
+                         cluster_name: str,
+                         zone: str = 'us-west1-a') -> str:
+        """Returns the URL that can be used to access the app.
 
     Args:
       kube_config: A kubernetes configuration which has access to the given
@@ -126,30 +130,32 @@ class DeploygkeWorkflow(object):
       Url of the deployed Django app.
     """
 
-    kube_config = self._container_client.create_kubernetes_configuration(
-        self._credentials, project_id, cluster_name, zone)
-    api_client = kubernetes.client.ApiClient(kube_config)
-    api = kubernetes.client.CoreV1Api(api_client)
-    return self._try_get_ingress_url(api)
+        kube_config = self._container_client.create_kubernetes_configuration(
+            self._credentials, project_id, cluster_name, zone)
+        api_client = kubernetes.client.ApiClient(kube_config)
+        api = kubernetes.client.CoreV1Api(api_client)
+        return self._try_get_ingress_url(api)
 
-  @backoff.on_predicate(backoff.constant, interval=0.5)
-  def _try_get_ingress_url(self, api: kubernetes.client.CoreV1Api) -> str:
-    items = api.list_service_for_all_namespaces().items
-    for item in items:
-      ingress = item.status.load_balancer.ingress
-      if ingress:
-        return 'http://{}/'.format(ingress[0].hostname or ingress[0].ip)
+    @backoff.on_predicate(backoff.constant, interval=0.5)
+    def _try_get_ingress_url(self, api: kubernetes.client.CoreV1Api) -> str:
+        items = api.list_service_for_all_namespaces().items
+        for item in items:
+            ingress = item.status.load_balancer.ingress
+            if ingress:
+                return 'http://{}/'.format(ingress[0].hostname or ingress[0].ip)
 
-    # @backoff.on_predicate(backoff.constant) will keep running this method
-    # until it gets a non-falsey result. Return value of '' means that the
-    # service is not ready yet.
-    return ''
+        # @backoff.on_predicate(backoff.constant) will keep running this method
+        # until it gets a non-falsey result. Return value of '' means that the
+        # service is not ready yet.
+        return ''
 
-  def _wait_for_deployment_ready(self,
-                                 kube_config: kubernetes.client.Configuration,
-                                 project_id: str, cluster_name: str,
-                                 app_name: str, zone: str = 'us-west1-a'):
-    """Wait for the deployment of Django app to get ready.
+    def _wait_for_deployment_ready(self,
+                                   kube_config: kubernetes.client.Configuration,
+                                   project_id: str,
+                                   cluster_name: str,
+                                   app_name: str,
+                                   zone: str = 'us-west1-a'):
+        """Wait for the deployment of Django app to get ready.
 
     Args:
       kube_config: A kubernetes configuration which has access to the given
@@ -161,22 +167,22 @@ class DeploygkeWorkflow(object):
         resides.
     """
 
-    api_client = kubernetes.client.ApiClient(kube_config)
-    api = kubernetes.client.ExtensionsV1beta1Api(api_client)
-    label_selector = '='.join(['app', app_name])
-    self._try_get_ready_replicas(api, label_selector)
+        api_client = kubernetes.client.ApiClient(kube_config)
+        api = kubernetes.client.ExtensionsV1beta1Api(api_client)
+        label_selector = '='.join(['app', app_name])
+        self._try_get_ready_replicas(api, label_selector)
 
-  @backoff.on_predicate(backoff.constant, interval=0.5)
-  def _try_get_ready_replicas(self,
-                              api: kubernetes.client.ExtensionsV1beta1Api,
-                              label_selector: str) -> int:
-    items = api.list_deployment_for_all_namespaces(
-        label_selector=label_selector).items
-    for item in items:
-      if item.status.ready_replicas:
-        return item.status.ready_replicas
+    @backoff.on_predicate(backoff.constant, interval=0.5)
+    def _try_get_ready_replicas(self,
+                                api: kubernetes.client.ExtensionsV1beta1Api,
+                                label_selector: str) -> int:
+        items = api.list_deployment_for_all_namespaces(
+            label_selector=label_selector).items
+        for item in items:
+            if item.status.ready_replicas:
+                return item.status.ready_replicas
 
-    # @backoff.on_predicate(backoff.constant) will keep running this method
-    # until it gets a non-falsey result. Return value of 0 means that the
-    # deployment is not ready yet.
-    return 0
+        # @backoff.on_predicate(backoff.constant) will keep running this method
+        # until it gets a non-falsey result. Return value of 0 means that the
+        # deployment is not ready yet.
+        return 0

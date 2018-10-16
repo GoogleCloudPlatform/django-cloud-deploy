@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for the django_gke.cli.google_client."""
 
 from unittest import mock
@@ -23,20 +22,20 @@ from django_cloud_deploy.utils import workflow_io
 
 
 class GoogleClientTest(absltest.TestCase):
-  """Tests for google_client.GoogleClient."""
+    """Tests for google_client.GoogleClient."""
 
-  @mock.patch('django_gke.cloudlib.project.ProjectClient')
-  def test_create_project_workflow(self, ProjectClient):
-    project_client = ProjectClient()
-    answers = ['My Project']
-    google_client = gc.GoogleClient(workflow_io.Test(answers), project_client)
+    @mock.patch('django_gke.cloudlib.project.ProjectClient')
+    def test_create_project_workflow(self, ProjectClient):
+        project_client = ProjectClient()
+        answers = ['My Project']
+        google_client = gc.GoogleClient(
+            workflow_io.Test(answers), project_client)
 
-    returned_project_id = google_client.create_project_workflow()
-    self.assertRegex(returned_project_id, r'my-project-\d{6}')
+        returned_project_id = google_client.create_project_workflow()
+        self.assertRegex(returned_project_id, r'my-project-\d{6}')
 
-    self.assertEqual(1,
-                     project_client.create_and_set_project.call_count)
-    (actual_project_id, actual_project_name), _ = (
-        project_client.create_and_set_project.call_args)
-    self.assertEqual('My Project', actual_project_name)
-    self.assertRegex(actual_project_id, returned_project_id)
+        self.assertEqual(1, project_client.create_and_set_project.call_count)
+        (actual_project_id, actual_project_name), _ = (
+            project_client.create_and_set_project.call_args)
+        self.assertEqual('My Project', actual_project_name)
+        self.assertRegex(actual_project_id, returned_project_id)

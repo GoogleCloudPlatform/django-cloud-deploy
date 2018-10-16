@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITconsoleNS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissconsolens and
 # limitatconsolens under the License.
-
 """Prompts the user for information e.g. project name."""
 
 import abc
@@ -28,13 +27,13 @@ from django_cloud_deploy.cloudlib import auth
 
 
 class Prompt(object):
-  """Base class for classes the collect user input from the console."""
+    """Base class for classes the collect user input from the console."""
 
-  @classmethod
-  @abc.abstractmethod
-  def prompt(cls, console: io.IO, step_prompt: str,
-             arguments: Dict[str, Any]) -> Any:
-    """Prompt the user to enter some information.
+    @classmethod
+    @abc.abstractmethod
+    def prompt(cls, console: io.IO, step_prompt: str,
+               arguments: Dict[str, Any]) -> Any:
+        """Prompt the user to enter some information.
 
     Args:
       console: Object to use for user I/O.
@@ -46,9 +45,9 @@ class Prompt(object):
       The value entered by the user.
     """
 
-  @staticmethod
-  def validate(s: str):
-    """Validates that a string is valid for this prompt type.
+    @staticmethod
+    def validate(s: str):
+        """Validates that a string is valid for this prompt type.
 
     Args:
       s: The string to validate.
@@ -56,11 +55,11 @@ class Prompt(object):
     Raises:
       ValueError: if the input string is not valid.
     """
-    pass
+        pass
 
 
 class NamePrompt(Prompt):
-  """Base class for classes that prompt for some sort of name.
+    """Base class for classes that prompt for some sort of name.
 
   Subclasses must:
   1. set _PROMPT to the prompt text.
@@ -68,17 +67,17 @@ class NamePrompt(Prompt):
   3. implement validate.
   """
 
-  _PROMPT = None
+    _PROMPT = None
 
-  @staticmethod
-  @abc.abstractmethod
-  def _default_name(arguments: Dict[str, Any]):
-    """The default name to use."""
+    @staticmethod
+    @abc.abstractmethod
+    def _default_name(arguments: Dict[str, Any]):
+        """The default name to use."""
 
-  @classmethod
-  def prompt(cls, console: io.IO, step_prompt: str,
-             arguments: Dict[str, Any]) -> str:
-    """Prompt the user to enter some sort of name.
+    @classmethod
+    def prompt(cls, console: io.IO, step_prompt: str,
+               arguments: Dict[str, Any]) -> str:
+        """Prompt the user to enter some sort of name.
 
     Args:
       console: Object to use for user I/O.
@@ -89,32 +88,33 @@ class NamePrompt(Prompt):
     Returns:
       The value entered by the user.
     """
-    default_name = cls._default_name(arguments)
-    while True:
-      console.tell(('{} {}').format(step_prompt, cls._PROMPT))
-      project_name = console.ask('[{}]: '.format(default_name))
-      if not project_name.strip():
-        project_name = default_name
-      try:
-        cls.validate(project_name)
-      except ValueError as e:
-        console.error(e)
-        continue
-      return project_name
+        default_name = cls._default_name(arguments)
+        while True:
+            console.tell(('{} {}').format(step_prompt, cls._PROMPT))
+            project_name = console.ask('[{}]: '.format(default_name))
+            if not project_name.strip():
+                project_name = default_name
+            try:
+                cls.validate(project_name)
+            except ValueError as e:
+                console.error(e)
+                continue
+            return project_name
 
 
 class GoogleCloudProjectNamePrompt(NamePrompt):
-  """Allow the user to enter a GCP project name."""
+    """Allow the user to enter a GCP project name."""
 
-  _PROMPT = 'Enter a Google Cloud Platform project name, or leave blank to use'
+    _PROMPT = ('Enter a Google Cloud Platform project name, or leave '
+               'blank to use')
 
-  @classmethod
-  def _default_name(cls, arguments: Dict[str, Any]):
-    return 'Django Project'
+    @classmethod
+    def _default_name(cls, arguments: Dict[str, Any]):
+        return 'Django Project'
 
-  @staticmethod
-  def validate(s):
-    """Validates that a string is a valid project name.
+    @staticmethod
+    def validate(s):
+        """Validates that a string is a valid project name.
 
     Args:
       s: The string to validate.
@@ -122,23 +122,24 @@ class GoogleCloudProjectNamePrompt(NamePrompt):
     Raises:
       ValueError: if the input string is not valid.
     """
-    if not (4 <= len(s) <= 30):
-      raise ValueError(('Invalid Google Cloud Platform project name "{}": '
-                        'must be between 4 and 30 characters').format(s))
+        if not (4 <= len(s) <= 30):
+            raise ValueError(
+                ('Invalid Google Cloud Platform project name "{}": '
+                 'must be between 4 and 30 characters').format(s))
 
 
 class DjangoProjectNamePrompt(NamePrompt):
-  """Allow the user to enter a Django project name."""
+    """Allow the user to enter a Django project name."""
 
-  _PROMPT = 'Enter a Django project name, or leave blank to use'
+    _PROMPT = 'Enter a Django project name, or leave blank to use'
 
-  @classmethod
-  def _default_name(cls, arguments: Dict[str, Any]):
-    return 'mysite'
+    @classmethod
+    def _default_name(cls, arguments: Dict[str, Any]):
+        return 'mysite'
 
-  @staticmethod
-  def validate(s):
-    """Validates that a string is a valid Django project name.
+    @staticmethod
+    def validate(s):
+        """Validates that a string is a valid Django project name.
 
     Args:
       s: The string to validate.
@@ -146,23 +147,23 @@ class DjangoProjectNamePrompt(NamePrompt):
     Raises:
       ValueError: if the input string is not valid.
     """
-    if not s.isidentifier():
-      raise ValueError(('Invalid Django project name "{}": '
-                        'must be a valid Python identifier').format(s))
+        if not s.isidentifier():
+            raise ValueError(('Invalid Django project name "{}": '
+                              'must be a valid Python identifier').format(s))
 
 
 class DjangoAppNamePrompt(NamePrompt):
-  """Allow the user to enter a Django app name."""
+    """Allow the user to enter a Django app name."""
 
-  _PROMPT = 'Enter a Django app name, or leave blank to use'
+    _PROMPT = 'Enter a Django app name, or leave blank to use'
 
-  @classmethod
-  def _default_name(cls, arguments: Dict[str, Any]):
-    return 'home'
+    @classmethod
+    def _default_name(cls, arguments: Dict[str, Any]):
+        return 'home'
 
-  @staticmethod
-  def validate(s):
-    """Validates that a string is a valid Django app name.
+    @staticmethod
+    def validate(s):
+        """Validates that a string is a valid Django app name.
 
     Args:
       s: The string to validate.
@@ -170,23 +171,23 @@ class DjangoAppNamePrompt(NamePrompt):
     Raises:
       ValueError: if the input string is not valid.
     """
-    if not s.isidentifier():
-      raise ValueError(('Invalid Django app name "{}": '
-                        'must be a valid Python identifier').format(s))
+        if not s.isidentifier():
+            raise ValueError(('Invalid Django app name "{}": '
+                              'must be a valid Python identifier').format(s))
 
 
 class DjangoSuperuserLoginPrompt(NamePrompt):
-  """Allow the user to enter a Django superuser login."""
+    """Allow the user to enter a Django superuser login."""
 
-  _PROMPT = 'Enter a name for the Django superuser, or leave blank to use'
+    _PROMPT = 'Enter a name for the Django superuser, or leave blank to use'
 
-  @classmethod
-  def _default_name(cls, arguments: Dict[str, Any]):
-    return 'admin'
+    @classmethod
+    def _default_name(cls, arguments: Dict[str, Any]):
+        return 'admin'
 
-  @staticmethod
-  def validate(s):
-    """Validates that a string is a valid Django superuser login.
+    @staticmethod
+    def validate(s):
+        """Validates that a string is a valid Django superuser login.
 
     Args:
       s: The string to validate.
@@ -194,25 +195,24 @@ class DjangoSuperuserLoginPrompt(NamePrompt):
     Raises:
       ValueError: if the input string is not valid.
     """
-    if not s.isalnum():
-      raise ValueError(('Invalid Django superuser login "{}": '
-                        'must be a alpha numeric').format(s))
+        if not s.isalnum():
+            raise ValueError(('Invalid Django superuser login "{}": '
+                              'must be a alpha numeric').format(s))
 
 
 class DjangoSuperuserEmailPrompt(NamePrompt):
-  """Allow the user to enter a Django email address."""
+    """Allow the user to enter a Django email address."""
 
-  _PROMPT = (
-      'Enter a e-mail address for the Django superuser, '
-      'or leave blank to use')
+    _PROMPT = ('Enter a e-mail address for the Django superuser, '
+               'or leave blank to use')
 
-  @classmethod
-  def _default_name(cls, arguments: Dict[str, Any]):
-    return 'test@example.com'
+    @classmethod
+    def _default_name(cls, arguments: Dict[str, Any]):
+        return 'test@example.com'
 
-  @staticmethod
-  def validate(s):
-    """Validates that a string is a valid Django superuser email address.
+    @staticmethod
+    def validate(s):
+        """Validates that a string is a valid Django superuser email address.
 
     Args:
       s: The string to validate.
@@ -220,30 +220,30 @@ class DjangoSuperuserEmailPrompt(NamePrompt):
     Raises:
       ValueError: if the input string is not valid.
     """
-    if not re.match(r'[^@]+@[^@]+\.[^@]+', s):
-      raise ValueError(('Invalid Django superuser email address "{}": '
-                        'the format should be like '
-                        '"test@example.com"').format(s))
+        if not re.match(r'[^@]+@[^@]+\.[^@]+', s):
+            raise ValueError(('Invalid Django superuser email address "{}": '
+                              'the format should be like '
+                              '"test@example.com"').format(s))
 
 
 class ProjectIdPrompt(Prompt):
-  """Allow the user to enter a GCP project id."""
+    """Allow the user to enter a GCP project id."""
 
-  @staticmethod
-  def _generate_default_project_id(project_name=None):
-    default_project_id = (project_name or 'django').lower()
-    default_project_id = default_project_id.replace(' ', '-')
-    if default_project_id[0] not in string.ascii_lowercase:
-      default_project_id = 'django-' + default_project_id
-    default_project_id = re.sub('[^a-z0-9\-]', '', default_project_id)
+    @staticmethod
+    def _generate_default_project_id(project_name=None):
+        default_project_id = (project_name or 'django').lower()
+        default_project_id = default_project_id.replace(' ', '-')
+        if default_project_id[0] not in string.ascii_lowercase:
+            default_project_id = 'django-' + default_project_id
+        default_project_id = re.sub('[^a-z0-9\-]', '', default_project_id)
 
-    return '{0}-{1}'.format(default_project_id[0:30 - 6 - 1],
-                            random.randint(100000, 1000000))
+        return '{0}-{1}'.format(default_project_id[0:30 - 6 - 1],
+                                random.randint(100000, 1000000))
 
-  @classmethod
-  def prompt(cls, console: io.IO, step_prompt: str,
-             arguments: Dict[str, Any]) -> str:
-    """Prompt the user to a Google Cloud Platform project id.
+    @classmethod
+    def prompt(cls, console: io.IO, step_prompt: str,
+               arguments: Dict[str, Any]) -> str:
+        """Prompt the user to a Google Cloud Platform project id.
 
     Args:
       console: Object to use for user I/O.
@@ -254,24 +254,24 @@ class ProjectIdPrompt(Prompt):
     Returns:
       The value entered by the user.
     """
-    default_project_id = cls._generate_default_project_id(
-        arguments.get('project_name'))
-    while True:
-      console.tell(('{} Enter a Google Cloud Platform Project ID, '
-                    'or leave blank to use').format(step_prompt))
-      project_id = console.ask('[{}]: '.format(default_project_id))
-      if not project_id.strip():
-        return default_project_id
-      try:
-        cls.validate(project_id)
-      except ValueError as e:
-        console.error(e)
-        continue
-      return project_id
+        default_project_id = cls._generate_default_project_id(
+            arguments.get('project_name'))
+        while True:
+            console.tell(('{} Enter a Google Cloud Platform Project ID, '
+                          'or leave blank to use').format(step_prompt))
+            project_id = console.ask('[{}]: '.format(default_project_id))
+            if not project_id.strip():
+                return default_project_id
+            try:
+                cls.validate(project_id)
+            except ValueError as e:
+                console.error(e)
+                continue
+            return project_id
 
-  @staticmethod
-  def validate(s):
-    """Validates that a string is a valid project id.
+    @staticmethod
+    def validate(s):
+        """Validates that a string is a valid project id.
 
     Args:
       s: The string to validate.
@@ -279,29 +279,29 @@ class ProjectIdPrompt(Prompt):
     Raises:
       ValueError: if the input string is not valid.
     """
-    if not re.match(r'[a-z][a-z0-9\-]{5,29}', s):
-      raise ValueError(('Invalid Google Cloud Platform Project ID "{}": '
-                        'must be between 6 and 30 characters and contain '
-                        'lowercase letters, digits or hyphens').format(s))
+        if not re.match(r'[a-z][a-z0-9\-]{5,29}', s):
+            raise ValueError(('Invalid Google Cloud Platform Project ID "{}": '
+                              'must be between 6 and 30 characters and contain '
+                              'lowercase letters, digits or hyphens').format(s))
 
 
 class DjangoFilesystemPath(Prompt):
-  """Allow the user to file system path for their project."""
+    """Allow the user to file system path for their project."""
 
-  @staticmethod
-  def _prompt_replace(console, directory):
-    while True:
-      r = console.ask(("The directory \'{}\' already exists, "
-                       "replace it's contents [y/N]: ").format(directory))
-      r = r.strip().lower() or 'n'
-      if r not in ['n', 'y']:
-        continue
-      return r == 'y'
+    @staticmethod
+    def _prompt_replace(console, directory):
+        while True:
+            r = console.ask(("The directory \'{}\' already exists, "
+                             "replace it's contents [y/N]: ").format(directory))
+            r = r.strip().lower() or 'n'
+            if r not in ['n', 'y']:
+                continue
+            return r == 'y'
 
-  @classmethod
-  def prompt(cls, console: io.IO, step_prompt: str,
-             arguments: Dict[str, Any]) -> str:
-    """Prompt the user to enter a file system path for their project.
+    @classmethod
+    def prompt(cls, console: io.IO, step_prompt: str,
+               arguments: Dict[str, Any]) -> str:
+        """Prompt the user to enter a file system path for their project.
 
     Args:
       console: Object to use for user I/O.
@@ -312,34 +312,34 @@ class DjangoFilesystemPath(Prompt):
     Returns:
       The value entered by the user.
     """
-    home_dir = os.path.expanduser('~')
-    # TODO: Remove filesystem-unsafe characters. Implement a validation method
-    # that checks for these.
-    default_directory = os.path.join(
-        home_dir,
-        arguments.get('project_name', 'django-project').lower().replace(
-            ' ', '-'))
+        home_dir = os.path.expanduser('~')
+        # TODO: Remove filesystem-unsafe characters. Implement a validation
+        # method that checks for these.
+        default_directory = os.path.join(
+            home_dir,
+            arguments.get('project_name', 'django-project').lower().replace(
+                ' ', '-'))
 
-    while True:
-      console.tell(
-          '{} Enter a directory or leave blank to use'.format(step_prompt))
-      directory = console.ask('[{}]: '.format(default_directory))
-      if not directory.strip():
-        directory = default_directory
-      try:
-        cls.validate(directory)
-      except ValueError as e:
-        console.error(e)
-        continue
+        while True:
+            console.tell('{} Enter a directory or leave blank to use'.format(
+                step_prompt))
+            directory = console.ask('[{}]: '.format(default_directory))
+            if not directory.strip():
+                directory = default_directory
+            try:
+                cls.validate(directory)
+            except ValueError as e:
+                console.error(e)
+                continue
 
-      if os.path.exists(directory):
-        if not cls._prompt_replace(console, directory):
-          continue
-      return directory
+            if os.path.exists(directory):
+                if not cls._prompt_replace(console, directory):
+                    continue
+            return directory
 
 
 class PasswordPrompt(Prompt):
-  """Base class for classes that prompt for a password.
+    """Base class for classes that prompt for a password.
 
   Subclasses must:
   1. implement _get_prompt()
@@ -347,15 +347,15 @@ class PasswordPrompt(Prompt):
   3. implement validate()
   """
 
-  @classmethod
-  @abc.abstractmethod
-  def _get_prompt(cls, arguments: Dict[str, Any]) -> str:
-    pass
+    @classmethod
+    @abc.abstractmethod
+    def _get_prompt(cls, arguments: Dict[str, Any]) -> str:
+        pass
 
-  @classmethod
-  def prompt(cls, console: io.IO, step_prompt: str,
-             arguments: Dict[str, Any]) -> str:
-    """Prompt the user to enter a password.
+    @classmethod
+    def prompt(cls, console: io.IO, step_prompt: str,
+               arguments: Dict[str, Any]) -> str:
+        """Prompt the user to enter a password.
 
     Args:
       console: Object to use for user I/O.
@@ -366,24 +366,24 @@ class PasswordPrompt(Prompt):
     Returns:
       The value entered by the user.
     """
-    console_prompt = cls._get_prompt(arguments)
-    console.tell(('{} {}').format(step_prompt, console_prompt))
-    while True:
-      password1 = console.getpass('Password: ')
-      try:
-        cls.validate(password1)
-      except ValueError as e:
-        console.error(e)
-        continue
-      password2 = console.getpass('Password (again): ')
-      if password1 != password2:
-        console.error('Passwords do not match, please try again')
-        continue
-      return password1
+        console_prompt = cls._get_prompt(arguments)
+        console.tell(('{} {}').format(step_prompt, console_prompt))
+        while True:
+            password1 = console.getpass('Password: ')
+            try:
+                cls.validate(password1)
+            except ValueError as e:
+                console.error(e)
+                continue
+            password2 = console.getpass('Password (again): ')
+            if password1 != password2:
+                console.error('Passwords do not match, please try again')
+                continue
+            return password1
 
-  @staticmethod
-  def validate(s):
-    """Validates that a string is a valid password.
+    @staticmethod
+    def validate(s):
+        """Validates that a string is a valid password.
 
     Args:
       s: The string to validate.
@@ -391,41 +391,41 @@ class PasswordPrompt(Prompt):
     Raises:
       ValueError: if the input string is not valid.
     """
-    if len(s) < 5:
-      raise ValueError('Passwords must be at least 6 characters long')
-    allowed_characters = frozenset(
-        string.ascii_letters + string.digits + string.punctuation)
-    if frozenset(s).issuperset(allowed_characters):
-      raise ValueError(
-          'Invalid character in password: '
-          'use letters, numbers and punctuation')
+        if len(s) < 5:
+            raise ValueError('Passwords must be at least 6 characters long')
+        allowed_characters = frozenset(string.ascii_letters + string.digits +
+                                       string.punctuation)
+        if frozenset(s).issuperset(allowed_characters):
+            raise ValueError('Invalid character in password: '
+                             'use letters, numbers and punctuation')
 
 
 class PostgresPasswordPrompt(PasswordPrompt):
-  """Allow the user to enter a Django Postgres password."""
+    """Allow the user to enter a Django Postgres password."""
 
-  @classmethod
-  def _get_prompt(cls, arguments: Dict[str, Any]) -> str:
-    return 'Enter a password for the default database user "postgres"'
+    @classmethod
+    def _get_prompt(cls, arguments: Dict[str, Any]) -> str:
+        return 'Enter a password for the default database user "postgres"'
 
 
 class DjangoSuperuserPasswordPrompt(PasswordPrompt):
-  """Allow the user to enter a password for the Django superuser."""
+    """Allow the user to enter a password for the Django superuser."""
 
-  @classmethod
-  def _get_prompt(cls, arguments: Dict[str, Any]) -> str:
-    if 'django_superuser_login' in arguments:
-      return 'Enter a password for the Django superuser "{}"'.format(
-          arguments['django_superuser_login'])
-    else:
-      return 'Enter a password for the Django superuser'
+    @classmethod
+    def _get_prompt(cls, arguments: Dict[str, Any]) -> str:
+        if 'django_superuser_login' in arguments:
+            return 'Enter a password for the Django superuser "{}"'.format(
+                arguments['django_superuser_login'])
+        else:
+            return 'Enter a password for the Django superuser'
 
 
 class CredentialsPrompt(Prompt):
-  @classmethod
-  def prompt(cls, console: io.IO, step_prompt: str,
-             arguments: Dict[str, Any]) -> credentials.Credentials:
-    """Prompt the user for access to the Google credentials.
+
+    @classmethod
+    def prompt(cls, console: io.IO, step_prompt: str,
+               arguments: Dict[str, Any]) -> credentials.Credentials:
+        """Prompt the user for access to the Google credentials.
 
     Args:
       console: Object to use for user I/O.
@@ -436,11 +436,11 @@ class CredentialsPrompt(Prompt):
     Returns:
       The user's credentials.
     """
-    console.tell(
-        ('{} In order to deploy your application, you must allow Django '
-         'Deploy to access your Google account.').format(step_prompt))
-    console.ask('Press [Enter] to open a browser window to allow access')
-    auth_client = auth.AuthClient()
-    auth_client.gcloud_login()
-    auth_client.authenticate_docker()
-    return auth_client.create_default_credentials()
+        console.tell(
+            ('{} In order to deploy your application, you must allow Django '
+             'Deploy to access your Google account.').format(step_prompt))
+        console.ask('Press [Enter] to open a browser window to allow access')
+        auth_client = auth.AuthClient()
+        auth_client.gcloud_login()
+        auth_client.authenticate_docker()
+        return auth_client.create_default_credentials()

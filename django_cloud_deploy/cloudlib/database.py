@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Manages Google Cloud SQL instances, databases and users.
 
 See https://cloud.google.com/sql/docs/
@@ -24,27 +23,28 @@ from googleapiclient import discovery
 
 
 class DatabaseError(Exception):
-  pass
+    pass
 
 
 class DatabaseClient(object):
-  """A class for managing Google Cloud SQL objects."""
+    """A class for managing Google Cloud SQL objects."""
 
-  def __init__(self, sqladmin_service: discovery.Resource):
-    self._sqladmin_service = sqladmin_service
+    def __init__(self, sqladmin_service: discovery.Resource):
+        self._sqladmin_service = sqladmin_service
 
-  @classmethod
-  def from_credentials(cls, credentials: credentials.Credentials):
-    return cls(discovery.build('sqladmin', 'v1beta4', credentials=credentials))
+    @classmethod
+    def from_credentials(cls, credentials: credentials.Credentials):
+        return cls(
+            discovery.build('sqladmin', 'v1beta4', credentials=credentials))
 
-  def create_instance_sync(self,
-                           project_id: str,
-                           instance: str,
-                           number_cpus: int = 1,
-                           memory_size: str = 3840,
-                           database_version: str = 'POSTGRES_9_6',
-                           region: str = 'us-west1'):
-    """Creates a new Google Cloud SQL instance and wait for provisioning.
+    def create_instance_sync(self,
+                             project_id: str,
+                             instance: str,
+                             number_cpus: int = 1,
+                             memory_size: str = 3840,
+                             database_version: str = 'POSTGRES_9_6',
+                             region: str = 'us-west1'):
+        """Creates a new Google Cloud SQL instance and wait for provisioning.
 
     See https://cloud.google.com/sql/docs/postgres/create-instance for valid
     arguments.
@@ -63,50 +63,52 @@ class DatabaseClient(object):
       ValueError: for invalid argument combinations.
       DatabaseError: if unable to provision the SQL instance.
     """
-    # See:
-    # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances
-    if not (0 < number_cpus <= 64):
-      raise ValueError('unexpected cpu count {!r}'.format(number_cpus))
+        # See:
+        # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances
+        if not (0 < number_cpus <= 64):
+            raise ValueError('unexpected cpu count {!r}'.format(number_cpus))
 
-    if not (3840 <= memory_size <= 425984):
-      raise ValueError('unexpected memory size {!r}'.format(memory_size))
+        if not (3840 <= memory_size <= 425984):
+            raise ValueError('unexpected memory size {!r}'.format(memory_size))
 
-    tier = 'db-custom-{}-{}'.format(number_cpus, memory_size)
-    database_instance_body = {
-        'name': instance,
-        'region': region,
-        'databaseVersion': database_version,
-        'settings': {'tier': tier,
-                     "backupConfiguration": {"enabled": True}}}
-    request = self._sqladmin_service.instances().insert(
-        project=project_id,
-        body=database_instance_body)
+        tier = 'db-custom-{}-{}'.format(number_cpus, memory_size)
+        database_instance_body = {
+            'name': instance,
+            'region': region,
+            'databaseVersion': database_version,
+            'settings': {
+                'tier': tier,
+                "backupConfiguration": {
+                    "enabled": True
+                }
+            }
+        }
+        request = self._sqladmin_service.instances().insert(
+            project=project_id, body=database_instance_body)
 
-    # See
-    # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances/insert
-    request.execute()
+        # See
+        # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances/insert
+        request.execute()
 
-    while True:
-      request = self._sqladmin_service.instances().get(project=project_id,
-                                                       instance=instance)
-      response = request.execute()
-      # Response format:
-      # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances#resource
-      if response['state'] == 'RUNNABLE':
-        return
-      elif response['state'] == 'PENDING_CREATE':
-        time.sleep(2)
-        continue
-      else:
-        raise DatabaseError(
-            'unexpected instance status after creation: {!r} [{!r}]'.format(
-                response['state'], response))
+        while True:
+            request = self._sqladmin_service.instances().get(
+                project=project_id, instance=instance)
+            response = request.execute()
+            # Response format:
+            # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances#resource
+            if response['state'] == 'RUNNABLE':
+                return
+            elif response['state'] == 'PENDING_CREATE':
+                time.sleep(2)
+                continue
+            else:
+                raise DatabaseError(
+                    'unexpected instance status after creation: {!r} [{!r}]'.
+                    format(response['state'], response))
 
-  def create_database_sync(self,
-                           project_id: str,
-                           instance: str,
-                           database: str):
-    """Creates a new database in a Cloud SQL instance and wait for completion.
+    def create_database_sync(self, project_id: str, instance: str,
+                             database: str):
+        """Creates a new database in a Cloud SQL instance and wait for completion.
 
     Args:
       project_id: The id of the project to create the database in.
@@ -116,34 +118,31 @@ class DatabaseClient(object):
     Raises:
       DatabaseError: if unable to create the new database.
     """
-    # See:
-    # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/databases/insert
-    request = self._sqladmin_service.databases().insert(
-        project=project_id,
-        instance=instance,
-        body={
-            'instance': instance,
-            'project': project_id,
-            'name': database})
-    response = request.execute()
-    while response['status'] in ['PENDING']:
-      request = self._sqladmin_service.databases().get(project=project_id,
-                                                       instance=instance,
-                                                       database=database)
-      response = request.execute()
-      time.sleep(2)
+        # See:
+        # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/databases/insert
+        request = self._sqladmin_service.databases().insert(
+            project=project_id,
+            instance=instance,
+            body={
+                'instance': instance,
+                'project': project_id,
+                'name': database
+            })
+        response = request.execute()
+        while response['status'] in ['PENDING']:
+            request = self._sqladmin_service.databases().get(
+                project=project_id, instance=instance, database=database)
+            response = request.execute()
+            time.sleep(2)
 
-    if response['status'] not in ['DONE', 'RUNNING']:
-      raise DatabaseError(
-          'unexpected database status after creation: {!r} [{!r}]'.format(
-              response['status'], response))
+        if response['status'] not in ['DONE', 'RUNNING']:
+            raise DatabaseError(
+                'unexpected database status after creation: {!r} [{!r}]'.format(
+                    response['status'], response))
 
-  def set_database_password(self,
-                            project_id: str,
-                            instance: str,
-                            user: str,
-                            password: str):
-    """Set the password for a database user.
+    def set_database_password(self, project_id: str, instance: str, user: str,
+                              password: str):
+        """Set the password for a database user.
 
     Args:
       project_id: The id of the project for the database user.
@@ -154,17 +153,17 @@ class DatabaseClient(object):
     Raises:
       DatabaseError: if unable to set the new password.
     """
-    # See:
-    # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/users/update
+        # See:
+        # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/users/update
 
-    request = self._sqladmin_service.users().update(project=project_id,
-                                                    instance=instance,
-                                                    host='no-host', name=user,
-                                                    body={
-                                                        'password': password
-                                                    })
-    response = request.execute()
-    if response['status'] not in ['DONE', 'RUNNING']:
-      raise DatabaseError(
-          'unexpected database status after creation: {!r} [{!r}]'.format(
-              response['status'], response))
+        request = self._sqladmin_service.users().update(
+            project=project_id,
+            instance=instance,
+            host='no-host',
+            name=user,
+            body={'password': password})
+        response = request.execute()
+        if response['status'] not in ['DONE', 'RUNNING']:
+            raise DatabaseError(
+                'unexpected database status after creation: {!r} [{!r}]'.format(
+                    response['status'], response))

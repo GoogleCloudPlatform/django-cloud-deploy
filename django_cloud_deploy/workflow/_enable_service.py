@@ -21,16 +21,16 @@ from django_cloud_deploy.cloudlib import enable_service
 
 
 class EnableServiceWorkflow(object):
-  """A class to control the workflow for enabling all required services."""
+    """A class to control the workflow for enabling all required services."""
 
-  def __init__(self,
-               enable_service_client: enable_service.EnableServiceClient):
-    self._enable_service_client = enable_service_client
+    def __init__(self,
+                 enable_service_client: enable_service.EnableServiceClient):
+        self._enable_service_client = enable_service_client
 
-  def enable_required_services(self,
-                               project_id: str,
-                               services: List[Dict[str, str]] = None):
-    """Enable required services for deploying Django apps to GKE.
+    def enable_required_services(self,
+                                 project_id: str,
+                                 services: List[Dict[str, str]] = None):
+        """Enable required services for deploying Django apps to GKE.
 
     Args:
       project_id: The GCP project id to enable services.
@@ -44,21 +44,21 @@ class EnableServiceWorkflow(object):
           ]
     """
 
-    services = services or EnableServiceWorkflow.load_services()
-    for service in services:
-      self._enable_service_client.enable_service_sync(
-          project_id, service['name'])
+        services = services or EnableServiceWorkflow.load_services()
+        for service in services:
+            self._enable_service_client.enable_service_sync(
+                project_id, service['name'])
 
-  @staticmethod
-  def load_services() -> List[Dict[str, str]]:
-    """Load information of the services to enable from a json file.
+    @staticmethod
+    def load_services() -> List[Dict[str, str]]:
+        """Load information of the services to enable from a json file.
 
     Returns:
       A list of the services to be enabled.
     """
 
-    data_dir = os.path.join(os.path.dirname(__file__), 'data')
-    data_file_path = os.path.join(data_dir, 'services.json')
-    with open(data_file_path) as data_file:
-      services = json.load(data_file)
-    return services
+        data_dir = os.path.join(os.path.dirname(__file__), 'data')
+        data_file_path = os.path.join(data_dir, 'services.json')
+        with open(data_file_path) as data_file:
+            services = json.load(data_file)
+        return services
