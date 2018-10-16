@@ -11,6 +11,10 @@ Currently, **Django Deploy** can only
 
 **Django Deploy** is an experimental project not official supported by Google.
 
+# Usage
+
+For detailed instructions see [USAGE](USAGE).
+
 # Development Workflow (Linux)
 
 Verify that Python 3.5 or later is installed:

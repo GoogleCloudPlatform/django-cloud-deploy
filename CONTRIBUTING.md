@@ -22,6 +22,10 @@ use GitHub pull requests for this purpose. Consult
 [GitHub Help](https://help.github.com/articles/about-pull-requests/) for more
 information on using pull requests.
 
+## Style guidelines
+
+All code submissions should follow the [Google Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md).
+
 ## Community Guidelines
 
 This project follows
