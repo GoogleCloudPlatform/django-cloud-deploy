@@ -18,6 +18,7 @@ with open("README.md", "r") as fh:
   long_description = fh.read()
 
 install_requires=[
+  'urllib3==1.23', #https://github.com/requests/requests/issues/4830
   'oauth2client>=4.1.2',
   'django>=2.1',
   'backoff>=1.6.0',
@@ -27,7 +28,7 @@ install_requires=[
   'kubernetes>=6.0.0',
   'google-cloud-container>=0.1.1',
   'grpcio>=1.14.1',
-  'google-cloud.storage>=1.10.0',
+  'google-cloud-storage>=1.10.0',
   'pexpect>=4.6.0',
   'psycopg2-binary>=2.7.5',
   'google-api-python-client>=1.7.4',
