@@ -35,11 +35,10 @@ git clone https://github.com/GoogleCloudPlatform/django-cloud-deploy
 cd django-cloud-deploy
 ```
 
-Create a new virtual environment and install `pipenv`:
+Create a new virtual environment:
 ```bash
 virtualenv -p python3 venv
 source venv/bin/activate
-pip install pipenv
 ```
 
 Install Django-GKE in edit mode:
@@ -49,10 +48,10 @@ pipenv  install -e .
 
 Run it:
 ```bash
-django_gke new
+django-cloud-deploy new
 ```
 
-Code modifications will be reflected in the next run of `django_gke`.
+Code modifications will be reflected in the next run of `django-cloud-deploy`.
 
 ## Contribute
 
