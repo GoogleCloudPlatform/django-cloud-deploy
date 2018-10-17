@@ -24,6 +24,13 @@ from googleapiclient import discovery
 from google.auth import credentials
 from googleapiclient import errors
 
+# After 2018/10/01, when a Googler created a new cloud project in google.com,
+# the new project is required to be created in a folder. For most Googlers,
+# there will be only one folder option named “google_default”. This is the id
+# of that folder.
+_DEFAULT_GOOGLE_FOLDER_ID = '396521612403'
+_GOOGLE_ORGANIZATION_ID = '433637338589'  # id of organization "google.com"
+
 
 class ProjectError(Exception):
     """An exception occured while creating or accessing a project."""
@@ -53,13 +60,34 @@ class ProjectClient(object):
             raise
         return True
 
+    def _is_google_account(self) -> bool:
+        """Returns whether the user logged in with a google.com account."""
+        body = {
+            'filter': 'domain:google.com'
+        }
+        request = self._cloudresourcemanager_service.organizations().search(
+            body=body)
+        response = request.execute()
+
+        # If we have non-empty result, then we are sure the user has access to
+        # 'google.com' organization
+        return 'organizations' in response
+
     def create_project(self, project_id: str, project_name: str):
         """Create a new GCP project."""
+        body = {
+            'name': project_name,
+            'projectId': project_id,
+        }
+
+        if self._is_google_account():
+            body['parent'] = {
+                'id': _DEFAULT_GOOGLE_FOLDER_ID,
+                'type': 'folder'
+            }
+
         request = self._cloudresourcemanager_service.projects().create(
-            body={
-                'name': project_name,
-                'projectId': project_id,
-            })
+            body=body)
         response = request.execute()
 
         if 'name' not in response:

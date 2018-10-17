@@ -22,7 +22,27 @@ from django_cloud_deploy.cloudlib import project
 from django_cloud_deploy.cloudlib.tests.lib import http_fake
 
 
-class ProjectsFake:
+class OrganizationsFake(object):
+    """A fake object returned by ...organizations()."""
+
+    def __init__(self, is_google=False):
+        self._is_google = is_google
+
+    def search(self, body):
+        if self._is_google:
+            return http_fake.HttpRequestFake(
+                {
+                    'organizations': [
+                        {
+                          'displayName': 'google.com',
+                        }
+                    ]
+                })
+        else:
+            return http_fake.HttpRequestFake({})
+
+
+class ProjectsFake(object):
     """A fake object returned by ...projects()."""
 
     def __init__(self):
@@ -47,11 +67,15 @@ class ProjectsFake:
 class ServiceFake:
     """A fake Resource returned by discovery.build('cloudresourcemanager', .."""
 
-    def __init__(self):
+    def __init__(self, is_google=False):
         self.projects_fake = ProjectsFake()
+        self.organizations_fake = OrganizationsFake(is_google)
 
     def projects(self):
         return self.projects_fake
+
+    def organizations(self):
+        return self.organizations_fake
 
 
 class ProjectClientTestCase(absltest.TestCase):
@@ -61,13 +85,28 @@ class ProjectClientTestCase(absltest.TestCase):
         self._service_fake = ServiceFake()
         self._project_client = project.ProjectClient(self._service_fake)
 
-    def test_create_project(self):
+    def test_create_project_non_googler(self):
         self._project_client.create_project('fn123', 'Friendly Name')
         self.assertEqual(self._service_fake.projects_fake.projects,
                          [{
                              'name': 'Friendly Name',
                              'projectId': 'fn123',
                          }])
+
+    def test_create_project_googler(self):
+        service_fake = ServiceFake(is_google=True)
+        project_client = project.ProjectClient(service_fake)
+        project_client.create_project('fn123', 'Friendly Name')
+        self.assertEqual(
+            service_fake.projects_fake.projects,
+            [{
+                'name': 'Friendly Name',
+                'projectId': 'fn123',
+                'parent': {
+                    'id': project._DEFAULT_GOOGLE_FOLDER_ID,
+                    'type': 'folder'
+                }
+            }])
 
     @mock.patch('subprocess.check_call')
     def test_create_and_set_project(self, check_call):
