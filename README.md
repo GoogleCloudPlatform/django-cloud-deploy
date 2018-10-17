@@ -1,3 +1,8 @@
+<head>
+  <base href="https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/"
+  target="_blank">
+</head>
+
 # Django Deploy
 
 **Django Deploy** is an experimental tool designed to make it easier to
@@ -13,7 +18,7 @@ Currently, **Django Deploy** can only
 
 # Usage
 
-For detailed instructions see [USAGE](USAGE).
+For detailed instructions see [USAGE](USAGE.md).
 
 # Development Workflow (Linux)
 
@@ -51,7 +56,7 @@ Code modifications will be reflected in the next run of `django_gke`.
 
 ## Contribute
 
-Check out our [CONTRIBUTING](CONTRIBUTING) to find out how you can help.
+Check out our [CONTRIBUTING](CONTRIBUTING.md) to find out how you can help.
 
 ## License
 
