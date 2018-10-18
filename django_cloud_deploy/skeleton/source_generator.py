@@ -14,6 +14,7 @@
 
 """Generate source files of a django app ready to be deployed to GKE."""
 import os
+import sys
 
 import django
 from django.core.management import utils
@@ -252,6 +253,22 @@ class DjangoSourceFileGenerator(_FileGenerator):
         for app_name in app_names:
             self.django_file_generator.generate_app_files(app_name, destination)
 
+    def _setup_django_environment(self, destination: str, project_name: str):
+        """Setup Django environment.
+
+        This makes Django command calls afterwards affect the newly generated
+        project.
+
+        Args:
+            destination: Absolute directory path to put your Django project.
+            project_name: Name of your Django project.
+        """
+
+        sys.path.append(destination)
+        os.environ['DJANGO_SETTINGS_MODULE'] = '{}.remote_settings'.format(
+            project_name)
+        django.setup()
+
     def generate_all_source_files(self,
                                   project_id,
                                   project_name,
@@ -287,3 +304,4 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.dependency_file_generator.generate(destination)
         self.yaml_file_generator.generate(destination, project_name, project_id,
                                           instance_name, region, image_tag)
+        self._setup_django_environment(destination, project_name)
