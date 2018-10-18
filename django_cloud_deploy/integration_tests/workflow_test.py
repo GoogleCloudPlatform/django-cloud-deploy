@@ -123,19 +123,20 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(test_base.BaseTest):
     def reset_iam_policy(self, member, roles):
         """Remove bindings as specified by the args.
 
-    If we only delete the service account, the role bindings for that service
-    account still exist. So we need to also reset the iam policy.
+        If we only delete the service account, the role bindings for that
+        service account still exist. So we need to also reset the iam policy.
 
-    Args:
-      member: str, the member to remove from the IAM policy. If should have
-        the following format:
-        "serviceAccount:{sa_id}@{project_id}.iam.gserviceaccount.com"
-      roles: str, the role the member should be removed from. Valid roles can
-        be found on https://cloud.google.com/iam/docs/understanding-roles
+        Args:
+            member: str, the member to remove from the IAM policy. If should
+                have the following format:
+                "serviceAccount:{sa_id}@{project_id}.iam.gserviceaccount.com"
+            roles: str, the role the member should be removed from. Valid roles
+                can be found on
+                https://cloud.google.com/iam/docs/understanding-roles
 
-    Yields:
-      Nothing
-    """
+        Yields:
+            Nothing
+        """
 
         try:
             yield

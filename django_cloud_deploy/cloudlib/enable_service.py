@@ -36,14 +36,14 @@ class EnableServiceClient(object):
     def enable_service_sync(self, project_id: str, service: str):
         """Enable a service for the given project.
 
-    Args:
-      project_id: GCP project id.
-      service: Name of the service to be enabled. For example,
-        "drive.googleapis.com"
+        Args:
+            project_id: GCP project id.
+            service: Name of the service to be enabled. For example,
+                "drive.googleapis.com"
 
-    Raises:
-      EnableServiceError: When it fails to enable a service.
-    """
+        Raises:
+            EnableServiceError: When it fails to enable a service.
+        """
 
         service_name = '/'.join(['projects', project_id, 'services', service])
         request = self._service_usage_service.services().enable(

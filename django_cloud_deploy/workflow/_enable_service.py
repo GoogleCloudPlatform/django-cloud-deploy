@@ -32,17 +32,17 @@ class EnableServiceWorkflow(object):
                                  services: List[Dict[str, str]] = None):
         """Enable required services for deploying Django apps to GKE.
 
-    Args:
-      project_id: The GCP project id to enable services.
-      services: The services to be enabled. It should have the following
-        format:
-          [
-            {
-              "title": "Compute Engine API",
-              "name": "compute.googleapis.com"
-            },
-          ]
-    """
+        Args:
+            project_id: The GCP project id to enable services.
+            services: The services to be enabled. It should have the following
+                format:
+                    [
+                        {
+                            "title": "Compute Engine API",
+                            "name": "compute.googleapis.com"
+                        },
+                    ]
+        """
 
         services = services or EnableServiceWorkflow.load_services()
         for service in services:
@@ -53,9 +53,9 @@ class EnableServiceWorkflow(object):
     def load_services() -> List[Dict[str, str]]:
         """Load information of the services to enable from a json file.
 
-    Returns:
-      A list of the services to be enabled.
-    """
+        Returns:
+            A list of the services to be enabled.
+        """
 
         data_dir = os.path.join(os.path.dirname(__file__), 'data')
         data_file_path = os.path.join(data_dir, 'services.json')

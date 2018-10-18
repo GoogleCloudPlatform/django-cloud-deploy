@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITconsoleNS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissconsolens and
 # limitatconsolens under the License.
+
 """Prompts the user for information e.g. project name."""
 
 import abc
@@ -35,37 +36,37 @@ class Prompt(object):
                arguments: Dict[str, Any]) -> Any:
         """Prompt the user to enter some information.
 
-    Args:
-      console: Object to use for user I/O.
-      step_prompt: A prefix showing the current step number e.g. "[1/3]".
-      arguments: The arguments that have already been collected from the user
-        e.g. {"project_id", "project-123"}
+        Args:
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
 
-    Returns:
-      The value entered by the user.
-    """
+        Returns:
+            The value entered by the user.
+        """
 
     @staticmethod
     def validate(s: str):
         """Validates that a string is valid for this prompt type.
 
-    Args:
-      s: The string to validate.
+        Args:
+            s: The string to validate.
 
-    Raises:
-      ValueError: if the input string is not valid.
-    """
+        Raises:
+            ValueError: if the input string is not valid.
+        """
         pass
 
 
 class NamePrompt(Prompt):
     """Base class for classes that prompt for some sort of name.
 
-  Subclasses must:
-  1. set _PROMPT to the prompt text.
-  2. implement _default_name()
-  3. implement validate.
-  """
+    Subclasses must:
+    1. set _PROMPT to the prompt text.
+    2. implement _default_name()
+    3. implement validate.
+    """
 
     _PROMPT = None
 
@@ -79,15 +80,15 @@ class NamePrompt(Prompt):
                arguments: Dict[str, Any]) -> str:
         """Prompt the user to enter some sort of name.
 
-    Args:
-      console: Object to use for user I/O.
-      step_prompt: A prefix showing the current step number e.g. "[1/3]".
-      arguments: The arguments that have already been collected from the user
-        e.g. {"project_id", "project-123"}
+        Args:
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
 
-    Returns:
-      The value entered by the user.
-    """
+        Returns:
+            The value entered by the user.
+        """
         default_name = cls._default_name(arguments)
         while True:
             console.tell(('{} {}').format(step_prompt, cls._PROMPT))
@@ -116,12 +117,12 @@ class GoogleCloudProjectNamePrompt(NamePrompt):
     def validate(s):
         """Validates that a string is a valid project name.
 
-    Args:
-      s: The string to validate.
+        Args:
+            s: The string to validate.
 
-    Raises:
-      ValueError: if the input string is not valid.
-    """
+        Raises:
+            ValueError: if the input string is not valid.
+        """
         if not (4 <= len(s) <= 30):
             raise ValueError(
                 ('Invalid Google Cloud Platform project name "{}": '
@@ -141,12 +142,12 @@ class DjangoProjectNamePrompt(NamePrompt):
     def validate(s):
         """Validates that a string is a valid Django project name.
 
-    Args:
-      s: The string to validate.
+        Args:
+            s: The string to validate.
 
-    Raises:
-      ValueError: if the input string is not valid.
-    """
+        Raises:
+            ValueError: if the input string is not valid.
+        """
         if not s.isidentifier():
             raise ValueError(('Invalid Django project name "{}": '
                               'must be a valid Python identifier').format(s))
@@ -165,12 +166,12 @@ class DjangoAppNamePrompt(NamePrompt):
     def validate(s):
         """Validates that a string is a valid Django app name.
 
-    Args:
-      s: The string to validate.
+        Args:
+            s: The string to validate.
 
-    Raises:
-      ValueError: if the input string is not valid.
-    """
+        Raises:
+            ValueError: if the input string is not valid.
+        """
         if not s.isidentifier():
             raise ValueError(('Invalid Django app name "{}": '
                               'must be a valid Python identifier').format(s))
@@ -189,12 +190,12 @@ class DjangoSuperuserLoginPrompt(NamePrompt):
     def validate(s):
         """Validates that a string is a valid Django superuser login.
 
-    Args:
-      s: The string to validate.
+        Args:
+            s: The string to validate.
 
-    Raises:
-      ValueError: if the input string is not valid.
-    """
+        Raises:
+            ValueError: if the input string is not valid.
+        """
         if not s.isalnum():
             raise ValueError(('Invalid Django superuser login "{}": '
                               'must be a alpha numeric').format(s))
@@ -214,12 +215,12 @@ class DjangoSuperuserEmailPrompt(NamePrompt):
     def validate(s):
         """Validates that a string is a valid Django superuser email address.
 
-    Args:
-      s: The string to validate.
+        Args:
+            s: The string to validate.
 
-    Raises:
-      ValueError: if the input string is not valid.
-    """
+        Raises:
+            ValueError: if the input string is not valid.
+        """
         if not re.match(r'[^@]+@[^@]+\.[^@]+', s):
             raise ValueError(('Invalid Django superuser email address "{}": '
                               'the format should be like '
@@ -245,15 +246,15 @@ class ProjectIdPrompt(Prompt):
                arguments: Dict[str, Any]) -> str:
         """Prompt the user to a Google Cloud Platform project id.
 
-    Args:
-      console: Object to use for user I/O.
-      step_prompt: A prefix showing the current step number e.g. "[1/3]".
-      arguments: The arguments that have already been collected from the user
-        e.g. {"project_id", "project-123"}
+        Args:
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
 
-    Returns:
-      The value entered by the user.
-    """
+        Returns:
+            The value entered by the user.
+        """
         default_project_id = cls._generate_default_project_id(
             arguments.get('project_name'))
         while True:
@@ -273,12 +274,12 @@ class ProjectIdPrompt(Prompt):
     def validate(s):
         """Validates that a string is a valid project id.
 
-    Args:
-      s: The string to validate.
+        Args:
+            s: The string to validate.
 
-    Raises:
-      ValueError: if the input string is not valid.
-    """
+        Raises:
+            ValueError: if the input string is not valid.
+        """
         if not re.match(r'[a-z][a-z0-9\-]{5,29}', s):
             raise ValueError(('Invalid Google Cloud Platform Project ID "{}": '
                               'must be between 6 and 30 characters and contain '
@@ -303,15 +304,15 @@ class DjangoFilesystemPath(Prompt):
                arguments: Dict[str, Any]) -> str:
         """Prompt the user to enter a file system path for their project.
 
-    Args:
-      console: Object to use for user I/O.
-      step_prompt: A prefix showing the current step number e.g. "[1/3]".
-      arguments: The arguments that have already been collected from the user
-        e.g. {"project_id", "project-123"}
+        Args:
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
 
-    Returns:
-      The value entered by the user.
-    """
+        Returns:
+            The value entered by the user.
+        """
         home_dir = os.path.expanduser('~')
         # TODO: Remove filesystem-unsafe characters. Implement a validation
         # method that checks for these.
@@ -341,11 +342,11 @@ class DjangoFilesystemPath(Prompt):
 class PasswordPrompt(Prompt):
     """Base class for classes that prompt for a password.
 
-  Subclasses must:
-  1. implement _get_prompt()
-  2. implement _default_name()
-  3. implement validate()
-  """
+    Subclasses must:
+    1. implement _get_prompt()
+    2. implement _default_name()
+    3. implement validate()
+    """
 
     @classmethod
     @abc.abstractmethod
@@ -357,15 +358,15 @@ class PasswordPrompt(Prompt):
                arguments: Dict[str, Any]) -> str:
         """Prompt the user to enter a password.
 
-    Args:
-      console: Object to use for user I/O.
-      step_prompt: A prefix showing the current step number e.g. "[1/3]".
-      arguments: The arguments that have already been collected from the user
-        e.g. {"project_id", "project-123"}
+        Args:
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
 
-    Returns:
-      The value entered by the user.
-    """
+        Returns:
+            The value entered by the user.
+        """
         console_prompt = cls._get_prompt(arguments)
         console.tell(('{} {}').format(step_prompt, console_prompt))
         while True:
@@ -385,12 +386,12 @@ class PasswordPrompt(Prompt):
     def validate(s):
         """Validates that a string is a valid password.
 
-    Args:
-      s: The string to validate.
+        Args:
+            s: The string to validate.
 
-    Raises:
-      ValueError: if the input string is not valid.
-    """
+        Raises:
+            ValueError: if the input string is not valid.
+        """
         if len(s) < 5:
             raise ValueError('Passwords must be at least 6 characters long')
         allowed_characters = frozenset(string.ascii_letters + string.digits +
@@ -427,15 +428,15 @@ class CredentialsPrompt(Prompt):
                arguments: Dict[str, Any]) -> credentials.Credentials:
         """Prompt the user for access to the Google credentials.
 
-    Args:
-      console: Object to use for user I/O.
-      step_prompt: A prefix showing the current step number e.g. "[1/3]".
-      arguments: The arguments that have already been collected from the user
-        e.g. {"project_id", "project-123"}
+        Args:
+        console: Object to use for user I/O.
+        step_prompt: A prefix showing the current step number e.g. "[1/3]".
+        arguments: The arguments that have already been collected from the user
+            e.g. {"project_id", "project-123"}
 
-    Returns:
-      The user's credentials.
-    """
+        Returns:
+            The user's credentials.
+        """
         console.tell(
             ('{} In order to deploy your application, you must allow Django '
              'Deploy to access your Google account.').format(step_prompt))

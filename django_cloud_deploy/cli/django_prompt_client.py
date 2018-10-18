@@ -76,11 +76,11 @@ class DjangoPromptClient(object):
     def _prompt_app_names(self):
         """Ask user to give a list of the names of their Django apps.
 
-    The app names should be separated by commas.
+        The app names should be separated by commas.
 
-    Returns:
-      List[str], list of app names.
-    """
+        Returns:
+            List[str], list of app names.
+        """
         default_value = 'polls'
         app_name_prompt = ('Provide App Names separated by commas, '
                            'use [{}] by pressing enter:').format(default_value)

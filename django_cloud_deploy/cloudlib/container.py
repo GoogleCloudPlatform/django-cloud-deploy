@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Manages Resources related to Google Kubernetes Engine.
 
 For example, docker image build and push, cluster creation, deployment and
@@ -50,18 +51,18 @@ class ClusterGetInfoError(Exception):
 class ContainerClient(object):
     """The class for deployment of a Django app to gke.
 
-  We should call the methods of this class in the following order:
-    1. Call create_cluster_sync to create a new cluster.
-    2. Call build_docker_image.
-    3. Call push_docker_image.
-    4. Call create_kubernetes_configuration to get a configuration object
-       to access the newly created cluster.
-    5. Call create_secret to create secret objects to hold sensitive
-       information necessary for the deployment of your Django app. These
-       information can be accessed inside pods of your Django app.
-    6. Call create_deployment.
-    7. Call create_service.
-  """
+    We should call the methods of this class in the following order:
+        1. Call create_cluster_sync to create a new cluster.
+        2. Call build_docker_image.
+        3. Call push_docker_image.
+        4. Call create_kubernetes_configuration to get a configuration object
+           to access the newly created cluster.
+        5. Call create_secret to create secret objects to hold sensitive
+           information necessary for the deployment of your Django app. These
+           information can be accessed inside pods of your Django app.
+        6. Call create_deployment.
+        7. Call create_service.
+    """
 
     # This class will create temporary files for cluster ca certificates.
     # This variable is used to save the path of those temporary files and
@@ -107,19 +108,19 @@ class ContainerClient(object):
                             zone: str = 'us-west1-a'):
         """Create a cluster with your GCP account.
 
-    Available region and zones can be found on
-    https://cloud.google.com/compute/docs/regions-zones/#available
+        Available region and zones can be found on
+        https://cloud.google.com/compute/docs/regions-zones/#available
 
-    Args:
-      project_id: The id of your GCP project to create cluster in.
-      cluster_name: The name of your cluster to create.
-      region: Where do you want to host the cluster.
-      zone: Name of the Google Compute Engine zone in which the cluster
-        resides.
+        Args:
+            project_id: The id of your GCP project to create cluster in.
+            cluster_name: The name of your cluster to create.
+            region: Where do you want to host the cluster.
+            zone: Name of the Google Compute Engine zone in which the cluster
+                resides.
 
-    Raises:
-      ContainerCreationError: If unable to create a cluster.
-    """
+        Raises:
+            ContainerCreationError: If unable to create a cluster.
+        """
 
         template = ContainerClient._load_cluster_definition_template()
         kubernetes_version = self._get_default_kubernetes_version(
@@ -178,20 +179,20 @@ class ContainerClient(object):
             zone: str = 'us-west1-a') -> kubernetes.client.Configuration:
         """Create a kubernetes config which has access to the given cluster.
 
-    Args:
-      credentials: The credentials object used to generate tokens to access
-        kubernetes clusters.
-      project_id: GCP project id.
-      cluster_name: Name of the kubernetes cluster we want to access.
-      zone: Where is the cluster hosted.
+        Args:
+            credentials: The credentials object used to generate tokens to
+                access kubernetes clusters.
+            project_id: GCP project id.
+            cluster_name: Name of the kubernetes cluster we want to access.
+            zone: Where is the cluster hosted.
 
-    Raises:
-      ClusterGetInfoError: When unexpected cluster information is returned from
-        GCP.
+        Raises:
+            ClusterGetInfoError: When unexpected cluster information is returned
+                from GCP.
 
-    Returns:
-      A kubernetes configuration which has access to the provided cluster.
-    """
+        Returns:
+            A kubernetes configuration which has access to the provided cluster.
+        """
 
         # This function will create a temporary file for cluster ca certificate.
         # Those temporary files should be removed after the program exists.
@@ -232,21 +233,21 @@ class ContainerClient(object):
     def build_docker_image(self, tag: str, directory: str):
         """Build docker image.
 
-    Args:
-      tag: Docker image tag. Should looks similar to
-        "gcr.io/<project_id>/<image_name>"
-      directory: Absolute path of the directory containing a Dockerfile.
-    """
+        Args:
+            tag: Docker image tag. Should looks similar to
+                "gcr.io/<project_id>/<image_name>"
+            directory: Absolute path of the directory containing a Dockerfile.
+        """
 
         self._docker_client.images.build(tag=tag, path=directory)
 
     def push_docker_image(self, tag: str):
         """Push docker image.
 
-    Args:
-      tag: Docker image tag. Should looks similar to
-        "gcr.io/<project_id>/<image_name>"
-    """
+        Args:
+            tag: Docker image tag. Should looks similar to
+                "gcr.io/<project_id>/<image_name>"
+        """
         self._docker_client.images.push(tag)
 
     def create_deployment(
@@ -257,17 +258,17 @@ class ContainerClient(object):
             namespace: str = 'default'):
         """Create a Kubernetes Deployment.
 
-    A Kubernetes Deployment describes a desired state of your application.
-    For example, it manages creation of Pods by means of ReplicaSets, and
-    defines what images to use for the containers.
+        A Kubernetes Deployment describes a desired state of your application.
+        For example, it manages creation of Pods by means of ReplicaSets, and
+        defines what images to use for the containers.
 
-    Args:
-      deployment_data: Definition of the deployment.
-      configuration: A Kubernetes configuration which has access to the cluster
-        for the deployment. If not set, it will use the default kubernetes
-        configuration.
-      namespace: Namespace of the deployment.
-    """
+        Args:
+            deployment_data: Definition of the deployment.
+            configuration: A Kubernetes configuration which has access to the
+                cluster for the deployment. If not set, it will use the default
+                kubernetes configuration.
+            namespace: Namespace of the deployment.
+        """
         api_client = kubernetes.client.ApiClient(configuration)
         api_instance = kubernetes.client.ExtensionsV1beta1Api(api_client)
         api_instance.create_namespaced_deployment(
@@ -281,16 +282,16 @@ class ContainerClient(object):
             namespace: str = 'default'):
         """Create a Kubernetes Dervice.
 
-    A Kubernetes Service is an abstraction which defines a logical set of Pods
-    and a policy by which to access them.
+        A Kubernetes Service is an abstraction which defines a logical set of
+        Pods and a policy by which to access them.
 
-    Args:
-      service_data: Definition of the service.
-      configuration: A Kubernetes configuration which has access to the cluster
-        for the service. If not set, it will use the default kubernetes
-        configuration.
-      namespace: Namespace of the service.
-    """
+        Args:
+            service_data: Definition of the service.
+            configuration: A Kubernetes configuration which has access to the
+                cluster for the service. If not set, it will use the default
+                kubernetes configuration.
+            namespace: Namespace of the service.
+        """
         api_client = kubernetes.client.ApiClient(configuration)
         api_instance = kubernetes.client.CoreV1Api(api_client)
         api_instance.create_namespaced_service(
@@ -303,16 +304,16 @@ class ContainerClient(object):
                       namespace: str = 'default'):
         """Create a Kubernetes Secret.
 
-    Kubernetes Secrets are intended to hold sensitive information. They are
-    accessible inside Pods.
+        Kubernetes Secrets are intended to hold sensitive information. They are
+        accessible inside Pods.
 
-    Args:
-      secret_data: Definition of the secret.
-      configuration: A Kubernetes configuration which has access to the cluster
-        for the secret. If not set, it will use the default kubernetes
-        configuration.
-      namespace: Namespace of the service.
-    """
+        Args:
+            secret_data: Definition of the secret.
+            configuration: A Kubernetes configuration which has access to the
+                cluster for the service. If not set, it will use the default
+                kubernetes configuration.
+            namespace: Namespace of the service.
+        """
         api_client = kubernetes.client.ApiClient(configuration)
         api_instance = kubernetes.client.CoreV1Api(api_client)
         api_instance.create_namespaced_secret(

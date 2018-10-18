@@ -37,43 +37,42 @@ or whitespaces). Use [{}] by pressing enter:
 
 
 class GoogleClient(base_client.BaseClient):
-    """ Encapsulates the logic to set up a new GKE project on GCP.
+    """Encapsulates the logic to set up a new GKE project on GCP.
 
-  This class has the logic required for the workflow steps a user needs
-  to go through to set up a new project on GCP. This is the "first half" for a
-  user to get their Django GKE project deployed. It gets instantiated with an
-  IO Class that allows better logging with user interactions. Uses google
-  application default credentials for authentication, which are generated via
-  Gcloud.
+    This class has the logic required for the workflow steps a user needs
+    to go through to set up a new project on GCP. This is the "first half" for a
+    user to get their Django GKE project deployed. It gets instantiated with an
+    IO Class that allows better logging with user interactions. Uses google
+    application default credentials for authentication, which are generated via
+    Gcloud.
 
     Typical usage example:
         client = GoogleClient(WorkflowIO.Console())
         client.create_project_workflow()
 
-
-  Args:
-    io: IO class that manages our user interactions
-    creds: (Optional) The OAuth2 Credentials to use for this
-                      client. If not passed (and if no ``_http`` object is
-                      passed), falls back to the default inferred from the
-                      environment.
-  """
+    Args:
+        io: IO class that manages our user interactions
+        creds: (Optional) The OAuth2 Credentials to use for this client. If not
+            passed (and if no ``_http`` object is passed), falls back to the
+            default inferred from the environment.
+    """
 
     def __init__(self,
                  io: workflow_io.IO,
                  project_client: project.ProjectClient,
                  debug=False):
         """
-    Will use the default application credentials. If they
-    have not been generated, then they will be generated via google-auth.
-    The resource_manager package will look for them in their default location.
+        Will use the default application credentials. If they
+        have not been generated, then they will be generated via google-auth.
+        The resource_manager package will look for them in their default
+        location.
 
-    Args:
-      io: Input/Output Handling Class.
-      creds: Optionally pass in credentials instead of using the default
-      application credentials. Also used to pass mocked creds.
-      debug: Whether this client uses debug mode.
-    """
+        Args:
+            io: Input/Output Handling Class.
+            creds: Optionally pass in credentials instead of using the default
+            application credentials. Also used to pass mocked creds.
+            debug: Whether this client uses debug mode.
+        """
         super().__init__(debug)
         self._project_client = project_client
         self.workflow = workflow_io.Workflow(io)
@@ -81,22 +80,22 @@ class GoogleClient(base_client.BaseClient):
     def create_project_workflow(self, project_id=None) -> str:
         """Starts the GCP Project creation workflow.
 
-    Makes API calls to GCP to create a project.
+        Makes API calls to GCP to create a project.
 
-    See google-cloud-resource-manager:
-    https://googlecloudplatform.github.io/google-cloud-python/latest/resource-manager/api.html#
+        See google-cloud-resource-manager:
+        https://googlecloudplatform.github.io/google-cloud-python/latest/resource-manager/api.html#
 
-    Args:
-      project_id: str or None. Test only, do not use. If this parameter is
-                  provided, we will use the provided project id instead of
-                  generating a random one based on the project name.
-    Returns:
-      A generated project id based on the project name that the user gave.
+        Args:
+            project_id: str or None. Test only, do not use. If this parameter is
+                provided, we will use the provided project id instead of
+                generating a random one based on the project name.
+        Returns:
+            A generated project id based on the project name that the user gave.
 
-    Raises:
-      RuntimeError: If project does not exist after 9 seconds
-       it throws an error
-    """
+        Raises:
+            RuntimeError: If project does not exist after 9 seconds
+                it throws an error
+        """
         self.workflow.tell(CREATE_GCP_PROJECT)
         project_name = self._prompt_project_input()
         self.workflow.tell(
@@ -115,14 +114,14 @@ class GoogleClient(base_client.BaseClient):
     def _generate_project_id(project_name: str) -> str:
         """Generate a project id based on given project name.
 
-    The generated project id will replace whitespace and underscores with
-    hyphens.
+        The generated project id will replace whitespace and underscores with
+        hyphens.
 
-    Args:
-      project_name: Input string which should represent a project name.
-    Returns:
-      Generated project id.
-    """
+        Args:
+            project_name: Input string which should represent a project name.
+        Returns:
+            Generated project id.
+        """
         random_suffix = str(random.randint(100000, 999999))
         project_id = project_name.lower().replace(' ', '-').replace('_', '-')
         if project_id[-1] != '-':
@@ -133,14 +132,14 @@ class GoogleClient(base_client.BaseClient):
     def _is_valid_project_name(project_name: str) -> bool:
         """Checks whether the input is a valid project id.
 
-    A valid project id should be 6-30 characters long and only contains lower
-    case ASCII, digits, or hyphens.
+        A valid project id should be 6-30 characters long and only contains
+        lower case ASCII, digits, or hyphens.
 
-    Args:
-      project_name: Input string which should represent a project id.
-    Returns:
-      Whether the input string is a valid project id.
-    """
+        Args:
+            project_name: Input string which should represent a project id.
+        Returns:
+            Whether the input string is a valid project id.
+        """
         return (len(project_name) and len(project_name) <= 24 and
                 re.fullmatch(r'^[\w\s]+$', project_name) is not None)
 

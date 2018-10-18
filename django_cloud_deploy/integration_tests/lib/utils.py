@@ -24,17 +24,17 @@ def get_resource_name(resource_type='',
                       timestamp_format=TIMESTAMP_FORMAT):
     """Generate resource names as TYPE-YYYYMMDD-HHMMSS-HASH.
 
-  This function is useful to avoid operations on the same resource when running
-  integration tests simultaneously.
+    This function is useful to avoid operations on the same resource when
+    running integration tests simultaneously.
 
-  Args:
-    resource_type: str, type of the resource which needs to generated name.
-    hash_len: int, the length of hash at the end of generated name.
-    timestamp_format: str, the timestamp format used to generate the name.
+    Args:
+        resource_type: str, type of the resource which needs to generated name.
+        hash_len: int, the length of hash at the end of generated name.
+        timestamp_format: str, the timestamp format used to generate the name.
 
-  Returns:
-    Generated name with the format mentioned above.
-  """
+    Returns:
+        Generated name with the format mentioned above.
+    """
 
     timestamp = datetime.datetime.utcnow().strftime(timestamp_format)
     hash_str = ''.join([

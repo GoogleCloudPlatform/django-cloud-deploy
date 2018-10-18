@@ -66,18 +66,17 @@ class RequirementsClient(object):
     def has_requirement(req: Requirement,
                         check_function: Callable,
                         install_function: Callable = None) -> bool:
-        """ Checks if requirement is met.
+        """Checks if requirement is met.
 
-    Args:
-      req: The requirement needed.
-      check_function: Function that will check if requirement is installed
-      install_function: Function that will install the requirement.
+        Args:
+            req: The requirement needed.
+            check_function: Function that will check if requirement is installed
+                install_function: Function that will install the requirement.
 
-    Returns:
-      Default to bool, but if fail_function was passed, it returns the return
-      value of the fail_function.
-
-    """
+        Returns:
+            Default to bool, but if fail_function was passed, it returns the
+            return value of the fail_function.
+        """
         if check_function(req.requirement):
             return True
 
@@ -98,9 +97,9 @@ class RequirementsClient(object):
 
     @staticmethod
     def is_docker_usable() -> bool:
-        """
-    Checks if the user can use docker. TODO: check if externally applicable
-    """
+        """Checks if the user can use docker."""
+
+        # TODO: check if externally applicable
         try:
             command = 'docker image ls'.split(' ')
             subprocess.check_call(

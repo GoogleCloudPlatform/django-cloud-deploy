@@ -29,10 +29,13 @@ class ServiceAccountClient(base_client.BaseClient):
     def create_service_account_workflow(self):
         """Create a service account with necessary roles and download keys.
 
-    Prerequisite: gcloud is configured with the correct user and project.
-    Returns:
-      key_path: str, the service account key path in your local file system.
-    """
+        Prerequisite:
+            gcloud is configured with the correct user and project.
+
+        Returns:
+            key_path: str, the service account key path in your local file
+                system.
+        """
         self._create_service_account()
         self._grant_roles()
         return self._download_keys()
@@ -40,13 +43,13 @@ class ServiceAccountClient(base_client.BaseClient):
     def _create_service_account(self, service_account_name=None):
         """Create a service account.
 
-    This function just creates the service account but does not grant any roles
-    to this account.
+        This function just creates the service account but does not grant any
+        roles to this account.
 
-    Args:
-      service_account_name: str, this is used in test to create a service
-                            account with name different with default.
-    """
+        Args:
+            service_account_name: str, this is used in test to create a service
+                account with name different with default.
+        """
         service_account_name = (service_account_name or
                                 'cloudsql-oauth-credentials')
         subprocess.check_call([
@@ -59,15 +62,15 @@ class ServiceAccountClient(base_client.BaseClient):
     def _grant_roles(self, service_account_name=None):
         """Grant the service account with roles to access cloud sql.
 
-    This function will give the service account the following roles:
-      1. Cloud SQL Client
-      2. Cloud SQL Editor
-      3. Cloud SQL Admin
+        This function will give the service account the following roles:
+          1. Cloud SQL Client
+          2. Cloud SQL Editor
+          3. Cloud SQL Admin
 
-    Args:
-      service_account_name: str, this is used in test to create a service
-                            account with name different with default.
-    """
+        Args:
+            service_account_name: str, this is used in test to create a service
+                account with name different with default.
+        """
         service_account_name = (service_account_name or
                                 'cloudsql-oauth-credentials')
         service_account_id = '{}@{}.iam.gserviceaccount.com'.format(
@@ -88,15 +91,16 @@ class ServiceAccountClient(base_client.BaseClient):
     def _download_keys(self, service_account_name=None):
         """Create new service account key and download it.
 
-    This key will be used by the cloudsql-proxy container to get access to
-    cloud sql instance.
+        This key will be used by the cloudsql-proxy container to get access to
+        cloud sql instance.
 
-    Args:
-      service_account_name: str, this is used in test to create a service
-                            account with name different with default.
-    Returns:
-      key_path: str, the service account key path in your local file system.
-    """
+        Args:
+            service_account_name: str, this is used in test to create a service
+                account with name different with default.
+        Returns:
+            key_path: str, the service account key path in your local file
+                system.
+        """
         service_account_name = (service_account_name or
                                 'cloudsql-oauth-credentials')
         service_account_id = '{}@{}.iam.gserviceaccount.com'.format(

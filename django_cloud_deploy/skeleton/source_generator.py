@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Generate source files of a django app ready to be deployed to GKE."""
 import os
 
@@ -53,14 +54,14 @@ class _Jinja2FileGenerator(_FileGenerator):
                           **options):
         """Render all templates in a directory.
 
-    Args:
-      template_dir: str, absolute path of the folder containing all template
-        files.
-      output_dir: str, absolute path of the output folder.
-      template_replacement: None or Dict[str, str], strings in template file
-        names to get replaced in the output.
-      **options: Dict[str, str], options used to render the templates.
-    """
+        Args:
+            template_dir: str, absolute path of the folder containing all
+                template files.
+            output_dir: str, absolute path of the output folder.
+            template_replacement: None or Dict[str, str], strings in template
+                file names to get replaced in the output.
+            **options: Dict[str, str], options used to render the templates.
+        """
 
         prefix_length = len(template_dir) + 1
 
@@ -98,11 +99,11 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
     def generate_project_files(self, project_id, site, destination):
         """Create a django project using our template.
 
-    Args:
-      project_id: str, GCP project id.
-      site: str, name of the project to be created.
-      destination: str, the destination path to hold files of the project.
-    """
+        Args:
+            project_id: str, GCP project id.
+            site: str, name of the project to be created.
+            destination: str, the destination path to hold files of the project.
+        """
         destination = os.path.abspath(os.path.expanduser(destination))
         project_templates_dir = os.path.join(self._get_template_folder_path(),
                                              self.PROJECT_TEMPLATE_FOLDER)
@@ -125,11 +126,11 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
                            template_folder=APP_TEMPLATE_FOLDER):
         """Create a django app using our template.
 
-    Args:
-      app_name: str, name of the app to be created.
-      destination: str, the destination path to hold files of the app.
-      template_folder: str, the template folder name
-    """
+        Args:
+            app_name: str, name of the app to be created.
+            destination: str, the destination path to hold files of the app.
+            template_folder: str, the template folder name
+        """
         app_templates_dir = os.path.join(self._get_template_folder_path(),
                                          template_folder)
         app_destination = os.path.join(destination, app_name)
@@ -153,10 +154,10 @@ class _DockerfileGenerator(_Jinja2FileGenerator):
     def generate(self, project_name, destination):
         """Generate Dockerfile and .dockerignore.
 
-    Args:
-      project_name: str, the name of your Django project.
-      destination: str, the destination directory path to put Dockerfile.
-    """
+        Args:
+            project_name: str, the name of your Django project.
+            destination: str, the destination directory path to put Dockerfile.
+        """
         file_names = ('Dockerfile', '.dockerignore')
         options = {'project_name': project_name}
         for file_name in file_names:
@@ -172,11 +173,12 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
     def generate(self, destination):
         """Generate requirements.txt.
 
-    Dependencies are hardcoded.
+        Dependencies are hardcoded.
 
-    Args:
-      destination: str, the destination directory path to put requirements.txt.
-    """
+        Args:
+            destination: str, the destination directory path to put
+                requirements.txt.
+        """
 
         # TODO: Find a way to determine the correct package version
         # instead of hardcoding everything.
@@ -199,18 +201,19 @@ class _YAMLFileGenerator(_Jinja2FileGenerator):
                  image_tag=None):
         """Generate YAML file which defines Kubernete deployment and service.
 
-    Args:
-      destination: str, the destination directory path to put the yaml file.
-      project_name: str, name of your Django project.
-      project_id: str, your GCP project id. This can be got from your GCP
-        console.
-      instance_name: str or None, the name of cloud sql instance for database
-        or the Django project. The default value for instance_name should be
-        "{project_name}-instance".
-      region: str, where to host the Django project.
-      image_tag: str or None. A customized docker image tag used in integration
-        tests.
-    """
+        Args:
+            destination: str, the destination directory path to put the yaml
+                file.
+            project_name: str, name of your Django project.
+            project_id: str, your GCP project id. This can be got from your GCP
+                console.
+            instance_name: str or None, the name of cloud sql instance for
+                database or the Django project. The default value for
+                instance_name should be "{project_name}-instance".
+            region: str, where to host the Django project.
+            image_tag: str or None. A customized docker image tag used in
+                integration tests.
+        """
         file_name = 'project_name.yaml'
         image_tag = image_tag or '/'.join(['gcr.io', project_id, project_name])
         instance_name = instance_name or project_name + '-instance'
@@ -259,20 +262,21 @@ class DjangoSourceFileGenerator(_FileGenerator):
                                   image_tag=None):
         """Generate all source files of a Django app to be deployed to GKE.
 
-    Args:
-      project_id: str, your GCP project id. This can be got from your GCP
-                  console.
-      project_name: str, name of your Django project.
-      app_names: List[str], a list of apps you want to create in your project.
-      destination: str, the destination directory path to put your Django
-        project.
-      instance_name: str or None, the name of cloud sql instance for database
-        or the Django project. The default value for instance_name should be
-        the project name.
-      region: str, where to host the Django project.
-      image_tag: str or None. A customized docker image tag used in integration
-        tests.
-    """
+        Args:
+            project_id: str, your GCP project id. This can be got from your GCP
+                console.
+            project_name: str, name of your Django project.
+            app_names: List[str], a list of apps you want to create in your
+                project.
+            destination: str, the destination directory path to put your Django
+                project.
+            instance_name: str or None, the name of cloud sql instance for
+                database or the Django project. The default value for
+                instance_name should be the project name.
+            region: str, where to host the Django project.
+            image_tag: str or None. A customized docker image tag used in
+                integration tests.
+        """
 
         # Create the folder if not exist.
         destination = os.path.abspath(os.path.expanduser(destination))

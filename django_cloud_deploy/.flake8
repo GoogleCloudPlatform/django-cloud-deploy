@@ -7,10 +7,10 @@ application-import-names=google
 max-line-length = 80
 
 exclude =
-  # nox
-  .nox
+    # nox
+    .nox
 
-  # Standard linting exemptions.
-  __pycache__,
-  .git,
-  *.pyc,
+    # Standard linting exemptions.
+    __pycache__,
+    .git,
+    *.pyc,

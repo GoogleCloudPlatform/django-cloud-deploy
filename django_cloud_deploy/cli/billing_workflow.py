@@ -28,12 +28,11 @@ class BillingWorkflow(object):
             'cloudbilling', 'v1', http=http))
 
     def billing_workflow(self):
-        """ Instructs user to set up billing for given project_id.
+        """Instructs user to set up billing for given project_id.
 
-    Confirms given project_id has billing. Sends user to the GCP console
-    to set it up via their webbrowser.
-
-    """
+        Confirms given project_id has billing. Sends user to the GCP console
+        to set it up via their webbrowser.
+        """
         self.workflow.tell('Billing is required for project %s '
                            'to deploy to GKE' % self.project_id)
 

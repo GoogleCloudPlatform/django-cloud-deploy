@@ -21,8 +21,8 @@ from typing import List
 
 class IO(abc.ABC):
     """
-  Workflow uses the classes that follow this interface to for input/output.
-  """
+    Workflow uses the classes that follow this interface to for input/output.
+    """
 
     def __init__(self):
         pass
@@ -31,29 +31,29 @@ class IO(abc.ABC):
     def ask(self, question: str):
         """Asks the user the question and returns an answer.
 
-    Args:
-      question: Message to tell the user
-    Returns:
-      The answer the user gave in a string format.
-    """
+        Args:
+            question: Message to tell the user
+        Returns:
+            The answer the user gave in a string format.
+        """
         pass
 
     @abc.abstractmethod
     def tell(self, msg: str):
         """Tells the user the given message.
 
-    Args:
-      msg: Message to tell the user
-    """
+        Args:
+            msg: Message to tell the user
+        """
         pass
 
 
 class Workflow(object):
     """
-  This class is meant to use an underlying IO class to interact with the user.
-  This gives flexibility when wanting to add additional logic regarding IO.
-  It also allows us for simplified testing.
-  """
+    This class is meant to use an underlying IO class to interact with the user.
+    This gives flexibility when wanting to add additional logic regarding IO.
+    It also allows us for simplified testing.
+    """
 
     def __init__(self, io: IO):
         self.io = io
@@ -81,16 +81,16 @@ class Workflow(object):
             error_msg: str = 'Invalid Answer') -> str:
         """Uses underlying IO object to send output and retrieve input from user.
 
-    default_value is returned if user just press Enter and provide nothing.
-    Args:
-      question: Question to ask the user.
-      default_value: Default value to return.
-      predicate: Function to check if input is valid.
-      error_msg: Message to display to the user if input failed predicate.
+        default_value is returned if user just press Enter and provide nothing.
+        Args:
+            question: Question to ask the user.
+            default_value: Default value to return.
+            predicate: Function to check if input is valid.
+            error_msg: Message to display to the user if input failed predicate.
 
-    Returns:
-      The input the user passed.
-    """
+        Returns:
+            The input the user passed.
+        """
 
         answer = self.io.ask(question)
         if not answer:
@@ -107,17 +107,14 @@ class Workflow(object):
     def tell(self, msg):
         """Uses underlying IO object to send output to user.
 
-    Args:
-      msg:  Message to tell the user
-
-    """
+        Args:
+            msg:  Message to tell the user
+        """
         self.io.tell(msg)
 
 
 class Console(IO):
-    """
-  Uses the console to interact with the user. See IO for method docs.
-  """
+    """Uses the console to interact with the user. See IO for method docs."""
 
     def ask(self, question: str, hide: bool = False) -> str:
         if hide:
@@ -131,11 +128,11 @@ class Console(IO):
 
 class Test(IO):
     """
-  This allow us to test the I/O by using arrays to store questions/answers
-  When using this class, pass the answers in the order that the questions will
-  be asked.This does require you to know what the workflow/related answers will
-  be for every test.
-  """
+    This allow us to test the I/O by using arrays to store questions/answers
+    When using this class, pass the answers in the order that the questions will
+    be asked.This does require you to know what the workflow/related answers
+    will be for every test.
+    """
 
     def __init__(self, answers: List[str]):
         super().__init__()
@@ -144,16 +141,16 @@ class Test(IO):
 
     def ask(self, question: str, hide: bool = False) -> str:
         """
-    Logs the history of questions in the order they were asked and returns
-    answer in the order that they were given. Expects <= len(answers) times to
-    be called in its lifetime.
+        Logs the history of questions in the order they were asked and returns
+        answer in the order that they were given. Expects <= len(answers) times
+        to be called in its lifetime.
 
-    Args:
-      question:
+        Args:
+            question:
 
-    Returns:
-      The corresponding Nth answer
-    """
+        Returns:
+            The corresponding Nth answer
+        """
         del hide  # Unused by ask
         self.output.append(question)
         return self.answers.pop()

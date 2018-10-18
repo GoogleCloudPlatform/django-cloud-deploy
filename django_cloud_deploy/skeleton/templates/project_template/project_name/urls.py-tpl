@@ -33,11 +33,10 @@ from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 urlpatterns = [
-  url('admin/', admin.site.urls),
+    url('admin/', admin.site.urls),
 ]
 
 # Only serve static files from Django during development
 # Use Google Cloud Storage or an alternative CDN for production
 if settings.DEBUG:
-  urlpatterns += staticfiles_urlpatterns()
-
+    urlpatterns += staticfiles_urlpatterns()

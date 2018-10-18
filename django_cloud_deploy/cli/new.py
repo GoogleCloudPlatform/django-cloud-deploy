@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITconsoleNS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissconsolens and
 # limitatconsolens under the License.
+
 """Create and deploy a new Django project on GKE."""
 
 import argparse

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Workflow for creating service accounts and generating keys."""
 
 import json
@@ -34,16 +35,16 @@ class ServiceAccountKeyGenerationWorkflow(object):
                    output_path: str):
         """Enable required services for deploying Django apps to GKE.
 
-    Args:
-      project_id: The GCP project id to enable services.
-      service_account_id: Id of your service account. For example, a service
-        account should be in the following format:
-          <service_account_id>@<project_id>.iam.gserviceaccount.com
-      service_account_name: Display name of your service account.
-      roles: Roles the service account should have. Valid roles can be found
-        on https://cloud.google.com/iam/docs/understanding-roles
-      output_path: The path to store your key.
-    """
+        Args:
+            project_id: The GCP project id to enable services.
+            service_account_id: Id of your service account. For example, a
+                service account should be in the following format:
+                <service_account_id>@<project_id>.iam.gserviceaccount.com
+            service_account_name: Display name of your service account.
+            roles: Roles the service account should have. Valid roles can be
+                found on https://cloud.google.com/iam/docs/understanding-roles
+            output_path: The path to store your key.
+        """
 
         self._service_account_client.create_service_account(
             project_id, service_account_id, service_account_name, roles)

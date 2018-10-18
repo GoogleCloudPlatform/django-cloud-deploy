@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Manages Google Cloud Platform service accounts and iam policies.
 
 See
@@ -87,18 +88,19 @@ class ServiceAccountClient(object):
                                service_account_name: str, roles: List[str]):
         """Create a service account and assign it with the given roles.
 
-    Args:
-      project_id: GCP project id.
-      service_account_id: Id of your service account. For example, a service
-        account should be in the following format:
-          <service_account_id>@<project_id>.iam.gserviceaccount.com
-      service_account_name: Display name of your service account.
-      roles: Roles the service account should have. Valid roles can be found
-        on https://cloud.google.com/iam/docs/understanding-roles
+        Args:
+            project_id: GCP project id.
+            service_account_id: Id of your service account. For example, a
+                service account should be in the following format:
+                <service_account_id>@<project_id>.iam.gserviceaccount.com
+            service_account_name: Display name of your service account.
+            roles: Roles the service account should have. Valid roles can be
+                found on https://cloud.google.com/iam/docs/understanding-roles
 
-    Raises:
-      ServiceAccountCreationError: When it fails to create a service account.
-    """
+        Raises:
+            ServiceAccountCreationError: When it fails to create a service
+                account.
+        """
 
         # Create a service account without any roles
         resource_name = '/'.join(['projects', project_id])
@@ -153,31 +155,31 @@ class ServiceAccountClient(object):
                    service_account_id: str) -> Dict[str, str]:
         """Create a new key of the given service account.
 
-    Args:
-      project_id: GCP project id.
-      service_account_id: Id of your service account. For example, a service
-        account should be in the following format:
-          <service_account_id>@<project_id>.iam.gserviceaccount.com
+        Args:
+            project_id: GCP project id.
+            service_account_id: Id of your service account. For example, a
+                service account should be in the following format:
+                <service_account_id>@<project_id>.iam.gserviceaccount.com
 
-    Raises:
-      ServiceAccountKeyCreationError: When it fails to create a service
-        account key.
+        Raises:
+            ServiceAccountKeyCreationError: When it fails to create a service
+                account key.
 
-    Returns:
-      Service account file content in the following format:
-        {
-          "type": "service_account",
-          "project_id": "...",
-          "private_key_id": "...",
-          "private_key": "..."
-          "client_email": "...",
-          "client_id": "...",
-          "auth_uri": "...",
-          "token_uri": "...",
-          "auth_provider_x509_cert_url": "...",
-          "client_x509_cert_url": "..."
-        }
-    """
+        Returns:
+            Service account file content in the following format:
+                {
+                  "type": "service_account",
+                  "project_id": "...",
+                  "private_key_id": "...",
+                  "private_key": "..."
+                  "client_email": "...",
+                  "client_id": "...",
+                  "auth_uri": "...",
+                  "token_uri": "...",
+                  "auth_provider_x509_cert_url": "...",
+                  "client_x509_cert_url": "..."
+                }
+        """
 
         service_account_email = ('{}@{}.iam.gserviceaccount.com'.format(
             service_account_id, project_id))

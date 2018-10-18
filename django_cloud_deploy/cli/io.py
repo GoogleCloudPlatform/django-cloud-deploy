@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Class for managing console I/O."""
 
 import abc
@@ -29,20 +30,20 @@ class IO(abc.ABC):
     def tell(self, *args):
         """Prints `args` to stdout.
 
-    Args:
-      args: The objects to print. For strings, the following HTML tags are
-          interpreted: <b>This text in bold</b>.
-    """
+        Args:
+            args: The objects to print. For strings, the following HTML tags are
+                interpreted: <b>This text in bold</b>.
+        """
         pass
 
     @abc.abstractmethod
     def error(self, *args):
         """Prints `args` to stderr.
 
-    Args:
-      args: The objects to print. For strings, the following HTML tags are
-          interpreted: <b>This text in bold</b>.
-    """
+        Args:
+            args: The objects to print. For strings, the following HTML tags are
+                interpreted: <b>This text in bold</b>.
+        """
         pass
 
     @abc.abstractmethod

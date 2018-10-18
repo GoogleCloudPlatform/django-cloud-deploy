@@ -33,14 +33,14 @@ from django_cloud_deploy.utils import base_client
 class DeploygkeWorkflow(base_client.BaseClient):
     """The class to help deployment of a django app to gke.
 
-  This class will do the following for the Django app:
+    This class will do the following for the Django app:
     1. Build and push docker images.
     2. Create a Kubernetes cluster if it does not exist on cloud.
     3. Deploy the Django app with the generated yaml file
     4. Create a GCS bucket to hold your app's static content
     5. Collect static content from your app and upload it to the bucket just
        created.
-  """
+    """
 
     def __init__(self,
                  project_id,
@@ -50,14 +50,15 @@ class DeploygkeWorkflow(base_client.BaseClient):
                  debug=False):
         """Deploy a Django app to GKE.
 
-    Args:
-      project_id: str, Google Cloud Platform project id.
-      project_name: str, Django project name.
-      project_path: str, path to the folder containing your Django project.
-      storage_client: None or google.cloud.storage.Client. This parameter is
-                      test only.
-      debug: bool. Whether to suppress subprocess output.
-    """
+        Args:
+            project_id: str, Google Cloud Platform project id.
+            project_name: str, Django project name.
+            project_path: str, path to the folder containing your Django
+                project.
+            storage_client: None or google.cloud.storage.Client. This parameter
+                is test only.
+            debug: bool. Whether to suppress subprocess output.
+        """
         super().__init__(debug)
         self._project_id = project_id
         self._project_name = project_name
@@ -101,16 +102,16 @@ class DeploygkeWorkflow(base_client.BaseClient):
                                          files_uploaded):
         """A helper function to upload files to gcs buckets.
 
-    Python Cloud Storage Client does not support uploading folders. So we need
-    a function to upload all files under a folder.
+        Python Cloud Storage Client does not support uploading folders. So we
+        need a function to upload all files under a folder.
 
-    Args:
-      bucket: google.cloud.storage.bucket.Bucket, your GCS bucket to hold
-              static contents.
-      current_path: str, the current folder path. This is the relative path
-                    with the root of static content folder.
-      files_uploaded: List[str], the list of paths of files uploaded.
-    """
+        Args:
+            bucket: google.cloud.storage.bucket.Bucket, your GCS bucket to hold
+                static contents.
+            current_path: str, the current folder path. This is the relative
+                path with the root of static content folder.
+            files_uploaded: List[str], the list of paths of files uploaded.
+        """
 
         # current_folder_path is an absolute path
         current_folder_path = os.path.join(self._project_path, current_path)
@@ -182,21 +183,21 @@ class DeploygkeWorkflow(base_client.BaseClient):
                   open_browser=True):
         """Go through all steps to deploy an app to gke.
 
-    Args:
-      service_account_key_path: str, the absolute path of your service account
-                                key.
-      admin_user_name: str, the user name of your superuser account.
-      cluster_name: str or None, name of the cluster to deploy the Django app.
-        This is only used in test.
-      bucket_name: str or None, name of the bucket to upload the static
-        contents. This is only used in test.
-      image_tag: str or None, tag of the docker image of the Django app.
-        This is only used in test.
-      open_browser: bool, whether to open the web browser showing the deployed
-        Django app at the end.
-    Returns:
-      url of admin site of the deployed Django app.
-    """
+        Args:
+            service_account_key_path: str, the absolute path of your service
+                account key.
+            admin_user_name: str, the user name of your superuser account.
+            cluster_name: str or None, name of the cluster to deploy the Django
+                app. This is only used in test.
+            bucket_name: str or None, name of the bucket to upload the static
+                contents. This is only used in test.
+            image_tag: str or None, tag of the docker image of the Django app.
+                This is only used in test.
+            open_browser: bool, whether to open the web browser showing the
+                deployed Django app at the end.
+        Returns:
+            url of admin site of the deployed Django app.
+        """
         cluster_name = cluster_name or self._project_name
         bucket_name = bucket_name or self._project_id
         image_tag = image_tag or self._project_image_tag
@@ -264,15 +265,15 @@ class DeploygkeWorkflow(base_client.BaseClient):
                         zone='us-west1-a'):
         """Create a cluster with your GCP account.
 
-    Args:
-      cluster_name: str, name of your cluster.`
-      region: str, where do you want to host the cluster.
-      zone: str, the name of the Google Compute Engine zone in which the
-            cluster resides.
+        Args:
+            cluster_name: str, name of your cluster.`
+            region: str, where do you want to host the cluster.
+            zone: str, the name of the Google Compute Engine zone in which the
+                cluster resides.
 
-    Available region and zones can be found on
-    https://cloud.google.com/compute/docs/regions-zones/#available
-    """
+        Available region and zones can be found on
+        https://cloud.google.com/compute/docs/regions-zones/#available
+        """
 
         search_path = self._get_template_folder_path()
         template_loader = jinja2.FileSystemLoader(searchpath=search_path)
@@ -335,10 +336,10 @@ class DeploygkeWorkflow(base_client.BaseClient):
     def _configure_kubectl(self, cluster_name, zone='us-west1-a'):
         """Configure kubectl to make it point to the newly created cluster.
 
-    Args:
-      cluster_name: str, name of the newly created cluster.
-      zone: str, zone of the cluster.
-    """
+        Args:
+            cluster_name: str, name of the newly created cluster.
+            zone: str, zone of the cluster.
+        """
         subprocess.check_call([
             'gcloud', 'container', 'clusters', 'get-credentials', cluster_name,
             '--zone', zone
@@ -350,9 +351,9 @@ class DeploygkeWorkflow(base_client.BaseClient):
     def _create_cloudsql_secrets(self, service_account_key_path):
         """Save all sensitive information with Kubernetes secrets.
 
-    Args:
-      service_account_key_path: str, the path of service account key.
-    """
+        Args:
+            service_account_key_path: str, the path of service account key.
+        """
         print('Create cloudsql secrets')
 
         username = os.environ['DATABASE_USER']

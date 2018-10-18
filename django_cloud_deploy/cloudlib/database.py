@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Manages Google Cloud SQL instances, databases and users.
 
 See https://cloud.google.com/sql/docs/
@@ -46,23 +47,23 @@ class DatabaseClient(object):
                              region: str = 'us-west1'):
         """Creates a new Google Cloud SQL instance and wait for provisioning.
 
-    See https://cloud.google.com/sql/docs/postgres/create-instance for valid
-    arguments.
+        See https://cloud.google.com/sql/docs/postgres/create-instance for valid
+        arguments.
 
-    Args:
-      project_id: The id of the project to provision the SQL instance in.
-      instance: The name of the new instance being provisioned.
-      number_cpus: The number of virtual CPUs to provision for the SQL
-          instance.
-      memory_size: The amount of memory, in MiB, to provision for the SQL
-          instance.
-      database_version: The type of database to provision.
-      region: The geographic region to provision the SQL instance in.
+        Args:
+            project_id: The id of the project to provision the SQL instance in.
+            instance: The name of the new instance being provisioned.
+            number_cpus: The number of virtual CPUs to provision for the SQL
+                instance.
+            memory_size: The amount of memory, in MiB, to provision for the SQL
+                instance.
+            database_version: The type of database to provision.
+            region: The geographic region to provision the SQL instance in.
 
-    Raises:
-      ValueError: for invalid argument combinations.
-      DatabaseError: if unable to provision the SQL instance.
-    """
+        Raises:
+            ValueError: for invalid argument combinations.
+            DatabaseError: if unable to provision the SQL instance.
+        """
         # See:
         # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances
         if not (0 < number_cpus <= 64):
@@ -110,14 +111,14 @@ class DatabaseClient(object):
                              database: str):
         """Creates a new database in a Cloud SQL instance and wait for completion.
 
-    Args:
-      project_id: The id of the project to create the database in.
-      instance: The name of the instance to create the database in.
-      database: The name of the new database to create.
+        Args:
+            project_id: The id of the project to create the database in.
+            instance: The name of the instance to create the database in.
+            database: The name of the new database to create.
 
-    Raises:
-      DatabaseError: if unable to create the new database.
-    """
+        Raises:
+            DatabaseError: if unable to create the new database.
+        """
         # See:
         # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/databases/insert
         request = self._sqladmin_service.databases().insert(
@@ -144,15 +145,15 @@ class DatabaseClient(object):
                               password: str):
         """Set the password for a database user.
 
-    Args:
-      project_id: The id of the project for the database user.
-      instance: The name of the instance for the database user.
-      user: The name of the database user e.g. "postgres".
-      password: The new password to set.
+        Args:
+            project_id: The id of the project for the database user.
+            instance: The name of the instance for the database user.
+            user: The name of the database user e.g. "postgres".
+            password: The new password to set.
 
-    Raises:
-      DatabaseError: if unable to set the new password.
-    """
+        Raises:
+            DatabaseError: if unable to set the new password.
+        """
         # See:
         # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/users/update
 

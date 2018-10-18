@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Workflow for deploying a Django app to GKE."""
 
 import base64
@@ -50,23 +51,23 @@ class DeploygkeWorkflow(object):
                             zone: str = 'us-west1-a') -> str:
         """Deploy a Django app to gke.
 
-    Args:
-      project_id: GCP project id.
-      cluster_name: Name of the cluster to host the app.
-      app_directory: Absolute path of the directory of your Django app.
-      app_name: Name of the Django app.
-      image_name: Tag of the docker image of the app.
-      secrets: Secrets necessary to run the app.
-      region: Where do you want to host the cluster.
-      zone: Name of the Google Compute Engine zone in which the cluster
-        resides.
+        Args:
+            project_id: GCP project id.
+            cluster_name: Name of the cluster to host the app.
+            app_directory: Absolute path of the directory of your Django app.
+            app_name: Name of the Django app.
+            image_name: Tag of the docker image of the app.
+            secrets: Secrets necessary to run the app.
+            region: Where do you want to host the cluster.
+            zone: Name of the Google Compute Engine zone in which the cluster
+                resides.
 
-    Raises:
-      DeployNewAppError: If unable to deploy the app.
+        Raises:
+            DeployNewAppError: If unable to deploy the app.
 
-    Returns:
-      The admin site url of the deployed Django app.
-    """
+        Returns:
+            The admin site url of the deployed Django app.
+        """
 
         self._container_client.create_cluster_sync(project_id, cluster_name,
                                                    region, zone)
@@ -118,17 +119,17 @@ class DeploygkeWorkflow(object):
                          zone: str = 'us-west1-a') -> str:
         """Returns the URL that can be used to access the app.
 
-    Args:
-      kube_config: A kubernetes configuration which has access to the given
-        cluster.
-      project_id: GCP project id.
-      cluster_name: Name of the cluster to host the app.
-      zone: Name of the Google Compute Engine zone in which the cluster
-        resides.
+        Args:
+            kube_config: A kubernetes configuration which has access to the
+                given cluster.
+            project_id: GCP project id.
+            cluster_name: Name of the cluster to host the app.
+            zone: Name of the Google Compute Engine zone in which the cluster
+                resides.
 
-    Returns:
-      Url of the deployed Django app.
-    """
+        Returns:
+            Url of the deployed Django app.
+        """
 
         kube_config = self._container_client.create_kubernetes_configuration(
             self._credentials, project_id, cluster_name, zone)
@@ -157,15 +158,15 @@ class DeploygkeWorkflow(object):
                                    zone: str = 'us-west1-a'):
         """Wait for the deployment of Django app to get ready.
 
-    Args:
-      kube_config: A kubernetes configuration which has access to the given
-        cluster.
-      project_id: GCP project id.
-      cluster_name: Name of the cluster to host the app.
-      app_name: Name of the Django app.
-      zone: Name of the Google Compute Engine zone in which the cluster
-        resides.
-    """
+        Args:
+            kube_config: A kubernetes configuration which has access to the
+                given cluster.
+            project_id: GCP project id.
+            cluster_name: Name of the cluster to host the app.
+            app_name: Name of the Django app.
+            zone: Name of the Google Compute Engine zone in which the cluster
+                resides.
+        """
 
         api_client = kubernetes.client.ApiClient(kube_config)
         api = kubernetes.client.ExtensionsV1beta1Api(api_client)
