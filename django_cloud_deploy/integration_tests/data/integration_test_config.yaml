@@ -1,3 +1,5 @@
 project_id: cloud-django-integration-test1
 project_name: clouddjangointegrationtest
 zone: us-west1-a
+database_user: fake_db_user
+database_password: fake_db_password

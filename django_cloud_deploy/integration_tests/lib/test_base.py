@@ -68,6 +68,14 @@ class BaseTest(absltest.TestCase):
 class DjangoFileGeneratorTest(BaseTest):
     """Base class for test cases which need Django project files."""
 
+    @property
+    def database_user(self):
+        return _TEST_CONFIG['database_user']
+
+    @property
+    def database_password(self):
+        return _TEST_CONFIG['database_password']
+
     def setUp(self):
         super().setUp()
         self.project_dir = tempfile.mkdtemp()
@@ -80,6 +88,8 @@ class DjangoFileGeneratorTest(BaseTest):
             project_name=self.project_name,
             app_names=app_names,
             destination=self.project_dir,
+            database_user=self.database_user,
+            database_password=self.database_password,
             image_tag=self.image_tag)
 
     def tearDown(self):

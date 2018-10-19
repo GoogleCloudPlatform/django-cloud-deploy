@@ -263,7 +263,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         project_id = project_name = 'test_generate_all_source_file'
         app_names = ['polls1', 'polls2']
         self._file_generator.generate_all_source_files(
-            project_id, project_name, app_names, self._project_dir)
+            project_id, project_name, app_names, self._project_dir,
+            'fake_db_user', 'fake_db_password')
         self._test_project_structure(project_name, app_names, self._project_dir)
 
     def test_file_generation_same_place(self):
@@ -274,7 +275,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         # This should not throw exceptions.
         for _ in range(3):
             self._file_generator.generate_all_source_files(
-                project_id, project_name, app_names, self._project_dir)
+                project_id, project_name, app_names, self._project_dir,
+                'fake_db_user', 'fake_db_password')
         self._test_project_structure(project_name, app_names, self._project_dir)
 
     def test_file_generation_directory_not_exist(self):
@@ -282,6 +284,7 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         app_names = ['polls1', 'polls2']
 
         project_dir = os.path.join(self._project_dir, 'dir_not_exist')
-        self._file_generator.generate_all_source_files(project_id, project_name,
-                                                       app_names, project_dir)
+        self._file_generator.generate_all_source_files(
+            project_id, project_name, app_names, project_dir, 'fake_db_user',
+            'fake_db_password')
         self._test_project_structure(project_name, app_names, project_dir)

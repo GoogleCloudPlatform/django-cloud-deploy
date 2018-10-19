@@ -253,7 +253,11 @@ class DjangoSourceFileGenerator(_FileGenerator):
         for app_name in app_names:
             self.django_file_generator.generate_app_files(app_name, destination)
 
-    def _setup_django_environment(self, destination: str, project_name: str):
+    def _setup_django_environment(self,
+                                  destination: str,
+                                  project_name: str,
+                                  database_user: str,
+                                  database_password: str):
         """Setup Django environment.
 
         This makes Django command calls afterwards affect the newly generated
@@ -262,8 +266,12 @@ class DjangoSourceFileGenerator(_FileGenerator):
         Args:
             destination: Absolute directory path to put your Django project.
             project_name: Name of your Django project.
+            database_user: The name of the database user. By default it is
+                "postgres". This is required for Django app to access database.
+            database_password: The database password to set.
         """
-
+        os.environ.setdefault('DATABASE_USER', database_user)
+        os.environ.setdefault('DATABASE_PASSWORD', database_password)
         sys.path.append(destination)
         os.environ['DJANGO_SETTINGS_MODULE'] = '{}.remote_settings'.format(
             project_name)
@@ -274,6 +282,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
                                   project_name,
                                   app_names,
                                   destination,
+                                  database_user: str,
+                                  database_password: str,
                                   instance_name=None,
                                   region='us-west1',
                                   image_tag=None):
@@ -287,6 +297,9 @@ class DjangoSourceFileGenerator(_FileGenerator):
                 project.
             destination: str, the destination directory path to put your Django
                 project.
+            database_user: The name of the database user. By default it is
+                "postgres". This is required for Django app to access database.
+            database_password: The database password to set.
             instance_name: str or None, the name of cloud sql instance for
                 database or the Django project. The default value for
                 instance_name should be the project name.
@@ -304,4 +317,5 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.dependency_file_generator.generate(destination)
         self.yaml_file_generator.generate(destination, project_name, project_id,
                                           instance_name, region, image_tag)
-        self._setup_django_environment(destination, project_name)
+        self._setup_django_environment(
+            destination, project_name, database_user, database_password)

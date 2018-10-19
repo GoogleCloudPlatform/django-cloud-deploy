@@ -180,12 +180,6 @@ def new(debug=False):
     django_prompter = django_prompt_client.DjangoPromptClient(console)
     django_config = django_prompter.prompt_user_for_info()
 
-    # Create Django Files
-    generator = source_generator.DjangoSourceFileGenerator()
-    generator.generate_all_source_files(project_id, django_config.django_name,
-                                        django_config.apps,
-                                        django_config.project_dir)
-
     # Create DB instance and configurations
 
     database_client = database.DatabaseClient.from_credentials(credentials)
@@ -198,9 +192,17 @@ def new(debug=False):
         database_client=database_client,
         debug=debug)
 
-    db_workflow.ask_for_password()
+    db_password = db_workflow.ask_for_password()
     superuser_name = db_workflow.ask_for_superuser_name()
     db_workflow.ask_for_superuser_email()
+
+    # Create Django Files
+    generator = source_generator.DjangoSourceFileGenerator()
+    generator.generate_all_source_files(project_id, django_config.django_name,
+                                        django_config.apps,
+                                        django_config.project_dir,
+                                        'postgres',
+                                        db_password)
 
     # Create DB instance and configurations
     print(generate_section_header(6, 'Database Set Up'))
