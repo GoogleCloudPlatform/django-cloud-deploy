@@ -25,8 +25,10 @@ from django_cloud_deploy.integration_tests.lib import test_base
 from django_cloud_deploy.integration_tests.lib import utils
 from django_cloud_deploy.workflow import _deploygke
 from django_cloud_deploy.workflow import _enable_service
+from django_cloud_deploy.workflow import _project
 from django_cloud_deploy.workflow import _service_account
 from googleapiclient import discovery
+from googleapiclient import errors
 
 
 class EnableServiceWorkflowIntegrationTest(test_base.BaseTest):
@@ -247,3 +249,51 @@ class DeploygkeWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest):
                     secrets=secrets)
                 response = requests.get(admin_url)
                 self.assertIn('Django administration', response.text)
+
+
+class ProjectWorkflowIntegrationTest(test_base.BaseTest):
+    """Integration test for django_cloud_deploy.workflow._project."""
+
+    def setUp(self):
+        super().setUp()
+        self._project_workflow = _project.ProjectWorkflow(self.credentials)
+
+    def test_create_new_project_no_permission(self):
+        project_name = 'New Project'
+        project_id = utils.get_resource_name(resource_type='project')
+
+        exception_regex = r'.*HttpError 403.*'
+
+        # The provided credentials object does not have permission to create
+        # projects
+        with self.assertRaisesRegex(errors.HttpError, exception_regex):
+            self._project_workflow.create_project(project_name, project_id)
+
+    def test_create_new_project_must_exist(self):
+        project_name = 'New Project'
+        project_id = utils.get_resource_name(resource_type='project')
+
+        exception_regex = r'.*does not exist.*'
+
+        with self.assertRaisesRegex(_project.ProjectionCreationError,
+                                    exception_regex):
+            self._project_workflow.create_project(
+                project_name, project_id,
+                project_creation=_project.CreationMode.MUST_EXIST)
+
+    def test_create_new_project_already_exist(self):
+        exception_regex = r'.*already exists.*'
+
+        with self.assertRaisesRegex(_project.ProjectionCreationError,
+                                    exception_regex):
+            self._project_workflow.create_project(
+                self.project_name, self.project_id)
+
+    def test_create_new_project_already_exist_create_if_needed(self):
+        self._project_workflow.create_project(
+            self.project_name, self.project_id,
+            project_creation=_project.CreationMode.CREATE_IF_NEEDED)
+        output = subprocess.check_output(
+            ['gcloud', 'config', 'list', 'project',
+             '--format=csv(core.project)'], universal_newlines=True)
+        self.assertIn(self.project_id, output)
