@@ -15,6 +15,7 @@
 
 import contextlib
 import json
+import os
 import subprocess
 import tempfile
 
@@ -27,6 +28,7 @@ from django_cloud_deploy.workflow import _deploygke
 from django_cloud_deploy.workflow import _enable_service
 from django_cloud_deploy.workflow import _project
 from django_cloud_deploy.workflow import _service_account
+from django_cloud_deploy.workflow import _static_content_serve
 from googleapiclient import discovery
 from googleapiclient import errors
 
@@ -297,3 +299,45 @@ class ProjectWorkflowIntegrationTest(test_base.BaseTest):
             ['gcloud', 'config', 'list', 'project',
              '--format=csv(core.project)'], universal_newlines=True)
         self.assertIn(self.project_id, output)
+
+
+class StaticContentServeWorkflowIntegrationTest(
+        test_base.DjangoFileGeneratorTest):
+    """Integration test for django_gke.workflow._static_content_serve."""
+
+    def setUp(self):
+        super().setUp()
+        self._static_content_serve_workflow = (
+            _static_content_serve.StaticContentServeWorkflow(self.credentials))
+        self._storage_service = discovery.build(
+            'storage', 'v1', credentials=self.credentials)
+
+    def _delete_objects(self, bucket_name):
+        request = self._storage_service.objects().list(bucket=bucket_name)
+        response = request.execute()
+        object_names = [item['name'] for item in response['items']]
+        for object_name in object_names:
+            request = self._storage_service.objects().delete(
+                bucket=bucket_name, object=object_name)
+            request.execute()
+
+    @contextlib.contextmanager
+    def clean_up_bucket(self, bucket_name):
+        try:
+            yield
+        finally:
+            self._delete_objects(bucket_name)
+            request = self._storage_service.buckets().delete(bucket=bucket_name)
+            request.execute()
+
+    def test_serve_static_content(self):
+        bucket_name = utils.get_resource_name('bucket')
+        static_content_dir = os.path.join(self.project_dir, 'static')
+        with self.clean_up_bucket(bucket_name):
+            self._static_content_serve_workflow.serve_static_content(
+                self.project_id, bucket_name, static_content_dir)
+            object_path = 'static/admin/css/base.css'
+            object_url = 'http://storage.googleapis.com/{}/{}'.format(
+                bucket_name, object_path)
+            response = requests.get(object_url)
+            self.assertIn('DJANGO', response.text)

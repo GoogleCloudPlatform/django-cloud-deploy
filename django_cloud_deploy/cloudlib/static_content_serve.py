@@ -92,27 +92,58 @@ class StaticContentServeClient(object):
         Raises:
             StaticContentServeError: When it fails to make the bucket public.
         """
-        body = {'role': 'READER'}
-        request = self._storage_service.bucketAccessControls().patch(
-            bucket=bucket_name, entity='allUsers', body=body)
+        request = self._storage_service.buckets().getIamPolicy(
+            bucket=bucket_name)
         try:
             response = request.execute()
-            if 'role' not in response:
+            if 'bindings' not in response:
                 raise StaticContentServeError(
-                    'Unexpected responses when making bucket "{}" public'.
-                    format(bucket_name))
+                    'Unexpected responses getting iam policy of bucket "{}"'
+                    .format(bucket_name))
         except errors.HttpError as e:
             if e.resp.status == 403:
                 raise StaticContentServeError(
-                    'You do not have permission to change acl of bucket "{}"'.
-                    format(bucket_name))
+                    ('You do not have permission to get iam policy of bucket '
+                     '"{}"').format(bucket_name))
             elif e.resp.status == 404:
                 raise StaticContentServeError(
                     'Bucket "{}" not found.'.format(bucket_name))
             else:
                 raise StaticContentServeError(
-                    'Unexpected error when making bucket "{}" public'.format(
-                        bucket_name)) from e
+                    'Unexpected error getting iam policy of bucket "{}"'
+                    .format(bucket_name)) from e
+
+        bindings = response['bindings']
+        new_binding = {
+            'role': 'roles/storage.objectViewer',
+            'members': [
+                'allUsers'
+            ]
+        }
+        bindings.append(new_binding)
+        body = {
+            'bindings': bindings
+        }
+        request = self._storage_service.buckets().setIamPolicy(
+            bucket=bucket_name, body=body)
+        try:
+            response = request.execute()
+            if 'bindings' not in response:
+                raise StaticContentServeError(
+                    'Unexpected responses setting iam policy of bucket "{}"'
+                    .format(bucket_name))
+        except errors.HttpError as e:
+            if e.resp.status == 403:
+                raise StaticContentServeError(
+                    ('You do not have permission to set iam policy of bucket '
+                     '"{}"').format(bucket_name))
+            elif e.resp.status == 404:
+                raise StaticContentServeError(
+                    'Bucket "{}" not found.'.format(bucket_name))
+            else:
+                raise StaticContentServeError(
+                    'Unexpected error setting iam policy of bucket "{}"'
+                    .format(bucket_name)) from e
 
     def upload_static_content(self, bucket_name: str, static_content_dir: str):
         """Upload static content in the given directory to a GCS bucket.
@@ -188,5 +219,10 @@ class StaticContentServeClient(object):
             raise StaticContentServeError(
                 'Django environment is not setup correctly or the settings '
                 'module is invalid. We cannot collect static files.')
-        management.call_command(
-            'collectstatic', verbosity=0, interactive=False)
+        cwd = os.getcwd()
+        # Change directory to the Django project directory. If we do not do
+        # this, static content will be collected in your current directory.
+        # This is not expected.
+        os.chdir(settings.BASE_DIR)
+        management.call_command('collectstatic', verbosity=0, interactive=False)
+        os.chdir(cwd)

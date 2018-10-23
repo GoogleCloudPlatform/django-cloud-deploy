@@ -16,6 +16,7 @@ import nox
 
 PACKAGES = [
     'pytest==3.6.3',
+    'pytest-forked==0.2',
     'oauth2client==4.1.2',
     'absl-py==0.3.0',
     'django==2.1',
@@ -43,7 +44,7 @@ def unit_test(session, python_version):
     # Run unit tests against all supported versions of Python.
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('pytest', '--ignore=integration_tests')
+    session.run('py.test', '--ignore=integration_tests')
 
 
 @nox.session
@@ -61,4 +62,4 @@ def integration_test(session, python_version):
 
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('pytest', 'integration_tests')
+    session.run('py.test', 'integration_tests', '--forked')

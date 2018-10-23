@@ -25,27 +25,18 @@ from googleapiclient import errors
 PROJECT_ID = 'fake_project_id'
 BUCKET_NAME = 'fake_bucket_name'
 
-POLICY = {'entity': 'allUsers', 'role': 'READER'}
+FAKE_IAM_POLICY = {
+    'bindings': [],
+}
 
+PUBLIC_READ_BINDING = {
+    'role': 'roles/storage.objectViewer',
+    'members': [
+        'allUsers'
+    ]
+}
 
-class BucketAccessControlsFake(object):
-    """A fake object returned by ...bucketAccessControls()."""
-
-    def __init__(self):
-        self.policy = {}
-
-    def patch(self, bucket, entity, body):
-        if 'no_permission' in bucket:
-            return http_fake.HttpRequestFake(
-                errors.HttpError(
-                    http_fake.HttpResponseFake(403), b'permission denied'))
-        elif 'invalid' in bucket:
-            return http_fake.HttpRequestFake({'invalid': 'response'})
-        else:
-            new_policy = {'entity': entity, 'role': body['role']}
-
-            self.policy[bucket] = new_policy
-            return http_fake.HttpRequestFake(new_policy)
+INVALID_IAM_POLICY = {'invalid_key': 'invalid_value'}
 
 
 class ObjectsFake(object):
@@ -67,6 +58,7 @@ class BucketsFake(object):
 
     def __init__(self):
         self.buckets = ['exist']
+        self.iam_policy = FAKE_IAM_POLICY
 
     def insert(self, project, body):
         bucket_name = body['name']
@@ -80,21 +72,32 @@ class BucketsFake(object):
             self.buckets.append(bucket_name)
             return http_fake.HttpRequestFake(body)
 
+    def getIamPolicy(self, bucket):
+        if 'invalid' in bucket:
+            return http_fake.HttpRequestFake(INVALID_IAM_POLICY)
+        elif 'no_permission' in bucket:
+            return http_fake.HttpRequestFake(
+                errors.HttpError(
+                    http_fake.HttpResponseFake(403), b'permission denied'))
+        else:
+            return http_fake.HttpRequestFake(self.iam_policy)
+
+    def setIamPolicy(self, bucket, body):
+        self.iam_policy = body
+        return http_fake.HttpRequestFake(body)
+
 
 class StorageServiceFake(object):
+
     def __init__(self):
         self.buckets_fake = BucketsFake()
         self.objects_fake = ObjectsFake()
-        self.bucket_access_controls_fake = BucketAccessControlsFake()
 
     def buckets(self):
         return self.buckets_fake
 
     def objects(self):
         return self.objects_fake
-
-    def bucketAccessControls(self):
-        return self.bucket_access_controls_fake
 
 
 class StaticContentServeClientTest(absltest.TestCase):
@@ -130,25 +133,25 @@ class StaticContentServeClientTest(absltest.TestCase):
 
     def test_make_bucket_public_success(self):
         self._static_content_serve_client.make_bucket_public(BUCKET_NAME)
-        self.assertEqual(
-            self._storage_service_fake.bucketAccessControls().
-            policy[BUCKET_NAME], POLICY)
+        self.assertIn(
+            PUBLIC_READ_BINDING,
+            self._storage_service_fake.buckets().iam_policy['bindings'])
 
     def test_make_bucket_public_no_permission(self):
         bucket_name = 'bucket_no_permission'
         with self.assertRaises(static_content_serve.StaticContentServeError):
             self._static_content_serve_client.make_bucket_public(bucket_name)
         self.assertNotIn(
-            bucket_name,
-            self._storage_service_fake.bucketAccessControls().policy)
+            PUBLIC_READ_BINDING,
+            self._storage_service_fake.buckets().iam_policy['bindings'])
 
     def test_make_bucket_public_invalid_response(self):
         bucket_name = 'invalid'
         with self.assertRaises(static_content_serve.StaticContentServeError):
             self._static_content_serve_client.make_bucket_public(bucket_name)
         self.assertNotIn(
-            bucket_name,
-            self._storage_service_fake.bucketAccessControls().policy)
+            PUBLIC_READ_BINDING,
+            self._storage_service_fake.buckets().iam_policy['bindings'])
 
     def test_upload_static_content(self):
         # Create a temporary directory looks like the follows:
