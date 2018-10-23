@@ -15,12 +15,15 @@
 
 import random
 import tempfile
+from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
 
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import prompt
+
+from google.auth import credentials
 
 
 class GoogleCloudProjectNamePromptTest(absltest.TestCase):
@@ -383,6 +386,143 @@ class DjangoSuperuserPasswordPromptTest(parameterized.TestCase):
             test_io, '[1/2]', {})
         self.assertEqual(password, 'secondtry2')
         self.assertEqual(len(test_io.password_answers), 0)  # All answers used.
+
+
+_FAKE_BILLING_ACCOUNTS = [
+    {
+        'name': 'billingAccounts/1',
+        'displayName': 'Fake Account 1',
+        'open': True
+    }
+]
+
+_FAKE_BILLING_ACCOUNTS_AFTER_CREATE = [
+    {
+        'name': 'billingAccounts/1',
+        'displayName': 'Fake Account 2',
+        'open': True
+    },
+    {
+        'name': 'billingAccounts/2',
+        'displayName': 'Fake Account 3',
+        'open': True
+    },
+]
+
+
+class BillingPromptTest(absltest.TestCase):
+    """Tests for prompt.BillingPrompt."""
+
+    def setUp(self):
+        self.credentials = mock.Mock(credentials.Credentials, authSpec=True)
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'), return_value=_FAKE_BILLING_ACCOUNTS)
+    def test_prompt(self, unused_mock):
+        test_io = io.TestIO()
+
+        test_io.answers.append('1')
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', {}, self.credentials)
+        self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'), return_value=_FAKE_BILLING_ACCOUNTS)
+    def test_numeric_choice_too_large(self, unused_mock):
+        test_io = io.TestIO()
+
+        test_io.answers.append('12345')
+        test_io.answers.append('1')
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', {}, self.credentials)
+        self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'), return_value=_FAKE_BILLING_ACCOUNTS)
+    def test_numeric_choice_too_small(self, unused_mock):
+        test_io = io.TestIO()
+
+        test_io.answers.append('-12345')
+        test_io.answers.append('1')
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', {}, self.credentials)
+        self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'), return_value=_FAKE_BILLING_ACCOUNTS)
+    def test_invalid_numeric_choice(self, unused_mock):
+        test_io = io.TestIO()
+
+        test_io.answers.append('a')
+        test_io.answers.append('1')
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', {}, self.credentials)
+        self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'),
+                side_effect=[
+                    _FAKE_BILLING_ACCOUNTS,
+                    _FAKE_BILLING_ACCOUNTS_AFTER_CREATE])
+    @mock.patch('webbrowser.open')
+    def test_have_existing_accounts_create_new_account(
+            self, *unused_mocks):
+        test_io = io.TestIO()
+
+        test_io.answers.append('')
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', {}, self.credentials)
+        self.assertEqual(
+            billing_name, _FAKE_BILLING_ACCOUNTS_AFTER_CREATE[1]['name'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'),
+                side_effect=[[], _FAKE_BILLING_ACCOUNTS])
+    @mock.patch('webbrowser.open')
+    def test_no_existing_accounts_create_new_account(
+            self, *unused_mocks):
+        test_io = io.TestIO()
+
+        test_io.answers.append('')
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', {}, self.credentials)
+        self.assertEqual(
+            billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'),
+                side_effect=[[], [], _FAKE_BILLING_ACCOUNTS])
+    @mock.patch('webbrowser.open')
+    def test_no_existing_accounts_create_new_account_success_second_time(
+            self, *unused_mocks):
+        test_io = io.TestIO()
+
+        test_io.answers.append('')
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', {}, self.credentials)
+        self.assertEqual(
+            billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'), return_value=_FAKE_BILLING_ACCOUNTS)
+    def test_validate_success(self, unused_mock):
+        prompt.BillingPrompt.validate(
+            _FAKE_BILLING_ACCOUNTS[0]['name'], self.credentials)
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'), return_value=_FAKE_BILLING_ACCOUNTS)
+    def test_validate_fail(self, unused_mock):
+        with self.assertRaises(ValueError):
+            prompt.BillingPrompt.validate(
+                _FAKE_BILLING_ACCOUNTS_AFTER_CREATE[1]['name'],
+                self.credentials)
 
 
 if __name__ == '__main__':

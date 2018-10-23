@@ -19,12 +19,15 @@ import os.path
 import random
 import re
 import string
-from typing import Any, Dict
+import time
+from typing import Any, Dict, List, Optional
+import webbrowser
 
 from google.auth import credentials
 
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cloudlib import auth
+from django_cloud_deploy.cloudlib import billing
 
 
 class Prompt(object):
@@ -32,8 +35,9 @@ class Prompt(object):
 
     @classmethod
     @abc.abstractmethod
-    def prompt(cls, console: io.IO, step_prompt: str,
-               arguments: Dict[str, Any]) -> Any:
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None) -> Any:
         """Prompt the user to enter some information.
 
         Args:
@@ -41,17 +45,21 @@ class Prompt(object):
             step_prompt: A prefix showing the current step number e.g. "[1/3]".
             arguments: The arguments that have already been collected from the
                 user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
 
         Returns:
             The value entered by the user.
         """
 
     @staticmethod
-    def validate(s: str):
+    def validate(s: str, credentials: Optional[credentials.Credentials] = None):
         """Validates that a string is valid for this prompt type.
 
         Args:
             s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
 
         Raises:
             ValueError: if the input string is not valid.
@@ -76,8 +84,9 @@ class NamePrompt(Prompt):
         """The default name to use."""
 
     @classmethod
-    def prompt(cls, console: io.IO, step_prompt: str,
-               arguments: Dict[str, Any]) -> str:
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to enter some sort of name.
 
         Args:
@@ -85,6 +94,8 @@ class NamePrompt(Prompt):
             step_prompt: A prefix showing the current step number e.g. "[1/3]".
             arguments: The arguments that have already been collected from the
                 user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
 
         Returns:
             The value entered by the user.
@@ -114,11 +125,13 @@ class GoogleCloudProjectNamePrompt(NamePrompt):
         return 'Django Project'
 
     @staticmethod
-    def validate(s):
+    def validate(s, credentials: Optional[credentials.Credentials] = None):
         """Validates that a string is a valid project name.
 
         Args:
             s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
 
         Raises:
             ValueError: if the input string is not valid.
@@ -139,11 +152,13 @@ class DjangoProjectNamePrompt(NamePrompt):
         return 'mysite'
 
     @staticmethod
-    def validate(s):
+    def validate(s, credentials: Optional[credentials.Credentials] = None):
         """Validates that a string is a valid Django project name.
 
         Args:
             s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
 
         Raises:
             ValueError: if the input string is not valid.
@@ -163,11 +178,13 @@ class DjangoAppNamePrompt(NamePrompt):
         return 'home'
 
     @staticmethod
-    def validate(s):
+    def validate(s, credentials: Optional[credentials.Credentials] = None):
         """Validates that a string is a valid Django app name.
 
         Args:
             s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
 
         Raises:
             ValueError: if the input string is not valid.
@@ -187,11 +204,13 @@ class DjangoSuperuserLoginPrompt(NamePrompt):
         return 'admin'
 
     @staticmethod
-    def validate(s):
+    def validate(s, credentials: Optional[credentials.Credentials] = None):
         """Validates that a string is a valid Django superuser login.
 
         Args:
             s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
 
         Raises:
             ValueError: if the input string is not valid.
@@ -212,11 +231,13 @@ class DjangoSuperuserEmailPrompt(NamePrompt):
         return 'test@example.com'
 
     @staticmethod
-    def validate(s):
+    def validate(s, credentials: Optional[credentials.Credentials] = None):
         """Validates that a string is a valid Django superuser email address.
 
         Args:
             s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
 
         Raises:
             ValueError: if the input string is not valid.
@@ -242,8 +263,9 @@ class ProjectIdPrompt(Prompt):
                                 random.randint(100000, 1000000))
 
     @classmethod
-    def prompt(cls, console: io.IO, step_prompt: str,
-               arguments: Dict[str, Any]) -> str:
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to a Google Cloud Platform project id.
 
         Args:
@@ -251,6 +273,8 @@ class ProjectIdPrompt(Prompt):
             step_prompt: A prefix showing the current step number e.g. "[1/3]".
             arguments: The arguments that have already been collected from the
                 user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
 
         Returns:
             The value entered by the user.
@@ -271,11 +295,13 @@ class ProjectIdPrompt(Prompt):
             return project_id
 
     @staticmethod
-    def validate(s):
+    def validate(s, credentials: Optional[credentials.Credentials] = None):
         """Validates that a string is a valid project id.
 
         Args:
             s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
 
         Raises:
             ValueError: if the input string is not valid.
@@ -300,8 +326,9 @@ class DjangoFilesystemPath(Prompt):
             return r == 'y'
 
     @classmethod
-    def prompt(cls, console: io.IO, step_prompt: str,
-               arguments: Dict[str, Any]) -> str:
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to enter a file system path for their project.
 
         Args:
@@ -309,6 +336,8 @@ class DjangoFilesystemPath(Prompt):
             step_prompt: A prefix showing the current step number e.g. "[1/3]".
             arguments: The arguments that have already been collected from the
                 user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
 
         Returns:
             The value entered by the user.
@@ -354,8 +383,9 @@ class PasswordPrompt(Prompt):
         pass
 
     @classmethod
-    def prompt(cls, console: io.IO, step_prompt: str,
-               arguments: Dict[str, Any]) -> str:
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to enter a password.
 
         Args:
@@ -363,6 +393,8 @@ class PasswordPrompt(Prompt):
             step_prompt: A prefix showing the current step number e.g. "[1/3]".
             arguments: The arguments that have already been collected from the
                 user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
 
         Returns:
             The value entered by the user.
@@ -383,11 +415,13 @@ class PasswordPrompt(Prompt):
             return password1
 
     @staticmethod
-    def validate(s):
+    def validate(s, credentials: Optional[credentials.Credentials] = None):
         """Validates that a string is a valid password.
 
         Args:
             s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
 
         Raises:
             ValueError: if the input string is not valid.
@@ -424,15 +458,19 @@ class DjangoSuperuserPasswordPrompt(PasswordPrompt):
 class CredentialsPrompt(Prompt):
 
     @classmethod
-    def prompt(cls, console: io.IO, step_prompt: str,
-               arguments: Dict[str, Any]) -> credentials.Credentials:
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None
+    ) -> credentials.Credentials:
         """Prompt the user for access to the Google credentials.
 
         Args:
-        console: Object to use for user I/O.
-        step_prompt: A prefix showing the current step number e.g. "[1/3]".
-        arguments: The arguments that have already been collected from the user
-            e.g. {"project_id", "project-123"}
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
 
         Returns:
             The user's credentials.
@@ -445,3 +483,113 @@ class CredentialsPrompt(Prompt):
         auth_client.gcloud_login()
         auth_client.authenticate_docker()
         return auth_client.create_default_credentials()
+
+
+class BillingPrompt(Prompt):
+    """Allow the user to select a billing account to use for deployment."""
+
+    @staticmethod
+    def _get_new_billing_account(
+            console: io.IO,
+            existing_billing_accounts: List[Dict[str, Any]],
+            billing_client: billing.BillingClient) -> str:
+        """Ask the user to create a new billing account and return name of it.
+
+        Args:
+            console: Object to use for user I/O.
+            existing_billing_accounts: User's billing accounts before creation
+                of new accounts.
+            billing_client: A client to query user's existing billing accounts.
+
+        Returns:
+            Name of the user's newly created billing account.
+        """
+        webbrowser.open(
+            'https://console.cloud.google.com/billing/create')
+        existing_billing_account_names = [
+            account['name'] for account in existing_billing_accounts]
+        console.tell(
+            'Waiting for billing account to be created.')
+        while True:
+            billing_accounts = billing_client.list_billing_accounts(
+                only_open_accounts=True)
+            if len(existing_billing_accounts) != len(billing_accounts):
+                billing_account_names = [
+                    account['name'] for account in billing_accounts]
+                diff = list(
+                    set(billing_account_names) -
+                    set(existing_billing_account_names))
+                return diff[0]
+            time.sleep(2)
+
+    @classmethod
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None) -> str:
+        """Prompt the user for a billing account to use for deployment.
+
+        Args:
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
+
+        Returns:
+            The user's credentials.
+        """
+        billing_client = billing.BillingClient.from_credentials(credentials)
+        billing_accounts = billing_client.list_billing_accounts(
+            only_open_accounts=True)
+        console.tell(
+            ('{} In order to deploy your application, you must enable billing '
+             'for your Google Cloud Project.').format(step_prompt))
+
+        # If the user has existing billing accounts, we let the user pick one
+        if billing_accounts:
+            console.tell('You have the following existing billing accounts: ')
+            for i, account_info in enumerate(billing_accounts):
+                console.tell('{}. {}'.format(
+                    i + 1, account_info['displayName']))
+            choice = console.ask(
+                ('Please enter your numeric choice or press [Enter] to create '
+                 'a new billing account: '))
+            while True:
+                if not choice:
+                    return cls._get_new_billing_account(
+                        console, billing_accounts, billing_client)
+                if (not choice.isdigit() or int(choice) <= 0
+                        or int(choice) > len(billing_accounts)):
+                    choice = console.ask(
+                        ('Please enter a value between 1 and {} or press '
+                         '[Enter] to create a new account: ').format(
+                             len(billing_accounts)))
+                else:
+                    return billing_accounts[int(choice) - 1]['name']
+        else:
+            # If the user does not have existing billing accounts, we direct
+            # the user to create a new one.
+            console.tell('You do not have existing billing accounts.')
+            console.ask('Press [Enter] to create a new billing account.')
+            return cls._get_new_billing_account(
+                console, billing_accounts, billing_client)
+
+    @staticmethod
+    def validate(s, credentials: Optional[credentials.Credentials] = None):
+        """Validates that a string is a valid billing account.
+
+        Args:
+            s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
+
+        Raises:
+            ValueError: if the input string is not valid.
+        """
+        billing_client = billing.BillingClient(credentials)
+        billing_accounts = billing_client.list_billing_accounts()
+        billing_account_names = [
+            account['name'] for account in billing_accounts]
+        if s not in billing_account_names:
+            raise ValueError('The provided billing account does not exist.')
