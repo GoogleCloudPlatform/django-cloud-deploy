@@ -15,6 +15,7 @@
 """Generate source files of a django app ready to be deployed to GKE."""
 import os
 import sys
+from typing import List, Optional
 
 import django
 from django.core.management import utils
@@ -97,14 +98,20 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
     ADMIN_TEMPLATE_FOLDER = 'admin_template'
     PROJECT_TEMPLATE_FOLDER = 'project_template'
 
-    def generate_project_files(self, project_id, site, destination):
+    def generate_project_files(self,
+                               project_id: str,
+                               site: str,
+                               destination: str,
+                               database_name: Optional[str] = None):
         """Create a django project using our template.
 
         Args:
-            project_id: str, GCP project id.
-            site: str, name of the project to be created.
-            destination: str, the destination path to hold files of the project.
+            project_id: GCP project id.
+            site: Name of the project to be created.
+            destination: The destination path to hold files of the project.
+            database_name: Name of your cloud database.
         """
+        database_name = database_name or site + '-db'
         destination = os.path.abspath(os.path.expanduser(destination))
         project_templates_dir = os.path.join(self._get_template_folder_path(),
                                              self.PROJECT_TEMPLATE_FOLDER)
@@ -114,6 +121,7 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
             'docs_version': version.get_docs_version(),
             'django_version': django.__version__,
             'secret_key': utils.get_random_secret_key(),
+            'database_name': database_name
         }
         template_replacement = {
             'project_name': site,
@@ -244,10 +252,26 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.dependency_file_generator = _DependencyFileGenerator()
         self.yaml_file_generator = _YAMLFileGenerator()
 
-    def _generate_django_source_files(self, project_id, project_name, app_names,
-                                      destination):
+    def _generate_django_source_files(self,
+                                      project_id: str,
+                                      project_name: str,
+                                      app_names: List[str],
+                                      destination: str,
+                                      database_name: str):
+        """Generate Django project and settings file.
+
+        Args:
+            project_id: Your GCP project id. This can be got from your GCP
+                console.
+            project_name: Name of your Django project.
+            app_names: A list of apps you want to create in your project.
+            destination: The destination directory path to put your Django
+                project.
+            database_name: Name of your cloud database.
+        """
+
         self.django_file_generator.generate_project_files(
-            project_id, project_name, destination)
+            project_id, project_name, destination, database_name)
 
         self.django_file_generator.generate_admin_files(destination)
         for app_name in app_names:
@@ -278,41 +302,41 @@ class DjangoSourceFileGenerator(_FileGenerator):
         django.setup()
 
     def generate_all_source_files(self,
-                                  project_id,
-                                  project_name,
-                                  app_names,
-                                  destination,
+                                  project_id: str,
+                                  project_name: str,
+                                  app_names: List[str],
+                                  destination: str,
                                   database_user: str,
                                   database_password: str,
-                                  instance_name=None,
-                                  region='us-west1',
-                                  image_tag=None):
+                                  instance_name: Optional[str] = None,
+                                  database_name: Optional[str] = None,
+                                  region: Optional[str] = 'us-west1',
+                                  image_tag: Optional[str] = None):
         """Generate all source files of a Django app to be deployed to GKE.
 
         Args:
-            project_id: str, your GCP project id. This can be got from your GCP
+            project_id: Your GCP project id. This can be got from your GCP
                 console.
-            project_name: str, name of your Django project.
-            app_names: List[str], a list of apps you want to create in your
-                project.
-            destination: str, the destination directory path to put your Django
+            project_name: Name of your Django project.
+            app_names: A list of apps you want to create in your project.
+            destination: The destination directory path to put your Django
                 project.
             database_user: The name of the database user. By default it is
                 "postgres". This is required for Django app to access database.
             database_password: The database password to set.
-            instance_name: str or None, the name of cloud sql instance for
-                database or the Django project. The default value for
-                instance_name should be the project name.
-            region: str, where to host the Django project.
-            image_tag: str or None. A customized docker image tag used in
-                integration tests.
+            instance_name: The name of cloud sql instance for database or the
+                Django project. The default value for instance_name should be
+                the project name.
+            database_name: Name of your cloud database.
+            region: Where to host the Django project.
+            image_tag: A customized docker image tag used in integration tests.
         """
 
         # Create the folder if not exist.
         destination = os.path.abspath(os.path.expanduser(destination))
         os.makedirs(destination, exist_ok=True)
         self._generate_django_source_files(project_id, project_name, app_names,
-                                           destination)
+                                           destination, database_name)
         self.docker_file_generator.generate(project_name, destination)
         self.dependency_file_generator.generate(destination)
         self.yaml_file_generator.generate(destination, project_name, project_id,

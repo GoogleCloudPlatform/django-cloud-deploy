@@ -138,6 +138,33 @@ class DjangoFileGeneratorTest(FileGeneratorTest):
             # Test remote settings use GCS buckets to serve static files
             self.assertIn(project_id + '/static', settings_content)
 
+            self.assertIn(project_name + '-db', settings_content)
+
+    def test_remote_settings_customize_database_name(self):
+        project_name = 'test_remote_settings_customize_database_name'
+        project_id = project_name + 'project_id'
+        self._django_file_generator.generate_project_files(
+            project_id, project_name, self._project_dir, 'customize-db')
+
+        with open(
+                os.path.join(self._project_dir, project_name,
+                             'remote_settings.py')) as settings:
+            settings_content = settings.read()
+
+            # Test remote settings imports base settings
+            self.assertIn('base_settings', settings_content)
+
+            # Test remote settings use Postgres
+            self.assertIn('postgresql', settings_content)
+
+            # Test remote settings does not use DEBUG mode
+            self.assertNotIn('DEBUG = True', settings_content)
+
+            # Test remote settings use GCS buckets to serve static files
+            self.assertIn(project_id + '/static', settings_content)
+
+            self.assertIn('customize-db', settings_content)
+
     def test_app_root_structure(self):
         app_name = 'test_app_root'
         app_folder_path = os.path.join(self._project_dir, app_name)

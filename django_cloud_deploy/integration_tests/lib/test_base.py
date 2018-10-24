@@ -81,6 +81,9 @@ class DjangoFileGeneratorTest(BaseTest):
         self.project_dir = tempfile.mkdtemp()
         image_name = utils.get_resource_name(resource_type='image')
         self.image_tag = '/'.join(['gcr.io', self.project_id, image_name])
+        self.instance_name = utils.get_resource_name(
+            resource_type='sql-instance')
+        self.database_name = utils.get_resource_name(resource_type='db')
         app_names = ['fake_app']
         generator = source_generator.DjangoSourceFileGenerator()
         generator.generate_all_source_files(
@@ -90,6 +93,8 @@ class DjangoFileGeneratorTest(BaseTest):
             destination=self.project_dir,
             database_user=self.database_user,
             database_password=self.database_password,
+            instance_name=self.instance_name,
+            database_name=self.database_name,
             image_tag=self.image_tag)
 
     def tearDown(self):
