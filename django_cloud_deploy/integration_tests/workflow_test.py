@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Integration tests for module django_cloud_deploy.workflow."""
 
 import contextlib
@@ -19,9 +20,6 @@ import os
 import subprocess
 import tempfile
 
-import requests
-
-from django_cloud_deploy.cloudlib import enable_service
 from django_cloud_deploy.integration_tests.lib import test_base
 from django_cloud_deploy.integration_tests.lib import utils
 from django_cloud_deploy.workflow import _deploygke
@@ -31,6 +29,7 @@ from django_cloud_deploy.workflow import _service_account
 from django_cloud_deploy.workflow import _static_content_serve
 from googleapiclient import discovery
 from googleapiclient import errors
+import requests
 
 
 class EnableServiceWorkflowIntegrationTest(test_base.BaseTest):
@@ -42,11 +41,8 @@ class EnableServiceWorkflowIntegrationTest(test_base.BaseTest):
 
     def setUp(self):
         super().setUp()
-        enable_service_client = (
-            enable_service.EnableServiceClient.from_credentials(
-                self.credentials))
         self.enable_service_workflow = _enable_service.EnableServiceWorkflow(
-            enable_service_client)
+            self.credentials)
         self.service_usage_service = discovery.build(
             'serviceusage', 'v1', credentials=self.credentials)
 

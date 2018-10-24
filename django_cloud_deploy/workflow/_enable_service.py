@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Manages Google Cloud Services."""
+
 import json
 import os
 from typing import Dict
@@ -19,13 +21,15 @@ from typing import List
 
 from django_cloud_deploy.cloudlib import enable_service
 
+from google.auth import credentials
+
 
 class EnableServiceWorkflow(object):
     """A class to control the workflow for enabling all required services."""
 
-    def __init__(self,
-                 enable_service_client: enable_service.EnableServiceClient):
-        self._enable_service_client = enable_service_client
+    def __init__(self, credentials: credentials.Credentials):
+        self._enable_service_client = (
+            enable_service.EnableServiceClient.from_credentials(credentials))
 
     def enable_required_services(self,
                                  project_id: str,
