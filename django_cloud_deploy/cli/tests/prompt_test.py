@@ -439,6 +439,18 @@ _FAKE_BILLING_ACCOUNTS_AFTER_CREATE = [
     },
 ]
 
+_FAKE_BILLING_INFO = {
+    "name": "projects/project-abc/billingInfo",
+    "projectId": "project-abc",
+    "billingAccountName": "billingAccounts/0135D3-2564D9-F29D2E",
+    "billingEnabled": True
+}
+
+_FAKE_NO_BILLING_INFO = {
+    "name": "projects/project-abc/billingInfo",
+    "projectId": "project-abc",
+}
+
 
 class BillingPromptTest(absltest.TestCase):
     """Tests for prompt.BillingPrompt."""
@@ -454,6 +466,38 @@ class BillingPromptTest(absltest.TestCase):
         test_io.answers.append('1')
         billing_name = prompt.BillingPrompt.prompt(
             test_io, '[1/2]', {}, self.credentials)
+        self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                'get_billing_account'), return_value=_FAKE_BILLING_INFO)
+    def test_use_existing_project_with_billing(self, unused_mock):
+        test_io = io.TestIO()
+        args = {
+            'use_existing_project': True,
+            'project_id': 'project-abc'
+        }
+
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', args, self.credentials)
+        self.assertEqual(billing_name, _FAKE_BILLING_INFO['billingAccountName'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'get_billing_account'), return_value=_FAKE_NO_BILLING_INFO)
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'), return_value=_FAKE_BILLING_ACCOUNTS)
+    def test_use_existing_project_without_billing(self, *unused_mock):
+        args = {
+            'use_existing_project': True,
+            'project_id': 'project-abc'
+        }
+
+        test_io = io.TestIO()
+
+        test_io.answers.append('1')
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', args, self.credentials)
         self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 

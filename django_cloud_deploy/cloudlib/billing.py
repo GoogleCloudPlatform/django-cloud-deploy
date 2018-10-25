@@ -35,7 +35,7 @@ class BillingClient(object):
         return cls(
             discovery.build('cloudbilling', 'v1', credentials=credentials))
 
-    def check_billing_enabled(self, project_id: str):
+    def check_billing_enabled(self, project_id: str) -> bool:
         """Check is billing enabled for the given project.
 
         Args:
@@ -44,11 +44,31 @@ class BillingClient(object):
         Returns:
             Is billing enabled for the given project.
         """
+        return (self.get_billing_account(project_id)
+                .get('billingEnabled', False))
+
+    def get_billing_account(self, project_id: str) -> Dict[str, Any]:
+        """Gets the billing information for the given project.
+
+        Args:
+            project_id: GCP project id.
+
+        Returns:
+            The billing information used by the project.
+
+            Example:
+                {
+                     'name': "projects/project-abc/billingInfo",
+                     'projectId': "project-abc",
+                     'billingAccountName': "billingAccounts/01D3-2564D9-F29D2E",
+                     'billingEnabled': true
+                }
+        """
         project_name = 'projects/{}'.format(project_id)
         request = self._billing_service.projects().getBillingInfo(
-                name=project_name)
+            name=project_name)
         response = request.execute()
-        return response.get('billingEnabled', False)
+        return response
 
     def list_billing_accounts(
             self, only_open_accounts: bool = False) -> List[Dict[str, Any]]:

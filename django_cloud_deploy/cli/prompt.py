@@ -555,9 +555,21 @@ class BillingPrompt(Prompt):
                 during prompt.
 
         Returns:
-            The user's credentials.
+            The user's billing account name.
         """
         billing_client = billing.BillingClient.from_credentials(credentials)
+
+        if arguments.get('use_existing_project', False):
+            project_id = arguments.get('project_id')
+
+            billing_account = (
+                billing_client.get_billing_account(project_id))
+            if billing_account.get('billingEnabled', False):
+                msg = ('{} Billing is already enabled on this project.'
+                       .format(step_prompt))
+                console.tell(msg)
+                return billing_account.get('billingAccountName')
+
         billing_accounts = billing_client.list_billing_accounts(
             only_open_accounts=True)
         console.tell(
