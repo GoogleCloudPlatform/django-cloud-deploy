@@ -24,6 +24,9 @@ gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
 gcloud config set project ${GOOGLE_PROJECT_ID}
 gcloud beta auth configure-docker
 
+sudo wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O /usr/local/bin/cloud_sql_proxy
+sudo chmod +x /usr/local/bin/cloud_sql_proxy
+
 cd $KOKORO_ARTIFACTS_DIR/github/django-cloud-deploy
 source kokoro/ubuntu/common.sh
 nox -f django_cloud_deploy/nox.py -s integration_test

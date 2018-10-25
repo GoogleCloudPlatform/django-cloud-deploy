@@ -233,7 +233,7 @@ class ProjectIdPromptTest(parameterized.TestCase):
 
         test_io.answers.append('')
         project_id = prompt.ProjectIdPrompt.prompt(test_io, '[1/2]', {})
-        self.assertRegex(project_id, 'django-\d{6}')
+        self.assertRegex(project_id, r'django-\d{6}')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
     def test_prompt_default_project_name(self):
@@ -242,7 +242,7 @@ class ProjectIdPromptTest(parameterized.TestCase):
         test_io.answers.append('')
         project_id = prompt.ProjectIdPrompt.prompt(
             test_io, '[1/2]', {'project_name': 'My Project'})
-        self.assertRegex(project_id, 'my-project-\d{6}')
+        self.assertRegex(project_id, r'my-project-\d{6}')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
     def test_prompt_bad_id(self):

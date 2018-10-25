@@ -257,7 +257,7 @@ class ProjectIdPrompt(Prompt):
         default_project_id = default_project_id.replace(' ', '-')
         if default_project_id[0] not in string.ascii_lowercase:
             default_project_id = 'django-' + default_project_id
-        default_project_id = re.sub('[^a-z0-9\-]', '', default_project_id)
+        default_project_id = re.sub(r'[^a-z0-9\-]', '', default_project_id)
 
         return '{0}-{1}'.format(default_project_id[0:30 - 6 - 1],
                                 random.randint(100000, 1000000))

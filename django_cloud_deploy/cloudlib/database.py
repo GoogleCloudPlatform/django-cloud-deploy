@@ -17,10 +17,16 @@
 See https://cloud.google.com/sql/docs/
 """
 
+import contextlib
+import signal
 import time
 
-from google.auth import credentials
+from django import db
+from django.core import management
+import pexpect
+
 from googleapiclient import discovery
+from google.auth import credentials
 
 
 class DatabaseError(Exception):
@@ -168,3 +174,122 @@ class DatabaseClient(object):
             raise DatabaseError(
                 'unexpected database status after creation: {!r} [{!r}]'.format(
                     response['status'], response))
+
+    @contextlib.contextmanager
+    def with_cloud_sql_proxy(self,
+                             project_id: str,
+                             instance_name: str,
+                             cloud_sql_proxy_path: str = 'cloud_sql_proxy',
+                             region: str = 'us-west1',
+                             port: int = 5432):
+        """A context manager to run and kill cloud sql proxy subprocesses.
+
+        cloud sql proxy is used to
+
+        Args:
+            project_id: GCP project id.
+            instance_name: Name of the Cloud SQL instance cloud sql proxy
+                targets at.
+            cloud_sql_proxy_path: The command to run your cloud sql proxy.
+            region: Where the Cloud SQL instance is in.
+            port: The port your Postgres database is using. By default it is
+                5432.
+
+        Yields:
+            None
+
+        Raises:
+            DatabaseError: If cloud sql proxy failed to start after 5 seconds.
+        """
+        try:
+            db.close_old_connections()
+            instance_connection_string = '{0}:{1}:{2}'.format(
+                project_id, region, instance_name)
+            instance_flag = '-instances={}=tcp:{}'.format(
+                instance_connection_string, port)
+            process = pexpect.spawn(
+                cloud_sql_proxy_path, args=[instance_flag])
+            # Make sure cloud sql proxy is started before doing the real work
+            process.expect('Ready for new connections', timeout=5)
+            yield
+        except pexpect.exceptions.TIMEOUT:
+            raise DatabaseError(
+                ('Cloud SQL Proxy was unable to start after 5 seconds. Output '
+                 'of cloud_sql_proxy: \n{}').format(process.before))
+        except pexpect.exceptions.EOF:
+            raise DatabaseError(
+                ('Cloud SQL Proxy exited unexpectedly. Output of '
+                 'cloud_sql_proxy: \n{}').format(process.before))
+        finally:
+            process.kill(signal.SIGTERM)
+
+    def migrate_database(self,
+                         project_id: str,
+                         instance_name: str,
+                         cloud_sql_proxy_path: str = 'cloud_sql_proxy',
+                         region: str = 'us-west1'):
+        """Migrate to Cloud SQL database.
+
+        This function should be called after we do the following:
+            1. Generated the Django project source files.
+            2. Setup Django environment so that it is using configuration files
+               of the newly generated project.
+            3. Created the Cloud SQL instance and database user.
+
+        Args:
+            project_id: GCP project id.
+            instance_name: Name of the Cloud SQL instance where the database you
+                want to migrate is in.
+            cloud_sql_proxy_path: The command to run your cloud sql proxy.
+            region: Where the Cloud SQL instance is in.
+        """
+        with self.with_cloud_sql_proxy(project_id,
+                                       instance_name,
+                                       cloud_sql_proxy_path,
+                                       region):
+            # "makemigrations" will generate migration files based on
+            # definitions in models.py.
+            management.call_command(
+                'makemigrations', verbosity=0, interactive=False)
+
+            # "migrate" will modify cloud sql database.
+            management.call_command('migrate', verbosity=0, interactive=False)
+
+    def create_super_user(self,
+                          superuser_name: str,
+                          superuser_email: str,
+                          superuser_password: str,
+                          project_id: str,
+                          instance_name: str,
+                          cloud_sql_proxy_path: str = 'cloud_sql_proxy',
+                          region: str = 'us-west1'):
+        """Create a super user in the cloud sql database.
+
+        This function should be called after we did the following:
+            1. Generated the Django project source files.
+            2. Setup Django environment so that it is using configuration files
+               of the newly generated project.
+            3. Created the Cloud SQL instance and database user.
+            4. Migrated database. Otherwise the schema for superuser does not
+               exist.
+
+        Args:
+            superuser_name: Name of the super user you want to create.
+            superuser_email: Email of the super user you want to create.
+            superuser_password: Password of the super user you want to create.
+            project_id: GCP project id.
+            instance_name: The Cloud SQL instance name in which you want to
+                create the super user.
+            cloud_sql_proxy_path: The command to run your cloud sql proxy.
+            region: Where the Cloud SQL instance is in.
+        """
+
+        with self.with_cloud_sql_proxy(project_id,
+                                       instance_name,
+                                       cloud_sql_proxy_path,
+                                       region):
+            # This can only be imported after django.setup() is called
+            from django.contrib.auth.models import User
+            User.objects.create_superuser(
+                username=superuser_name, email=superuser_email,
+                password=superuser_password)

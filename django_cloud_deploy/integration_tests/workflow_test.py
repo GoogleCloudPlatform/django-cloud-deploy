@@ -22,6 +22,7 @@ import tempfile
 
 from django_cloud_deploy.integration_tests.lib import test_base
 from django_cloud_deploy.integration_tests.lib import utils
+from django_cloud_deploy.workflow import _database
 from django_cloud_deploy.workflow import _deploygke
 from django_cloud_deploy.workflow import _enable_service
 from django_cloud_deploy.workflow import _project
@@ -337,3 +338,90 @@ class StaticContentServeWorkflowIntegrationTest(
                 bucket_name, object_path)
             response = requests.get(object_url)
             self.assertIn('DJANGO', response.text)
+
+
+class DatabaseWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest):
+    """Integration test for django_cloud_deploy.workflow._database."""
+
+    def setUp(self):
+        super().setUp()
+        self.database_workflow = _database.DatabaseWorkflow(self.credentials)
+        self.sqladmin_service = discovery.build(
+            'sqladmin',
+            'v1beta4',
+            cache_discovery=False,
+            credentials=self.credentials)
+
+    @contextlib.contextmanager
+    def clean_up_sql_instance(self, instance_name):
+        try:
+            yield
+        finally:
+            request = self.sqladmin_service.instances().delete(
+                instance=instance_name, project=self.project_id)
+            request.execute()
+
+    @contextlib.contextmanager
+    def clean_up_database(self, instance_name, database_name):
+        try:
+            yield
+        finally:
+            request = self.sqladmin_service.databases().delete(
+                database=database_name,
+                instance=instance_name,
+                project=self.project_id)
+            request.execute()
+
+    def _list_instances(self):
+        request = self.sqladmin_service.instances().list(
+            project=self.project_id)
+        response = request.execute()
+        instances = [item['name'] for item in response['items']]
+        return instances
+
+    def _list_databases(self, instance_name):
+        request = self.sqladmin_service.databases().list(
+            project=self.project_id, instance=instance_name)
+        response = request.execute()
+        databases = [item['name'] for item in response['items']]
+        return databases
+
+    def test_create_and_setup_database(self):
+        """Test case for _database.DatabaseWorkflow.create_and_setup_database.
+
+        This test also tests _database.DatabaseWorkflow.migrate_database.
+        migrate_database is a part of create_and_setup_database.
+        """
+        with self.clean_up_sql_instance(self.instance_name):
+            with self.clean_up_database(self.instance_name, self.database_name):
+                superuser_name = 'admin'
+                superuser_email = 'admin@gmail.com'
+                superuser_password = 'fake_superuser_password'
+
+                self.database_workflow.create_and_setup_database(
+                    project_id=self.project_id,
+                    instance_name=self.instance_name,
+                    database_name=self.database_name,
+                    database_password=self.database_password,
+                    superuser_name=superuser_name,
+                    superuser_email=superuser_email,
+                    superuser_password=superuser_password)
+
+                # Assert Cloud SQL instance is created
+                instances = self._list_instances()
+                self.assertIn(self.instance_name, instances)
+
+                # Assert database is created
+                databases = self._list_databases(self.instance_name)
+                self.assertIn(self.database_name, databases)
+
+                with self.database_workflow.with_cloud_sql_proxy(
+                        self.project_id, self.instance_name):
+                    # # This can only be imported after django.setup() is called
+                    from django.contrib.auth.models import User
+
+                    # Assert superuser is created
+                    users = User.objects.filter(username=superuser_name)
+                    self.assertEqual(len(users), 1)
+                    user = users[0]
+                    self.assertTrue(user.is_superuser)
