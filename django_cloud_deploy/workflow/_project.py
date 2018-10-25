@@ -38,10 +38,11 @@ class ProjectWorkflow(object):
         self._project_client = project.ProjectClient.from_credentials(
             credentials)
 
-    def create_project(self,
-                       project_name: str,
-                       project_id: str,
-                       project_creation: CreationMode = CreationMode.CREATE):
+    def create_project(
+            self,
+            project_name: str,
+            project_id: str,
+            project_creation: CreationMode = CreationMode.CREATE_IF_NEEDED):
         """Create a GCP Project and set it to be the active project of gcloud.
 
         Args:

@@ -120,9 +120,11 @@ class ProjectClientTestCase(absltest.TestCase):
         check_call.assert_called_once_with(
             ['gcloud', 'config', 'set', 'project', 'fn123'])
 
-    def test_project_exists_does(self):
+    @mock.patch('subprocess.check_call')
+    def test_project_exists_does(self, check_call):
         self._project_client.create_and_set_project('p123', 'Friendly Name')
-        self.assertTrue(self._project_client.project_exists('p123'))
+        check_call.assert_called_once_with(
+            ['gcloud', 'config', 'set', 'project', 'p123'])
 
     def test_project_exists_doesnot(self):
         self.assertFalse(self._project_client.project_exists('p123'))

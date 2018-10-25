@@ -286,7 +286,9 @@ class ProjectWorkflowIntegrationTest(test_base.BaseTest):
         with self.assertRaisesRegex(_project.ProjectionCreationError,
                                     exception_regex):
             self._project_workflow.create_project(
-                self.project_name, self.project_id)
+                self.project_name,
+                self.project_id,
+                project_creation=_project.CreationMode.CREATE)
 
     def test_create_new_project_already_exist_create_if_needed(self):
         self._project_workflow.create_project(

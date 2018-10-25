@@ -25,9 +25,24 @@ from django_cloud_deploy.cli import prompt
 
 from google.auth import credentials
 
+_FAKE_PROJECT_RESPONSE = {
+    "projectNumber": "814717604088",
+    "projectId": "project-abc",
+    "lifecycleState": "ACTIVE",
+    "name": "Djangogke Project",
+    "createTime": "2018-09-25T00:18:30.394Z",
+    "parent": {
+        "type": "organization",
+        "id": "433637338589"
+    }
+}
+
 
 class GoogleCloudProjectNamePromptTest(absltest.TestCase):
     """Tests for prompt.GoogleCloudProjectNamePrompt."""
+
+    def setUp(self):
+        self.credentials = mock.Mock(credentials.Credentials, authSpec=True)
 
     def test_prompt(self):
         test_io = io.TestIO()
@@ -60,6 +75,21 @@ class GoogleCloudProjectNamePromptTest(absltest.TestCase):
     def test_validate_short(self):
         with self.assertRaisesRegex(ValueError, 'XXX'):
             prompt.GoogleCloudProjectNamePrompt.validate('XXX')
+
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'get_project', return_value=_FAKE_PROJECT_RESPONSE)
+    def test_prompt_use_existing_project(self, unused_mock):
+        test_io = io.TestIO()
+
+        args = {
+            'use_existing_project': True,
+            'project_id': 'project-abc'
+        }
+        name = prompt.GoogleCloudProjectNamePrompt.prompt(test_io,
+                                                          '[1/2]',
+                                                          args,
+                                                          self.credentials)
+        self.assertEqual(name, _FAKE_PROJECT_RESPONSE['name'])
 
 
 class DjangoProjectNamePromptTest(absltest.TestCase):

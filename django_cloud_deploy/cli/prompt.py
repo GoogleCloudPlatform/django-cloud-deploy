@@ -28,6 +28,7 @@ from google.auth import credentials
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cloudlib import auth
 from django_cloud_deploy.cloudlib import billing
+from django_cloud_deploy.cloudlib import project
 
 
 class Prompt(object):
@@ -123,6 +124,22 @@ class GoogleCloudProjectNamePrompt(NamePrompt):
     @classmethod
     def _default_name(cls, arguments: Dict[str, Any]):
         return 'Django Project'
+
+    @classmethod
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None) -> str:
+
+        if not arguments.get('use_existing_project', False):
+            return (
+                super().prompt(console, step_prompt, arguments, credentials))
+
+        project_id = arguments.get('project_id')
+        project_client = project.ProjectClient.from_credentials(credentials)
+        project_name = project_client.get_project(project_id)['name']
+        message = 'Project name found: {}'.format(project_name)
+        console.tell(('{} {}').format(step_prompt, message))
+        return project_name
 
     @staticmethod
     def validate(s, credentials: Optional[credentials.Credentials] = None):
@@ -280,7 +297,8 @@ class ProjectIdPrompt(Prompt):
             The value entered by the user.
         """
         default_project_id = cls._generate_default_project_id(
-            arguments.get('project_name'))
+            arguments.get('project_name', None)
+        )
         while True:
             console.tell(('{} Enter a Google Cloud Platform Project ID, '
                           'or leave blank to use').format(step_prompt))

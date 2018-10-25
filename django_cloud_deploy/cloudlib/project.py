@@ -18,6 +18,7 @@ See https://gcloud-python.readthedocs.io/en/latest/resource-manager/api.html
 """
 
 import subprocess
+from typing import Any, Dict
 
 import backoff
 
@@ -51,15 +52,22 @@ class ProjectClient(object):
 
     def project_exists(self, project_id: str) -> bool:
         """Returns True if the given project id exists."""
-        request = self._cloudresourcemanager_service.projects().get(
-            projectId=project_id)
         try:
-            request.execute()
+            self.get_project(project_id)
         except errors.HttpError as e:
             if e.resp.status in [403, 404]:
                 return False
             raise
         return True
+
+    def get_project(self, project_id: str) -> Dict[str, Any]:
+        """Returns True if the given project id exists."""
+        request = self._cloudresourcemanager_service.projects().get(
+            projectId=project_id)
+        try:
+            return request.execute()
+        except errors.HttpError as e:
+            raise e
 
     def _is_google_account(self) -> bool:
         """Returns whether the user logged in with a google.com account."""

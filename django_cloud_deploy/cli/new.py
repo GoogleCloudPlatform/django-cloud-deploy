@@ -68,11 +68,18 @@ def add_arguments(parser):
         dest='django_superuser_email',
         help='The e-mail address of the Django superuser.')
 
+    parser.add_argument(
+        '--use-existing-project',
+        dest='use_existing_project',
+        action='store_true',
+        help='Flag to indicate using a new or existing project.')
+
 
 def main(args: argparse.Namespace):
     prompt_order = [
-        'project_name',
+        'credentials',
         'project_id',
+        'project_name',
         'database_password',
         'django_directory_path',
         'django_project_name',
@@ -80,12 +87,12 @@ def main(args: argparse.Namespace):
         'django_superuser_login',
         'django_superuser_password',
         'django_superuser_email',
-        'credentials',
     ]
 
     required_parameters_to_prompt = {
-        'project_name': prompt.GoogleCloudProjectNamePrompt,
+        'credentials': prompt.CredentialsPrompt,
         'project_id': prompt.ProjectIdPrompt,
+        'project_name': prompt.GoogleCloudProjectNamePrompt,
         'database_password': prompt.PostgresPasswordPrompt,
         'django_directory_path': prompt.DjangoFilesystemPath,
         'django_project_name': prompt.DjangoProjectNamePrompt,
@@ -93,7 +100,6 @@ def main(args: argparse.Namespace):
         'django_superuser_login': prompt.DjangoSuperuserLoginPrompt,
         'django_superuser_password': prompt.DjangoSuperuserPasswordPrompt,
         'django_superuser_email': prompt.DjangoSuperuserEmailPrompt,
-        'credentials': prompt.CredentialsPrompt()
     }
 
     # Parameters that were *not* provided as command flags.
@@ -115,6 +121,13 @@ def main(args: argparse.Namespace):
         else:
             remaining_parameters_to_prompt[parameter_name] = prompter
 
+    use_existing_project = getattr(args, 'use_existing_project', False)
+
+    if use_existing_project:
+        actual_parameters['use_existing_project'] = use_existing_project
+        remaining_parameters_to_prompt['project_name'] = (
+            prompt.GoogleCloudProjectNamePrompt)
+
     if remaining_parameters_to_prompt:
         console = io.ConsoleIO()
 
@@ -125,6 +138,7 @@ def main(args: argparse.Namespace):
         parameter_and_prompt = sorted(
             remaining_parameters_to_prompt.items(),
             key=lambda i: prompt_order.index(i[0]))
+
         for step, (parameter_name, prompter) in enumerate(parameter_and_prompt):
             step = '<b>[{}/{}]</b>'.format(step + 1, num_steps)
             actual_parameters[parameter_name] = prompter.prompt(
