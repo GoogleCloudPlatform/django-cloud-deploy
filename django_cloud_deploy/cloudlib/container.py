@@ -222,7 +222,6 @@ class ContainerClient(object):
         self._temp_ca_files.append(ca_file_path)
         with open(ca_file_path, 'wb') as ca_file:
             ca_file.write(base64.standard_b64decode(ca))
-        print(self._temp_ca_files)
         configuration = kubernetes.client.Configuration()
         configuration.api_key['authorization'] = credentials.token
         configuration.api_key_prefix['authorization'] = 'Bearer'

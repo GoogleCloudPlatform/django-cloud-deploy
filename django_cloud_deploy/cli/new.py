@@ -17,8 +17,10 @@
 import argparse
 import sys
 
-from django_cloud_deploy.cli import prompt
+from django_cloud_deploy import tool_requirements
 from django_cloud_deploy.cli import io
+from django_cloud_deploy.cli import prompt
+import django_cloud_deploy.workflow as workflow
 
 
 def add_arguments(parser):
@@ -26,6 +28,7 @@ def add_arguments(parser):
         '--project-name',
         dest='project_name',
         help='The name of the Google Cloud Platform project. Can be changed.')
+
     parser.add_argument(
         '--project-id',
         dest='project_id',
@@ -76,6 +79,10 @@ def add_arguments(parser):
 
 
 def main(args: argparse.Namespace):
+
+    console = io.ConsoleIO()
+    tool_requirements.check_and_handle_requirements(console)
+
     prompt_order = [
         'credentials',
         'project_id',
@@ -101,7 +108,7 @@ def main(args: argparse.Namespace):
         'django_app_name': prompt.DjangoAppNamePrompt,
         'django_superuser_login': prompt.DjangoSuperuserLoginPrompt,
         'django_superuser_password': prompt.DjangoSuperuserPasswordPrompt,
-        'django_superuser_email': prompt.DjangoSuperuserEmailPrompt,
+        'django_superuser_email': prompt.DjangoSuperuserEmailPrompt
     }
 
     # Parameters that were *not* provided as command flags.
@@ -131,7 +138,6 @@ def main(args: argparse.Namespace):
             prompt.GoogleCloudProjectNamePrompt)
 
     if remaining_parameters_to_prompt:
-        console = io.ConsoleIO()
 
         num_steps = len(remaining_parameters_to_prompt)
         console.tell(
@@ -144,9 +150,22 @@ def main(args: argparse.Namespace):
         for step, (parameter_name, prompter) in enumerate(parameter_and_prompt):
             step = '<b>[{}/{}]</b>'.format(step + 1, num_steps)
             actual_parameters[parameter_name] = prompter.prompt(
-                console, step, actual_parameters)
+                console, step, actual_parameters,
+                actual_parameters.get('credentials', None))
 
-    print(actual_parameters)
+    workflow_manager = workflow.WorkflowManager(
+        actual_parameters['credentials'])
+    workflow_manager.create_and_deploy_new_project(
+        actual_parameters['project_name'],
+        actual_parameters['project_id'],
+        actual_parameters['billing_account_name'],
+        actual_parameters['django_project_name'],
+        actual_parameters['django_app_name'],
+        actual_parameters['django_superuser_login'],
+        actual_parameters['django_superuser_email'],
+        actual_parameters['django_superuser_password'],
+        actual_parameters['django_directory_path'],
+        actual_parameters['database_password'])
 
 
 if __name__ == '__main__':

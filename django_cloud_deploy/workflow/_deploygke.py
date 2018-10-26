@@ -104,41 +104,31 @@ class DeploygkeWorkflow(object):
                 metadata={'name': secret_name})
             self._container_client.create_secret(secret_data, kube_config)
         self._container_client.create_deployment(deployment_data, kube_config)
-        self._wait_for_deployment_ready(kube_config, project_id, cluster_name,
-                                        app_name, zone)
+        self._wait_for_deployment_ready(kube_config, app_name)
         self._container_client.create_service(service_data, kube_config)
-        ingress_url = self._get_ingress_url(kube_config, project_id,
-                                            cluster_name, zone)
+        ingress_url = self._get_ingress_url(kube_config)
         admin_url = urllib.parse.urljoin(ingress_url, '/admin')
         return admin_url
 
     def _get_ingress_url(self,
-                         kube_config: kubernetes.client.Configuration,
-                         project_id: str,
-                         cluster_name: str,
-                         zone: str = 'us-west1-a') -> str:
+                         kube_config: kubernetes.client.Configuration) -> str:
         """Returns the URL that can be used to access the app.
 
         Args:
             kube_config: A kubernetes configuration which has access to the
                 given cluster.
-            project_id: GCP project id.
-            cluster_name: Name of the cluster to host the app.
-            zone: Name of the Google Compute Engine zone in which the cluster
-                resides.
 
         Returns:
             Url of the deployed Django app.
         """
 
-        kube_config = self._container_client.create_kubernetes_configuration(
-            self._credentials, project_id, cluster_name, zone)
         api_client = kubernetes.client.ApiClient(kube_config)
         api = kubernetes.client.CoreV1Api(api_client)
         return self._try_get_ingress_url(api)
 
     @backoff.on_predicate(backoff.constant, interval=0.5)
     def _try_get_ingress_url(self, api: kubernetes.client.CoreV1Api) -> str:
+        """Return Ingress url when service is ready."""
         items = api.list_service_for_all_namespaces().items
         for item in items:
             ingress = item.status.load_balancer.ingress
@@ -150,22 +140,14 @@ class DeploygkeWorkflow(object):
         # service is not ready yet.
         return ''
 
-    def _wait_for_deployment_ready(self,
-                                   kube_config: kubernetes.client.Configuration,
-                                   project_id: str,
-                                   cluster_name: str,
-                                   app_name: str,
-                                   zone: str = 'us-west1-a'):
+    def _wait_for_deployment_ready(
+            self, kube_config: kubernetes.client.Configuration, app_name: str):
         """Wait for the deployment of Django app to get ready.
 
         Args:
             kube_config: A kubernetes configuration which has access to the
                 given cluster.
-            project_id: GCP project id.
-            cluster_name: Name of the cluster to host the app.
             app_name: Name of the Django app.
-            zone: Name of the Google Compute Engine zone in which the cluster
-                resides.
         """
 
         api_client = kubernetes.client.ApiClient(kube_config)
@@ -177,6 +159,7 @@ class DeploygkeWorkflow(object):
     def _try_get_ready_replicas(self,
                                 api: kubernetes.client.ExtensionsV1beta1Api,
                                 label_selector: str) -> int:
+        """Return ready replicas when deployment is ready."""
         items = api.list_deployment_for_all_namespaces(
             label_selector=label_selector).items
         for item in items:
