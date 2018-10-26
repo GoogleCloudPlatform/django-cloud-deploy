@@ -130,8 +130,9 @@ class Gcloud(Requirement):
             MissingRequirementError: If the requirement is not found.
         """
         if not shutil.which('gcloud'):
-            download_link = 'https://cloud.google.com/sdk/install'
-            msg = ('Please download Google Cloud SDK'
+            download_link = (
+                'https://cloud.google.com/sdk/docs/downloads-interactive')
+            msg = ('Please download Google Cloud SDK '
                    'from {}'.format(download_link))
             raise MissingRequirementError(cls.NAME, msg)
 
