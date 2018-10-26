@@ -17,10 +17,8 @@ import subprocess
 import google.auth
 from google.auth import credentials
 
-from django_cloud_deploy.utils import base_client
 
-
-class AuthClient(base_client.BaseClient):
+class AuthClient(object):
     """A class for GCP authentication."""
 
     def gcloud_login(self):
@@ -30,7 +28,8 @@ class AuthClient(base_client.BaseClient):
         must have the current account active via the Gcloud CLI.
         """
         command = ['gcloud', 'auth', 'login', '-q']
-        subprocess.check_call(command, stdout=self._stdout, stderr=self._stderr)
+        subprocess.check_call(
+            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def create_default_credentials(self) -> credentials.Credentials:
         """Retrieves google application default credentials for authentication.
@@ -42,7 +41,8 @@ class AuthClient(base_client.BaseClient):
             Credentials Object
         """
         command = ['gcloud', 'auth', 'application-default', 'login', '-q']
-        subprocess.check_call(command, stdout=self._stdout, stderr=self._stderr)
+        subprocess.check_call(
+            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         creds, _ = google.auth.default()
         return creds
 
@@ -53,4 +53,5 @@ class AuthClient(base_client.BaseClient):
         https://cloud.google.com/container-registry/docs/advanced-authentication
         """
         command = ['gcloud', 'auth', 'configure-docker', '-q']
-        subprocess.check_call(command, stdout=self._stdout, stderr=self._stderr)
+        subprocess.check_call(
+            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

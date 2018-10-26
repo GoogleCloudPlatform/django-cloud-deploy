@@ -50,10 +50,6 @@ class ToolRequirementsNegativeTest(absltest.TestCase):
         gcloud = tool_requirements.Gcloud
         self.requirement_missing(gcloud)
 
-    def test_kubectl_missing(self):
-        kubectl = tool_requirements.Kubectl
-        self.requirement_missing(kubectl)
-
     def test_cloud_sql_proxy_missing(self):
         cloud_sql_proxy = tool_requirements.CloudSqlProxy
         self.test_console.answers.append('n')
@@ -80,10 +76,6 @@ class ToolRequirementsPositiveTest(absltest.TestCase):
     def test_gcloud(self):
         Gcloud = tool_requirements.Gcloud
         self.has_requirement(Gcloud)
-
-    def test_kubectl(self):
-        kubectl = tool_requirements.Kubectl
-        self.has_requirement(kubectl)
 
     def test_cloud_sql_proxy(self):
         cloud_sql_proxy = tool_requirements.CloudSqlProxy

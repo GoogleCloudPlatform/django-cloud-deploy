@@ -166,21 +166,6 @@ class Docker(Requirement):
             raise MissingRequirementError(cls.NAME, msg)
 
 
-class Kubectl(Requirement):
-    NAME = 'Kubectl'
-
-    @classmethod
-    def check(cls):
-        """Checks if Kubectl is installed.
-
-        Raises:
-            MissingRequirementError: If the requirement is not found.
-        """
-        if not shutil.which('kubectl'):
-            msg = 'To install kubectl run: gcloud components install kubectl'
-            raise MissingRequirementError(cls.NAME, msg)
-
-
 class CloudSqlProxy(Requirement):
     NAME = 'Cloud Sql Proxy'
 
@@ -255,7 +240,6 @@ class CloudSqlProxy(Requirement):
 _REQUIREMENTS = [
     Gcloud,
     Docker,
-    Kubectl,
     CloudSqlProxy
 ]
 
