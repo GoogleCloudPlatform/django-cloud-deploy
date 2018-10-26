@@ -106,7 +106,7 @@ class BillingClient(object):
         all_billing_accounts = response['billingAccounts']
         if only_open_accounts:
             return [account for account in all_billing_accounts
-                    if account['open']]
+                    if account.get('open', False)]
         else:
             return all_billing_accounts
 
