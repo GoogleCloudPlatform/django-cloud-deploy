@@ -17,12 +17,12 @@ import sys
 import warnings
 
 from django_cloud_deploy.cli import new
+from django_cloud_deploy.cli import update
 
 
-def _update():
+def _update(args):
     """Update the Django project on GKE."""
-    # TODO: Make update work
-    pass
+    update.main(args)
 
 
 def _new(args):
@@ -49,6 +49,7 @@ def main():
         description=('Deploys an Django project, previously created with '
                      'django_cloud_deploy, on Google Kubernetes Engine.'))
     update_parser.set_defaults(func=_update)
+    update.add_arguments(update_parser)
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)

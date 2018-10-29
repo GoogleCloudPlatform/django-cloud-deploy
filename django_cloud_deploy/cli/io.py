@@ -78,7 +78,7 @@ class ConsoleIO(IO):
             file=sys.stderr)
 
     def ask(self, prompt=None):
-        return input(prompt)
+        return input(self._replace_html_tags(prompt, sys.stdout.fileno()))
 
     def getpass(self, prompt=None):
         "Prompt the user for a password and return the result."

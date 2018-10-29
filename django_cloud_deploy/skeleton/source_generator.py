@@ -277,11 +277,11 @@ class DjangoSourceFileGenerator(_FileGenerator):
         for app_name in app_names:
             self.django_file_generator.generate_app_files(app_name, destination)
 
-    def _setup_django_environment(self,
-                                  destination: str,
-                                  project_name: str,
-                                  database_user: str,
-                                  database_password: str):
+    def setup_django_environment(self,
+                                 destination: str,
+                                 project_name: str,
+                                 database_user: str,
+                                 database_password: str):
         """Setup Django environment.
 
         This makes Django command calls afterwards affect the newly generated
@@ -341,5 +341,5 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.dependency_file_generator.generate(destination)
         self.yaml_file_generator.generate(destination, project_name, project_id,
                                           instance_name, region, image_tag)
-        self._setup_django_environment(
+        self.setup_django_environment(
             destination, project_name, database_user, database_password)

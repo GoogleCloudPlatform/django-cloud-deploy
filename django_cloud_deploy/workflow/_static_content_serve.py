@@ -47,3 +47,17 @@ class StaticContentServeWorkflow(object):
         self._static_content_serve_client.make_bucket_public(bucket_name)
         self._static_content_serve_client.upload_static_content(
             bucket_name, static_content_dir)
+
+    def update_static_content(self,
+                              bucket_name: str,
+                              static_content_dir: str):
+        """Update GCS bucket after user modified the Django app.
+
+        Args:
+            bucket_name: Name of the bucket to create and serve static content.
+            static_content_dir: Absolute path of the directory for static
+                content.
+        """
+        self._static_content_serve_client.collect_static_content()
+        self._static_content_serve_client.upload_static_content(
+            bucket_name, static_content_dir)

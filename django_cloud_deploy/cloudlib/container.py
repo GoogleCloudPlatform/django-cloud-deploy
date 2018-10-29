@@ -273,6 +273,41 @@ class ContainerClient(object):
         api_instance.create_namespaced_deployment(
             namespace=namespace, body=deployment_data)
 
+    def update_deployment(
+            self,
+            deployment_data: kubernetes.client.V1Deployment,
+            configuration: (
+                kubernetes.client.configuration.Configuration) = None,
+            namespace: str = 'default'):
+        """Update a Kubernetes Deployment.
+
+        A Kubernetes Deployment describes a desired state of your application.
+        For example, it manages creation of Pods by means of ReplicaSets, and
+        defines what images to use for the containers.
+
+        Args:
+            deployment_data: Definition of the deployment.
+            configuration: A Kubernetes configuration which has access to the
+                cluster for the deployment. If not set, it will use the default
+                kubernetes configuration.
+            namespace: Namespace of the deployment.
+        """
+        api_client = kubernetes.client.ApiClient(configuration)
+        api_instance = kubernetes.client.ExtensionsV1beta1Api(api_client)
+
+        deployment_name = deployment_data['metadata']['name']
+
+        # TODO: Find a better way to do update.
+        # Right now we scale the replicas to 0 and then scale it back. This
+        # will trigger an image update.
+        replicas = deployment_data['spec']['replicas']
+        deployment_data['spec']['replicas'] = 0
+        api_instance.patch_namespaced_deployment(
+            name=deployment_name, namespace=namespace, body=deployment_data)
+        deployment_data['spec']['replicas'] = replicas
+        api_instance.patch_namespaced_deployment(
+            name=deployment_name, namespace=namespace, body=deployment_data)
+
     def create_service(
             self,
             service_data: kubernetes.client.V1Service,

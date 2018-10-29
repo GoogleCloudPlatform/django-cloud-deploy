@@ -185,6 +185,12 @@ class DjangoProjectNamePrompt(NamePrompt):
                               'must be a valid Python identifier').format(s))
 
 
+class DjangoProjectNameUpdatePrompt(DjangoProjectNamePrompt):
+    """Allow the user to enter a Django project name."""
+
+    _PROMPT = 'Enter the Django project name you want to update.'
+
+
 class DjangoAppNamePrompt(NamePrompt):
     """Allow the user to enter a Django app name."""
 
@@ -330,6 +336,39 @@ class ProjectIdPrompt(Prompt):
                               'lowercase letters, digits or hyphens').format(s))
 
 
+class ProjectIdUpdatePrompt(ProjectIdPrompt):
+    """Allow the user to enter a GCP project id."""
+
+    @classmethod
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None) -> str:
+        """Prompt the user to a Google Cloud Platform project id.
+
+        Args:
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
+
+        Returns:
+            The value entered by the user.
+        """
+        while True:
+            console.tell(
+                ('{} Enter the Google Cloud Platform Project ID for your '
+                 'Django project to update:').format(step_prompt))
+            project_id = console.ask('[{}]: '.format('django-<random_digits>'))
+            try:
+                cls.validate(project_id)
+            except ValueError as e:
+                console.error(e)
+                continue
+            return project_id
+
+
 class DjangoFilesystemPath(Prompt):
     """Allow the user to file system path for their project."""
 
@@ -384,6 +423,65 @@ class DjangoFilesystemPath(Prompt):
                 if not cls._prompt_replace(console, directory):
                     continue
             return directory
+
+
+class DjangoFilesystemPathUpdate(Prompt):
+    """Allow the user to file system path for their project."""
+
+    @classmethod
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None) -> str:
+        """Prompt the user to enter a file system path for their project.
+
+        Args:
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
+
+        Returns:
+            The value entered by the user.
+        """
+        home_dir = os.path.expanduser('~')
+        default_directory = os.path.join(
+            home_dir,
+            arguments.get('project_name', 'django-project').lower().replace(
+                ' ', '-'))
+
+        while True:
+            console.tell(
+                ('{} Enter the directory of the Django project you want to '
+                 'update:'.format(step_prompt)))
+            directory = console.ask('[{}]: '.format(default_directory))
+            if not directory.strip():
+                directory = default_directory
+            directory = os.path.abspath(os.path.expanduser(directory))
+
+            try:
+                cls.validate(directory)
+            except ValueError as e:
+                console.error(e)
+                continue
+
+            return directory
+
+    @staticmethod
+    def validate(s, credentials: Optional[credentials.Credentials] = None):
+        """Validates that a string is a valid directory path.
+
+        Args:
+            s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
+
+        Raises:
+            ValueError: if the input string is not valid.
+        """
+        if not os.path.exists(s):
+            raise ValueError(('Path ["{}"] does not exist.').format(s))
 
 
 class PasswordPrompt(Prompt):
@@ -459,6 +557,35 @@ class PostgresPasswordPrompt(PasswordPrompt):
     @classmethod
     def _get_prompt(cls, arguments: Dict[str, Any]) -> str:
         return 'Enter a password for the default database user "postgres"'
+
+
+class PostgresPasswordUpdatePrompt(PasswordPrompt):
+    """Allow the user to enter a Django Postgres password."""
+
+    @classmethod
+    def _get_prompt(cls, arguments: Dict[str, Any]) -> str:
+        return 'Enter the password for the default database user "postgres"'
+
+    @classmethod
+    def prompt(
+            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
+            credentials: Optional[credentials.Credentials] = None) -> str:
+        """Prompt the user to enter a password.
+
+        Args:
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
+
+        Returns:
+            The value entered by the user.
+        """
+        console_prompt = cls._get_prompt(arguments)
+        console.tell(('{} {}').format(step_prompt, console_prompt))
+        return console.getpass('Password: ')
 
 
 class DjangoSuperuserPasswordPrompt(PasswordPrompt):

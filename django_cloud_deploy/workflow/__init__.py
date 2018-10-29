@@ -33,6 +33,7 @@ class WorkflowManager(object):
     """A class to control workflow for deploying Django apps on GKE."""
 
     _TOTAL_NEW_STEPS = 8
+    _TOTAL_UPDATE_STEPS = 3
 
     def __init__(self, credentials: credentials.Credentials):
         self._source_generator = source_generator.DjangoSourceFileGenerator()
@@ -106,15 +107,21 @@ class WorkflowManager(object):
         static_content_dir = os.path.join(django_directory_path, 'static')
 
         # TODO: Use progress bar to show status info instead of print statement
-        print(self._generate_section_header(1, 'Create GCP Project'))
+        print(
+            self._generate_section_header(
+                1, 'Create GCP Project', self._TOTAL_NEW_STEPS))
         self._project_workflow.create_project(
             project_name, project_id)
 
-        print(self._generate_section_header(2, 'Billing Set Up'))
+        print(
+            self._generate_section_header(
+                2, 'Billing Set Up', self._TOTAL_NEW_STEPS))
         self._billing_client.enable_project_billing(
             project_id, billing_account_name)
 
-        print(self._generate_section_header(3, 'Django Source Generation'))
+        print(
+            self._generate_section_header(
+                3, 'Django Source Generation', self._TOTAL_NEW_STEPS))
         self._source_generator.generate_all_source_files(
             project_id=project_id,
             project_name=django_project_name,
@@ -123,24 +130,34 @@ class WorkflowManager(object):
             database_user=database_username,
             database_password=database_password)
 
-        print(self._generate_section_header(4, 'Database Set Up'))
+        print(
+            self._generate_section_header(
+                4, 'Database Set Up (Take Up To 5 Minutes)',
+                self._TOTAL_NEW_STEPS))
         self._database_workflow.create_and_setup_database(
             project_id, database_instance_name, database_name,
             database_password, django_superuser_name, django_superuser_email,
             django_superuser_password, database_username,
             cloud_sql_proxy_path, region)
 
-        print(self._generate_section_header(5, 'Enable Service\'s'))
+        print(
+            self._generate_section_header(
+                5, 'Enable Services', self._TOTAL_NEW_STEPS))
         required_services = self._enable_service_workflow.load_services()
         self._enable_service_workflow.enable_required_services(
             project_id, required_services)
 
-        print(self._generate_section_header(6, 'Static Content Serve Set Up'))
+        print(
+            self._generate_section_header(
+                6, 'Static Content Serve Set Up (Take Up To 5 Minutes)',
+                self._TOTAL_NEW_STEPS))
         self._statitc_content_workflow.serve_static_content(
             project_id, cloud_storage_bucket_name, static_content_dir)
 
-        print(self._generate_section_header(
-            7, 'Create Service Account Necessary For Deployment'))
+        print(
+            self._generate_section_header(
+                7, 'Create Service Account Necessary For Deployment',
+                self._TOTAL_NEW_STEPS))
         self._service_account_workflow.create_key(
             project_id, service_account_id, service_account_name, roles,
             service_account_key_path)
@@ -158,13 +175,74 @@ class WorkflowManager(object):
             }
         }
 
-        print(self._generate_section_header(8, 'Deployment'))
+        print(
+            self._generate_section_header(
+                8, 'Deployment (Take Up To 20 Minutes)', self._TOTAL_NEW_STEPS))
         admin_url = self._deploygke_workflow.deploy_new_app_sync(
             project_id, cluster_name, django_directory_path,
             django_project_name, image_name, secrets)
+        print('Your app is running at {}.'.format(admin_url))
         if open_browser:
             webbrowser.open(admin_url)
 
-    def _generate_section_header(self, step: str, section_name: str):
+    def update_project(self,
+                       project_id: str,
+                       django_project_name: str,
+                       django_directory_path: str,
+                       database_password: str,
+                       cloud_sql_proxy_path: str = 'cloud_sql_proxy',
+                       region: str = 'us-west1',
+                       open_browser: bool = True):
+        """Workflow of updating a deployed Django app on GKE.
+
+        Args:
+            project_id: The unique id to use when creating the Google Cloud
+                Platform project.
+            django_project_name: The name of the Django project e.g. "mysite".
+            django_directory_path: The location where the generated Django
+                project code should be stored.
+            database_password: The password for the default database user.
+            cloud_sql_proxy_path: The command to run your cloud sql proxy.
+            region: Where the service is hosted.
+            open_browser: Whether we open the browser to show the deployed app
+                at the end.
+        """
+
+        # A bunch of variables necessary for deployment we hardcode for user.
+        database_username = 'postgres'
+        cloud_storage_bucket_name = project_id
+        cluster_name = django_project_name
+        database_instance_name = django_project_name + '-instance'
+        image_name = '/'.join(['gcr.io', project_id, django_project_name])
+        static_content_dir = os.path.join(django_directory_path, 'static')
+
+        self._source_generator.setup_django_environment(
+            django_directory_path, django_project_name, database_username,
+            database_password)
+
+        print(
+            self._generate_section_header(
+                1, 'Database Migration', self._TOTAL_UPDATE_STEPS))
+        self._database_workflow.migrate_database(
+            project_id, database_instance_name, cloud_sql_proxy_path, region)
+
+        print(
+            self._generate_section_header(
+                2, 'Static Content Update', self._TOTAL_UPDATE_STEPS))
+        self._statitc_content_workflow.update_static_content(
+            cloud_storage_bucket_name, static_content_dir)
+
+        print(
+            self._generate_section_header(
+                3, 'Update Deployment', self._TOTAL_UPDATE_STEPS))
+        admin_url = self._deploygke_workflow.update_app_sync(
+            project_id, cluster_name, django_directory_path,
+            django_project_name, image_name)
+        print('Your app is running at {}.'.format(admin_url))
+        if open_browser:
+            webbrowser.open(admin_url)
+
+    def _generate_section_header(self, step: str, section_name: str,
+                                 total_steps: int):
         return '\n**Step {} of {}: {}**\n'.format(
-            step, self._TOTAL_NEW_STEPS, section_name)
+            step, total_steps, section_name)

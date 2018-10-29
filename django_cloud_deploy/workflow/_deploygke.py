@@ -110,6 +110,52 @@ class DeploygkeWorkflow(object):
         admin_url = urllib.parse.urljoin(ingress_url, '/admin')
         return admin_url
 
+    def update_app_sync(self,
+                        project_id: str,
+                        cluster_name: str,
+                        app_directory: str,
+                        app_name: str,
+                        image_name: str,
+                        zone: str = 'us-west1-a') -> str:
+        """Update an existing Django app on gke.
+
+        Args:
+            project_id: GCP project id.
+            cluster_name: Name of the cluster to host the app.
+            app_directory: Absolute path of the directory of your Django app.
+            app_name: Name of the Django app.
+            image_name: Tag of the docker image of the app.
+            zone: Name of the Google Compute Engine zone in which the cluster
+                resides.
+
+        Raises:
+            DeployNewAppError: If unable to deploy the app.
+
+        Returns:
+            The admin site url of the deployed Django app.
+        """
+        self._container_client.build_docker_image(image_name, app_directory)
+        self._container_client.push_docker_image(image_name)
+        yaml_file_path = os.path.join(app_directory, app_name + '.yaml')
+        with open(yaml_file_path) as yaml_file:
+            for data in yaml.load_all(yaml_file):
+                if data['kind'] == 'Deployment':
+                    deployment_data = data
+
+        # This happens if the generated Django app does not have a valid yaml
+        # file.
+        if not deployment_data:
+            raise DeployNewAppError(
+                ('Invalid kubernetes configuration file for Django app '
+                 '"{}" in "{}"').format(app_name, app_directory))
+        kube_config = self._container_client.create_kubernetes_configuration(
+            self._credentials, project_id, cluster_name, zone)
+        self._container_client.update_deployment(deployment_data, kube_config)
+        self._wait_for_deployment_ready(kube_config, app_name)
+        ingress_url = self._get_ingress_url(kube_config)
+        admin_url = urllib.parse.urljoin(ingress_url, '/admin')
+        return admin_url
+
     def _get_ingress_url(self,
                          kube_config: kubernetes.client.Configuration) -> str:
         """Returns the URL that can be used to access the app.
