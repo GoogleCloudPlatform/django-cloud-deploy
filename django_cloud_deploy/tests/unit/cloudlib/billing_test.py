@@ -17,7 +17,7 @@
 from absl.testing import absltest
 
 from django_cloud_deploy.cloudlib import billing
-from django_cloud_deploy.cloudlib.tests.lib import http_fake
+from django_cloud_deploy.tests.unit.cloudlib.lib import http_fake
 
 PROJECT_ID = 'fake_project_id'
 BILLING_ACCOUNT_NAME = 'fake_billing_account'

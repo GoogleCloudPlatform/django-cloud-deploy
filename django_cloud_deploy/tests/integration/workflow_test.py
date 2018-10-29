@@ -20,8 +20,8 @@ import os
 import subprocess
 import tempfile
 
-from django_cloud_deploy.integration_tests.lib import test_base
-from django_cloud_deploy.integration_tests.lib import utils
+from django_cloud_deploy.tests.lib import test_base
+from django_cloud_deploy.tests.lib import utils
 from django_cloud_deploy.workflow import _database
 from django_cloud_deploy.workflow import _deploygke
 from django_cloud_deploy.workflow import _enable_service

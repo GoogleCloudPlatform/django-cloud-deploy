@@ -16,7 +16,7 @@
 from absl.testing import absltest
 
 from django_cloud_deploy.cloudlib import enable_service
-from django_cloud_deploy.cloudlib.tests.lib import http_fake
+from django_cloud_deploy.tests.unit.cloudlib.lib import http_fake
 
 PROJECT_ID = 'fake_project_id'
 SERVICE = 'fake_service'

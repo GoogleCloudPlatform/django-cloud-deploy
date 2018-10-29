@@ -44,7 +44,7 @@ def unit_test(session, python_version):
     # Run unit tests against all supported versions of Python.
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('py.test', '--ignore=integration_tests')
+    session.run('py.test', '--ignore=tests/integration')
 
 
 @nox.session
@@ -62,4 +62,4 @@ def integration_test(session, python_version):
 
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('py.test', 'integration_tests', '--forked')
+    session.run('py.test', 'tests/integration', '--forked')

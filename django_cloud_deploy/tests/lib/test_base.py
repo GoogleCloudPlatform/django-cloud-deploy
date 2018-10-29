@@ -20,8 +20,8 @@ import yaml
 from absl.testing import absltest
 from google.oauth2 import service_account
 
-import django_cloud_deploy.integration_tests
-from django_cloud_deploy.integration_tests.lib import utils
+import django_cloud_deploy.tests
+from django_cloud_deploy.tests.lib import utils
 from django_cloud_deploy.skeleton import source_generator
 
 
@@ -29,8 +29,9 @@ def _load_test_config():
     """Loads information of the pre-configured gcp project."""
 
     dirname, _ = os.path.split(
-        os.path.abspath(django_cloud_deploy.integration_tests.__file__))
-    config_path = os.path.join(dirname, 'data', 'integration_test_config.yaml')
+        os.path.abspath(django_cloud_deploy.tests.__file__))
+    config_path = os.path.join(
+        dirname, 'integration', 'data', 'integration_test_config.yaml')
     with open(config_path) as config_file:
         config_file_content = config_file.read()
     return yaml.load(config_file_content)

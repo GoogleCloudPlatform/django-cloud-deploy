@@ -20,7 +20,7 @@ from unittest import mock
 from absl.testing import absltest
 
 from django_cloud_deploy.cloudlib import container
-from django_cloud_deploy.cloudlib.tests.lib import http_fake
+from django_cloud_deploy.tests.unit.cloudlib.lib import http_fake
 
 PROJECT_ID = 'fake_project_id'
 CLUSTER_NAME = 'fake_cluster'
