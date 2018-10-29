@@ -184,7 +184,10 @@ class DatabaseClient(object):
                              port: int = 5432):
         """A context manager to run and kill cloud sql proxy subprocesses.
 
-        cloud sql proxy is used to
+        Used to provides secure access to your Cloud SQL Second Generation
+        instances without having to whitelist IP addresses or configure SSL.
+        For more information:
+        https://cloud.google.com/sql/docs/postgres/sql-proxy
 
         Args:
             project_id: GCP project id.
