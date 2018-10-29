@@ -116,8 +116,9 @@ class WorkflowManager(object):
         print(
             self._generate_section_header(
                 2, 'Billing Set Up', self._TOTAL_NEW_STEPS))
-        self._billing_client.enable_project_billing(
-            project_id, billing_account_name)
+        if not self._billing_client.check_billing_enabled(project_id):
+            self._billing_client.enable_project_billing(
+                project_id, billing_account_name)
 
         print(
             self._generate_section_header(
