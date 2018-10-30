@@ -14,7 +14,6 @@
 
 """Integration tests for module django_cloud_deploy.workflow."""
 
-import contextlib
 import json
 import os
 import subprocess
@@ -33,7 +32,7 @@ from googleapiclient import errors
 import requests
 
 
-class EnableServiceWorkflowIntegrationTest(test_base.BaseTest):
+class EnableServiceWorkflowIntegrationTest(test_base.ResourceCleanUpTest):
     """Integration test for django_cloud_deploy.workflow._enable_service."""
 
     # Google drive api is not already enabled on the GCP project for integration
@@ -54,18 +53,6 @@ class EnableServiceWorkflowIntegrationTest(test_base.BaseTest):
         response = request.execute()
         return [service['config']['name'] for service in response['services']]
 
-    @contextlib.contextmanager
-    def disable_services(self, services):
-        try:
-            yield
-        finally:
-            for service in services:
-                service_name = '/'.join(
-                    ['projects', self.project_id, 'services', service['name']])
-                request = self.service_usage_service.services().disable(
-                    name=service_name, body={'disableDependentServices': False})
-                request.execute()
-
     def test_enable_services(self):
         with self.disable_services(self.SERVICES):
             self.enable_service_workflow.enable_required_services(
@@ -75,7 +62,8 @@ class EnableServiceWorkflowIntegrationTest(test_base.BaseTest):
                 self.assertIn(service['name'], enabled_services)
 
 
-class ServiceAccountKeyGenerationWorkflowIntegrationTest(test_base.BaseTest):
+class ServiceAccountKeyGenerationWorkflowIntegrationTest(
+        test_base.ResourceCleanUpTest):
     """Integration test for django_cloud_deploy.workflow._service_account."""
 
     ROLES = ('roles/cloudsql.client', 'roles/cloudsql.editor',
@@ -109,54 +97,6 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(test_base.BaseTest):
             resource=self.project_id)
         return request.execute()
 
-    @contextlib.contextmanager
-    def delete_service_account(self, project_id, service_account_email):
-        try:
-            yield
-        finally:
-            resource_name = 'projects/{}/serviceAccounts/{}'.format(
-                project_id, service_account_email)
-            request = self.iam_service.projects().serviceAccounts().delete(
-                name=resource_name)
-            request.execute()
-
-    @contextlib.contextmanager
-    def reset_iam_policy(self, member, roles):
-        """Remove bindings as specified by the args.
-
-        If we only delete the service account, the role bindings for that
-        service account still exist. So we need to also reset the iam policy.
-
-        Args:
-            member: str, the member to remove from the IAM policy. If should
-                have the following format:
-                "serviceAccount:{sa_id}@{project_id}.iam.gserviceaccount.com"
-            roles: str, the role the member should be removed from. Valid roles
-                can be found on
-                https://cloud.google.com/iam/docs/understanding-roles
-
-        Yields:
-            Nothing
-        """
-
-        try:
-            yield
-        finally:
-            policy = self._get_iam_policy()
-            for role in roles:
-                # Remove the given members for a role
-                for binding in policy['bindings']:
-                    if binding['role'] == role and member in binding['members']:
-                        binding['members'].remove(member)
-                        break
-
-            # Remove any empty bindings.
-            policy['bindings'] = [b for b in policy['bindings'] if b['members']]
-            body = {'policy': policy}
-            request = self.cloudresourcemanager_service.projects().setIamPolicy(
-                resource=self.project_id, body=body)
-            request.execute()
-
     def assert_valid_service_account_key(self, key_file_content):
         key = json.loads(key_file_content)
         for attributes in self.KEY_EXPECTED_ATTRIBUTES:
@@ -169,8 +109,7 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(test_base.BaseTest):
         service_account_email = '{}@{}.iam.gserviceaccount.com'.format(
             service_account_id, self.project_id)
         member = 'serviceAccount:{}'.format(service_account_email)
-        with self.delete_service_account(self.project_id,
-                                         service_account_email):
+        with self.delete_service_account(service_account_email):
             with self.reset_iam_policy(member, self.ROLES):
                 with tempfile.NamedTemporaryFile(mode='w+t') as key_file:
                     self.service_account_workflow.create_key(
@@ -193,36 +132,14 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(test_base.BaseTest):
                         self.assertTrue(find_role)
 
 
-class DeploygkeWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest):
+class DeploygkeWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest,
+                                       test_base.ResourceCleanUpTest):
     """Integration test for django_cloud_deploy.workflow._deploygke."""
 
     def setUp(self):
         super().setUp()
-        self.container_service = discovery.build(
-            'container', 'v1', credentials=self.credentials)
         self.deploygke_workflow = (_deploygke.DeploygkeWorkflow(
             self.credentials))
-
-    @contextlib.contextmanager
-    def clean_up_cluster(self, cluster_name):
-        try:
-            yield
-        finally:
-            request = self.container_service.projects().zones().clusters(
-            ).delete(
-                projectId=self.project_id,
-                zone=self.zone,
-                clusterId=cluster_name)
-            request.execute()
-
-    @contextlib.contextmanager
-    def clean_up_docker_image(self, image_name):
-        try:
-            yield
-        finally:
-            # TODO: Rewrite this subprocess call with library call.
-            subprocess.check_call(
-                ['gcloud', 'container', 'images', 'delete', image_name, '-q'])
 
     def test_deploy_new_app_sync(self):
         cluster_name = utils.get_resource_name(resource_type='cluster')
@@ -301,33 +218,13 @@ class ProjectWorkflowIntegrationTest(test_base.BaseTest):
 
 
 class StaticContentServeWorkflowIntegrationTest(
-        test_base.DjangoFileGeneratorTest):
+        test_base.DjangoFileGeneratorTest, test_base.ResourceCleanUpTest):
     """Integration test for django_gke.workflow._static_content_serve."""
 
     def setUp(self):
         super().setUp()
         self._static_content_serve_workflow = (
             _static_content_serve.StaticContentServeWorkflow(self.credentials))
-        self._storage_service = discovery.build(
-            'storage', 'v1', credentials=self.credentials)
-
-    def _delete_objects(self, bucket_name):
-        request = self._storage_service.objects().list(bucket=bucket_name)
-        response = request.execute()
-        object_names = [item['name'] for item in response['items']]
-        for object_name in object_names:
-            request = self._storage_service.objects().delete(
-                bucket=bucket_name, object=object_name)
-            request.execute()
-
-    @contextlib.contextmanager
-    def clean_up_bucket(self, bucket_name):
-        try:
-            yield
-        finally:
-            self._delete_objects(bucket_name)
-            request = self._storage_service.buckets().delete(bucket=bucket_name)
-            request.execute()
 
     def test_serve_static_content(self):
         bucket_name = utils.get_resource_name('bucket')
@@ -342,7 +239,8 @@ class StaticContentServeWorkflowIntegrationTest(
             self.assertIn('DJANGO', response.text)
 
 
-class DatabaseWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest):
+class DatabaseWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest,
+                                      test_base.ResourceCleanUpTest):
     """Integration test for django_cloud_deploy.workflow._database."""
 
     def setUp(self):
@@ -353,26 +251,6 @@ class DatabaseWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest):
             'v1beta4',
             cache_discovery=False,
             credentials=self.credentials)
-
-    @contextlib.contextmanager
-    def clean_up_sql_instance(self, instance_name):
-        try:
-            yield
-        finally:
-            request = self.sqladmin_service.instances().delete(
-                instance=instance_name, project=self.project_id)
-            request.execute()
-
-    @contextlib.contextmanager
-    def clean_up_database(self, instance_name, database_name):
-        try:
-            yield
-        finally:
-            request = self.sqladmin_service.databases().delete(
-                database=database_name,
-                instance=instance_name,
-                project=self.project_id)
-            request.execute()
 
     def _list_instances(self):
         request = self.sqladmin_service.instances().list(

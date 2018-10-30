@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
 import os
 import shutil
+import subprocess
 import tempfile
+from typing import Any, List, Dict
 import yaml
 
 from absl.testing import absltest
@@ -23,6 +26,8 @@ from google.oauth2 import service_account
 import django_cloud_deploy.tests
 from django_cloud_deploy.tests.lib import utils
 from django_cloud_deploy.skeleton import source_generator
+import googleapiclient
+from googleapiclient import discovery
 
 
 def _load_test_config():
@@ -100,3 +105,209 @@ class DjangoFileGeneratorTest(BaseTest):
 
     def tearDown(self):
         shutil.rmtree(self.project_dir)
+
+
+class ResourceCleanUpTest(BaseTest):
+    """Class for test cases which need resource cleaning up."""
+
+    @contextlib.contextmanager
+    def clean_up_cluster(self, cluster_name: str):
+        """A context manager to delete the given cluster at the end.
+
+        Args:
+            cluster_name: Name of the cluster to delete.
+
+        Yields:
+            None
+        """
+        try:
+            yield
+        finally:
+            container_service = discovery.build(
+                'container', 'v1', credentials=self.credentials)
+            request = container_service.projects().zones().clusters().delete(
+                projectId=self.project_id,
+                zone=self.zone,
+                clusterId=cluster_name)
+            request.execute()
+
+    def _delete_objects(self,
+                        bucket_name: str,
+                        storage_service: googleapiclient.discovery.Resource):
+        """Delete all objects in the given bucket.
+
+        Needed by clean_up_bucket.
+
+        Args:
+            bucket_name: Name of the cluster to delete.
+            storage_service: Google client to make api calls.
+        """
+        request = storage_service.objects().list(bucket=bucket_name)
+        response = request.execute()
+        object_names = [item['name'] for item in response['items']]
+        for object_name in object_names:
+            request = storage_service.objects().delete(
+                bucket=bucket_name, object=object_name)
+            request.execute()
+
+    @contextlib.contextmanager
+    def clean_up_bucket(self, bucket_name: str):
+        """A context manager to delete the given GCS bucket.
+
+        Args:
+            bucket_name: Name of the GCS bucket to delete.
+
+        Yields:
+            None
+        """
+        try:
+            yield
+        finally:
+            storage_service = discovery.build(
+                'storage', 'v1', credentials=self.credentials)
+            self._delete_objects(bucket_name, storage_service)
+            request = storage_service.buckets().delete(bucket=bucket_name)
+            request.execute()
+
+    @contextlib.contextmanager
+    def clean_up_docker_image(self, image_name: str):
+        """A context manager to delete the given docker image.
+
+        Args:
+            image_name: Name of the docker image to delete.
+
+        Yields:
+            None
+        """
+        try:
+            yield
+        finally:
+            # TODO: Rewrite this subprocess call with library call.
+            subprocess.check_call(
+                ['gcloud', 'container', 'images', 'delete', image_name, '-q'])
+
+    @contextlib.contextmanager
+    def disable_services(self, services: List[Dict[str, Any]]):
+        """A context manager to disable the given services.
+
+        Args:
+            services: List of the services to disable.
+
+        Yields:
+            None
+        """
+        try:
+            yield
+        finally:
+            service_usage_service = discovery.build(
+                'serviceusage', 'v1', credentials=self.credentials)
+            for service in services:
+                service_name = '/'.join(
+                    ['projects', self.project_id, 'services', service['name']])
+                request = service_usage_service.services().disable(
+                    name=service_name, body={'disableDependentServices': False})
+                request.execute()
+
+    @contextlib.contextmanager
+    def delete_service_account(self, service_account_email: str):
+        """A context manager to delete the given service account.
+
+        Args:
+            service_account_email: Email of the service account to delete.
+
+        Yields:
+            None
+        """
+        try:
+            yield
+        finally:
+            iam_service = discovery.build(
+                'iam', 'v1', credentials=self.credentials)
+            resource_name = 'projects/{}/serviceAccounts/{}'.format(
+                self.project_id, service_account_email)
+            request = iam_service.projects().serviceAccounts().delete(
+                name=resource_name)
+            request.execute()
+
+    @contextlib.contextmanager
+    def reset_iam_policy(self, member: str, roles: List[str]):
+        """Remove bindings as specified by the args.
+
+        If we only delete the service account, the role bindings for that
+        service account still exist. So we need to also reset the iam policy.
+
+        Args:
+            member: The member to remove from the IAM policy. If should
+                have the following format:
+                "serviceAccount:{sa_id}@{project_id}.iam.gserviceaccount.com"
+            roles: The roles the member should be removed from. Valid roles
+                can be found on
+                https://cloud.google.com/iam/docs/understanding-roles
+
+        Yields:
+            Nothing
+        """
+
+        try:
+            yield
+        finally:
+            cloudresourcemanager_service = discovery.build(
+                'cloudresourcemanager', 'v1', credentials=self.credentials)
+            request = cloudresourcemanager_service.projects().getIamPolicy(
+                resource=self.project_id)
+            policy = request.execute()
+            for role in roles:
+                # Remove the given members for a role
+                for binding in policy['bindings']:
+                    if binding['role'] == role and member in binding['members']:
+                        binding['members'].remove(member)
+                        break
+
+            # Remove any empty bindings.
+            policy['bindings'] = [b for b in policy['bindings'] if b['members']]
+            body = {'policy': policy}
+            request = cloudresourcemanager_service.projects().setIamPolicy(
+                resource=self.project_id, body=body)
+            request.execute()
+
+    @contextlib.contextmanager
+    def clean_up_sql_instance(self, instance_name: str):
+        """A context manager to delete the given Cloud SQL instance.
+
+        Args:
+            instance_name: Name of the Cloud SQL instance to delete.
+
+        Yields:
+            None
+        """
+        try:
+            yield
+        finally:
+            sqladmin_service = discovery.build(
+                'sqladmin', 'v1beta4', credentials=self.credentials)
+            request = sqladmin_service.instances().delete(
+                instance=instance_name, project=self.project_id)
+            request.execute()
+
+    @contextlib.contextmanager
+    def clean_up_database(self, instance_name: str, database_name: str):
+        """A context manager to delete the given Cloud SQL database.
+
+        Args:
+            instance_name: Name of the Cloud SQL instance the database belongs
+                to.
+            database_name: Name of the database to delete.
+
+        Yields:
+            None
+        """
+        try:
+            yield
+        finally:
+            sqladmin_service = discovery.build(
+                'sqladmin', 'v1beta4', credentials=self.credentials)
+            request = sqladmin_service.databases().delete(
+                database=database_name,
+                instance=instance_name,
+                project=self.project_id)
+            request.execute()
