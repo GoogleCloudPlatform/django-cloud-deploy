@@ -21,7 +21,7 @@ TIMESTAMP_FORMAT = '%Y%m%d-%H%M%S'
 
 def get_resource_name(resource_type='',
                       hash_len=4,
-                      timestamp_format=TIMESTAMP_FORMAT):
+                      timestamp_format=TIMESTAMP_FORMAT) -> str:
     """Generate resource names as TYPE-YYYYMMDD-HHMMSS-HASH.
 
     This function is useful to avoid operations on the same resource when

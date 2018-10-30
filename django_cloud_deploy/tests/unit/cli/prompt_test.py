@@ -319,7 +319,8 @@ class DjangoFilesystemPathTest(parameterized.TestCase):
             self.assertEqual(path, '/tmp/newname')
             self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
-    def test_prompt_default(self):
+    @mock.patch('os.path.exists', return_value=False)
+    def test_prompt_default(self, unused_mock):
         test_io = io.TestIO()
 
         test_io.answers.append('')

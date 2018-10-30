@@ -97,8 +97,7 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
             resource=self.project_id)
         return request.execute()
 
-    def assert_valid_service_account_key(self, key_file_content):
-        key = json.loads(key_file_content)
+    def assert_valid_service_account_key(self, key):
         for attributes in self.KEY_EXPECTED_ATTRIBUTES:
             self.assertIn(attributes, key)
         self.assertEqual(self.project_id, key['project_id'])
@@ -112,11 +111,34 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
         with self.delete_service_account(service_account_email):
             with self.reset_iam_policy(member, self.ROLES):
                 with tempfile.NamedTemporaryFile(mode='w+t') as key_file:
-                    self.service_account_workflow.create_key(
-                        self.project_id, service_account_id,
-                        'Test Service Account', self.ROLES, key_file.name)
-                    self.assert_valid_service_account_key(key_file.file.read())
 
+                    # key_file.name is its path
+                    key_path = key_file.name
+                    file_name = 'key-file-name'
+                    database_username = 'username'
+                    database_password = 'password'
+                    service_account = _service_account.ServiceAccount(
+                        service_account_id, 'Test Service Account',
+                        file_name, self.ROLES, key_path)
+                    secrets = (
+                        self.service_account_workflow.handle_service_accounts(
+                            self.project_id, database_username,
+                            database_password, [service_account])
+                    )
+                    key = json.loads(key_file.file.read())
+                    self.assert_valid_service_account_key(key)
+
+                    # Assert the secrets are formatted correctly
+                    expected_secret = {
+                        'cloudsql': {
+                            'username': database_username,
+                            'password': database_password
+                        },
+                        service_account_id: {
+                            file_name: json.dumps(key, sort_keys=True)
+                        }
+                    }
+                    self.assertDictEqual(expected_secret, secrets)
                     # Assert the service account is created
                     all_service_accounts = self._list_service_accounts()
                     self.assertIn(service_account_email, all_service_accounts)

@@ -94,15 +94,7 @@ class WorkflowManager(object):
         cluster_name = django_project_name
         database_name = django_project_name + '-db'
         database_instance_name = django_project_name + '-instance'
-        service_account_name = 'CloudSQL Oauth Credentials'
-        service_account_id = 'cloudsql-oauth-credentials'
 
-        service_account_key_path = (
-            '{}/{}.json'.format(os.path.expanduser('~'), service_account_id))
-        roles = (
-            'roles/cloudsql.client', 'roles/cloudsql.editor',
-            'roles/cloudsql.admin'
-        )
         image_name = '/'.join(['gcr.io', project_id, django_project_name])
         static_content_dir = os.path.join(django_directory_path, 'static')
 
@@ -159,22 +151,9 @@ class WorkflowManager(object):
             self._generate_section_header(
                 7, 'Create Service Account Necessary For Deployment',
                 self._TOTAL_NEW_STEPS))
-        self._service_account_workflow.create_key(
-            project_id, service_account_id, service_account_name, roles,
-            service_account_key_path)
-
-        # Prepare Kubernetes secret object based on service account key.
-        with open(service_account_key_path) as key_file:
-            key_content = key_file.read()
-        secrets = {
-            'cloudsql': {
-                'username': database_username,
-                'password': database_password
-            },
-            'cloudsql-oauth-credentials': {
-                'credentials.json': key_content
-            }
-        }
+        secrets = self._service_account_workflow.handle_service_accounts(
+            project_id, database_username, database_password
+        )
 
         print(
             self._generate_section_header(
