@@ -419,22 +419,25 @@ class DjangoSuperuserPasswordPromptTest(parameterized.TestCase):
         self.assertEqual(len(test_io.password_answers), 0)  # All answers used.
 
 
-_FAKE_BILLING_ACCOUNTS = [
+_SINGLE_FAKE_ACCOUNT = [
     {
         'name': 'billingAccounts/1',
         'displayName': 'Fake Account 1',
         'open': True
-    }
+    },
 ]
 
-_FAKE_BILLING_ACCOUNTS_AFTER_CREATE = [
+_FAKE_BILLING_ACCOUNTS = _SINGLE_FAKE_ACCOUNT + [
     {
-        'name': 'billingAccounts/1',
+        'name': 'billingAccounts/2',
         'displayName': 'Fake Account 2',
         'open': True
     },
+]
+
+_FAKE_BILLING_ACCOUNTS_AFTER_CREATE = _FAKE_BILLING_ACCOUNTS + [
     {
-        'name': 'billingAccounts/2',
+        'name': 'billingAccounts/3',
         'displayName': 'Fake Account 3',
         'open': True
     },
@@ -539,6 +542,34 @@ class BillingPromptTest(absltest.TestCase):
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
     @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'), return_value=_SINGLE_FAKE_ACCOUNT)
+    def test_invalid_numeric_choice_single_account(self, unused_mock):
+        test_io = io.TestIO()
+
+        test_io.answers.append('a')
+        test_io.answers.append('1')
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', {}, self.credentials)
+        self.assertEqual(billing_name, _SINGLE_FAKE_ACCOUNT[0]['name'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+        self.assertIn(
+            'enter "1" to use "Fake Account 1"', test_io.ask_prompts[-1])
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
+                 'list_billing_accounts'), return_value=_FAKE_BILLING_ACCOUNTS)
+    def test_invalid_numeric_choice_multiple_accounts(self, unused_mock):
+        test_io = io.TestIO()
+
+        test_io.answers.append('a')
+        test_io.answers.append('1')
+        billing_name = prompt.BillingPrompt.prompt(
+            test_io, '[1/2]', {}, self.credentials)
+        self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+        self.assertIn(
+            'enter a value between 1 and 2', test_io.ask_prompts[-1])
+
+    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
                  'list_billing_accounts'),
                 side_effect=[
                     _FAKE_BILLING_ACCOUNTS,
@@ -552,12 +583,12 @@ class BillingPromptTest(absltest.TestCase):
         billing_name = prompt.BillingPrompt.prompt(
             test_io, '[1/2]', {}, self.credentials)
         self.assertEqual(
-            billing_name, _FAKE_BILLING_ACCOUNTS_AFTER_CREATE[1]['name'])
+            billing_name, _FAKE_BILLING_ACCOUNTS_AFTER_CREATE[-1]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
     @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
                  'list_billing_accounts'),
-                side_effect=[[], _FAKE_BILLING_ACCOUNTS])
+                side_effect=[[], _SINGLE_FAKE_ACCOUNT])
     @mock.patch('webbrowser.open')
     def test_no_existing_accounts_create_new_account(
             self, *unused_mocks):
@@ -567,12 +598,12 @@ class BillingPromptTest(absltest.TestCase):
         billing_name = prompt.BillingPrompt.prompt(
             test_io, '[1/2]', {}, self.credentials)
         self.assertEqual(
-            billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
+            billing_name, _SINGLE_FAKE_ACCOUNT[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
     @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
                  'list_billing_accounts'),
-                side_effect=[[], [], _FAKE_BILLING_ACCOUNTS])
+                side_effect=[[], [], _SINGLE_FAKE_ACCOUNT])
     @mock.patch('webbrowser.open')
     def test_no_existing_accounts_create_new_account_success_second_time(
             self, *unused_mocks):
@@ -582,7 +613,7 @@ class BillingPromptTest(absltest.TestCase):
         billing_name = prompt.BillingPrompt.prompt(
             test_io, '[1/2]', {}, self.credentials)
         self.assertEqual(
-            billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
+            billing_name, _SINGLE_FAKE_ACCOUNT[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
     @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
@@ -596,7 +627,7 @@ class BillingPromptTest(absltest.TestCase):
     def test_validate_fail(self, unused_mock):
         with self.assertRaises(ValueError):
             prompt.BillingPrompt.validate(
-                _FAKE_BILLING_ACCOUNTS_AFTER_CREATE[1]['name'],
+                'fakeaccount',
                 self.credentials)
 
 

@@ -718,10 +718,16 @@ class BillingPrompt(Prompt):
                         console, billing_accounts, billing_client)
                 if (not choice.isdigit() or int(choice) <= 0
                         or int(choice) > len(billing_accounts)):
-                    choice = console.ask(
-                        ('Please enter a value between 1 and {} or press '
-                         '[Enter] to create a new account: ').format(
-                             len(billing_accounts)))
+                    if len(billing_accounts) == 1:
+                        choice = console.ask(
+                            ('Please enter "1" to use "{}" or press '
+                             '[Enter] to create a new account: ').format(
+                                billing_accounts[0]['displayName']))
+                    else:
+                        choice = console.ask(
+                            ('Please enter a value between 1 and {} or press '
+                             '[Enter] to create a new account: ').format(
+                                len(billing_accounts)))
                 else:
                     return billing_accounts[int(choice) - 1]['name']
         else:
