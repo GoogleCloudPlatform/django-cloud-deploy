@@ -29,6 +29,8 @@ from django_cloud_deploy.workflow import _static_content_serve
 
 from google.auth import credentials
 
+ProjectCreationMode = _project.CreationMode
+
 
 class WorkflowManager(object):
     """A class to control workflow for deploying Django apps on GKE."""
@@ -50,31 +52,32 @@ class WorkflowManager(object):
         self._statitc_content_workflow = (
             _static_content_serve.StaticContentServeWorkflow(credentials))
 
-    def create_and_deploy_new_project(self,
-                                      project_name: str,
-                                      project_id: str,
-                                      billing_account_name: str,
-                                      django_project_name: str,
-                                      django_app_name: str,
-                                      django_superuser_name: str,
-                                      django_superuser_email: str,
-                                      django_superuser_password: str,
-                                      django_directory_path: str,
-                                      database_password: str,
-                                      required_services:
-                                      Optional[List[Dict[str, str]]] = None,
-                                      required_service_accounts:
-                                      Optional[List[Dict[str, Any]]] = None,
-                                      region: str = 'us-west1',
-                                      cloud_sql_proxy_path: str =
-                                      'cloud_sql_proxy',
-                                      open_browser: bool = True):
+    def create_and_deploy_new_project(
+            self,
+            project_name: str,
+            project_id: str,
+            project_creation_mode: ProjectCreationMode.CREATE,
+            billing_account_name: str,
+            django_project_name: str,
+            django_app_name: str,
+            django_superuser_name: str,
+            django_superuser_email: str,
+            django_superuser_password: str,
+            django_directory_path: str,
+            database_password: str,
+            required_services: Optional[List[Dict[str, str]]] = None,
+            required_service_accounts: Optional[List[Dict[str, Any]]] = None,
+            region: str = 'us-west1',
+            cloud_sql_proxy_path: str = 'cloud_sql_proxy',
+            open_browser: bool = True):
         """Workflow of deploying a newly generated Django app to GKE.
 
         Args:
             project_name: The name of the Google Cloud Platform project.
             project_id: The unique id to use when creating the Google Cloud
                 Platform project.
+            project_creation: Whether we want to create the GCP project or use
+                an existing project.
             billing_account_name: Name of the billing account user want to use
                 for their Google Cloud Platform project. Should look like
                 "billingAccounts/12345-678901-234567"
@@ -120,7 +123,7 @@ class WorkflowManager(object):
             self._generate_section_header(
                 1, 'Create GCP Project', self._TOTAL_NEW_STEPS))
         self._project_workflow.create_project(
-            project_name, project_id)
+            project_name, project_id, project_creation_mode)
 
         print(
             self._generate_section_header(

@@ -25,6 +25,7 @@ import webbrowser
 
 from google.auth import credentials
 
+from django_cloud_deploy import workflow
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cloudlib import auth
 from django_cloud_deploy.cloudlib import billing
@@ -130,11 +131,14 @@ class GoogleCloudProjectNamePrompt(NamePrompt):
             cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
             credentials: Optional[credentials.Credentials] = None) -> str:
 
-        if not arguments.get('use_existing_project', False):
+        if ('project_creation_mode' not in arguments or
+            (arguments['project_creation_mode'] !=
+             workflow.ProjectCreationMode.MUST_EXIST)):
             return (
                 super().prompt(console, step_prompt, arguments, credentials))
 
-        project_id = arguments.get('project_id')
+        assert 'project_id' in arguments, 'project_id must be set'
+        project_id = arguments['project_id']
         project_client = project.ProjectClient.from_credentials(credentials)
         project_name = project_client.get_project(project_id)['name']
         message = 'Project name found: {}'.format(project_name)
@@ -686,9 +690,12 @@ class BillingPrompt(Prompt):
         """
         billing_client = billing.BillingClient.from_credentials(credentials)
 
-        if arguments.get('use_existing_project', False):
-            project_id = arguments.get('project_id')
+        if ('project_creation_mode' in arguments and
+            (arguments['project_creation_mode'] ==
+             workflow.ProjectCreationMode.MUST_EXIST)):
 
+            assert 'project_id' in arguments, 'project_id must be set'
+            project_id = arguments['project_id']
             billing_account = (
                 billing_client.get_billing_account(project_id))
             if billing_account.get('billingEnabled', False):

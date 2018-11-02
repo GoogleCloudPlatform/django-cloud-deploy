@@ -20,6 +20,7 @@ from unittest import mock
 from absl.testing import absltest
 from absl.testing import parameterized
 
+from django_cloud_deploy import workflow
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import prompt
 
@@ -82,7 +83,7 @@ class GoogleCloudProjectNamePromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         args = {
-            'use_existing_project': True,
+            'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
             'project_id': 'project-abc'
         }
         name = prompt.GoogleCloudProjectNamePrompt.prompt(test_io,
@@ -478,7 +479,7 @@ class BillingPromptTest(absltest.TestCase):
     def test_use_existing_project_with_billing(self, unused_mock):
         test_io = io.TestIO()
         args = {
-            'use_existing_project': True,
+            'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
             'project_id': 'project-abc'
         }
 
@@ -493,7 +494,7 @@ class BillingPromptTest(absltest.TestCase):
                  'list_billing_accounts'), return_value=_FAKE_BILLING_ACCOUNTS)
     def test_use_existing_project_without_billing(self, *unused_mock):
         args = {
-            'use_existing_project': True,
+            'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
             'project_id': 'project-abc'
         }
 

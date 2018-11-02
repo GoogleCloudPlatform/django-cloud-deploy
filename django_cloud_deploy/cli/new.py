@@ -122,7 +122,7 @@ def main(args: argparse.Namespace):
     remaining_parameters_to_prompt = {}
 
     actual_parameters = {
-        # TODO: Some arguments will need to be prepopulated here.
+        'project_creation_mode': workflow.ProjectCreationMode.CREATE
     }
 
     for parameter_name, prompter in required_parameters_to_prompt.items():
@@ -137,15 +137,13 @@ def main(args: argparse.Namespace):
         else:
             remaining_parameters_to_prompt[parameter_name] = prompter
 
-    use_existing_project = getattr(args, 'use_existing_project', False)
-
-    if use_existing_project:
-        actual_parameters['use_existing_project'] = use_existing_project
+    if args.use_existing_project:
+        actual_parameters['project_creation_mode'] = (
+            workflow.ProjectCreationMode.MUST_EXIST)
         remaining_parameters_to_prompt['project_name'] = (
             prompt.GoogleCloudProjectNamePrompt)
 
     if remaining_parameters_to_prompt:
-
         num_steps = len(remaining_parameters_to_prompt)
         console.tell(
             '<b>{} steps to setup your new project</b>'.format(num_steps))
@@ -165,6 +163,7 @@ def main(args: argparse.Namespace):
     workflow_manager.create_and_deploy_new_project(
         actual_parameters['project_name'],
         actual_parameters['project_id'],
+        actual_parameters['project_creation_mode'],
         actual_parameters['billing_account_name'],
         actual_parameters['django_project_name'],
         actual_parameters['django_app_name'],

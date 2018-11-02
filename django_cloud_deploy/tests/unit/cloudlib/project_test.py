@@ -49,6 +49,12 @@ class ProjectsFake(object):
         self.projects = []
 
     def create(self, body):
+        for p in self.projects:
+            if p['projectId'] == body['projectId']:
+                return http_fake.HttpRequestFake(
+                    errors.HttpError(
+                        http_fake.HttpResponseFake(409),
+                        b'Requested entity already exists'))
         self.projects.append(body)
         return http_fake.HttpRequestFake({
             'name':
@@ -107,6 +113,11 @@ class ProjectClientTestCase(absltest.TestCase):
                     'type': 'folder'
                 }
             }])
+
+    def test_create_project_exists(self):
+        self._project_client.create_project('fn123', 'Friendly Name')
+        with self.assertRaises(project.ProjectExistsError):
+            self._project_client.create_project('fn123', 'Duplicate!')
 
     @mock.patch('subprocess.check_call')
     def test_create_and_set_project(self, check_call):

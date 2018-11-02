@@ -35,7 +35,11 @@ _GOOGLE_ORGANIZATION_ID = '433637338589'  # id of organization "google.com"
 
 
 class ProjectError(Exception):
-    """An exception occured while creating or accessing a project."""
+    """An error occurred while creating or accessing a project."""
+
+
+class ProjectExistsError(ProjectError):
+    """Attempted to create a project that already exists."""
 
 
 class ProjectClient(object):
@@ -97,7 +101,13 @@ class ProjectClient(object):
 
         request = self._cloudresourcemanager_service.projects().create(
             body=body)
-        response = request.execute()
+        try:
+            response = request.execute()
+        except errors.HttpError as e:
+            if e.resp.status == 409:
+                raise ProjectExistsError(
+                    'the project "{}" already exists'.format(project_id)) from e
+            raise
 
         if 'name' not in response:
             raise ProjectError(
