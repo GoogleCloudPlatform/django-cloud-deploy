@@ -18,9 +18,9 @@ import argparse
 import sys
 
 from django_cloud_deploy import tool_requirements
+from django_cloud_deploy import workflow
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import prompt
-import django_cloud_deploy.workflow as workflow
 
 
 def add_arguments(parser):
@@ -160,18 +160,23 @@ def main(args: argparse.Namespace):
 
     workflow_manager = workflow.WorkflowManager(
         actual_parameters['credentials'])
-    workflow_manager.create_and_deploy_new_project(
-        actual_parameters['project_name'],
-        actual_parameters['project_id'],
-        actual_parameters['project_creation_mode'],
-        actual_parameters['billing_account_name'],
-        actual_parameters['django_project_name'],
-        actual_parameters['django_app_name'],
-        actual_parameters['django_superuser_login'],
-        actual_parameters['django_superuser_email'],
-        actual_parameters['django_superuser_password'],
-        actual_parameters['django_directory_path'],
-        actual_parameters['database_password'])
+
+    try:
+        workflow_manager.create_and_deploy_new_project(
+            actual_parameters['project_name'],
+            actual_parameters['project_id'],
+            actual_parameters['project_creation_mode'],
+            actual_parameters['billing_account_name'],
+            actual_parameters['django_project_name'],
+            actual_parameters['django_app_name'],
+            actual_parameters['django_superuser_login'],
+            actual_parameters['django_superuser_email'],
+            actual_parameters['django_superuser_password'],
+            actual_parameters['django_directory_path'],
+            actual_parameters['database_password'])
+    except workflow.ProjectExistsError:
+        console.error('A project with id "{}" already exists'.format(
+            actual_parameters['project_id']))
 
 
 if __name__ == '__main__':

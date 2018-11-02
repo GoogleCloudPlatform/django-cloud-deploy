@@ -31,6 +31,10 @@ class ProjectionCreationError(Exception):
     """An exception raised when project creation failed."""
 
 
+class ProjectExistsError(ProjectionCreationError):
+    """Attempted to create a project that already exists."""
+
+
 class ProjectWorkflow(object):
     """A class for managing Google Cloud Platform projects."""
 
@@ -63,7 +67,7 @@ class ProjectWorkflow(object):
         exists = self._project_client.project_exists(project_id)
         if exists:
             if project_creation == CreationMode.CREATE:
-                raise ProjectionCreationError(
+                raise ProjectExistsError(
                     'project {!r} already exists'.format(project_id))
             else:
                 self._project_client.set_existing_project(project_id)

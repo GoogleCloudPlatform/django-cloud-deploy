@@ -30,6 +30,7 @@ from django_cloud_deploy.workflow import _static_content_serve
 from google.auth import credentials
 
 ProjectCreationMode = _project.CreationMode
+ProjectExistsError = _project.ProjectExistsError
 
 
 class WorkflowManager(object):
