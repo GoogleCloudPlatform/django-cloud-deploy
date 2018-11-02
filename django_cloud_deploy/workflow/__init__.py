@@ -15,6 +15,7 @@
 """A module to manage workflow for deployment of Django apps."""
 
 import os
+from typing import Any, Dict, List, Optional
 import webbrowser
 
 from django_cloud_deploy.cloudlib import billing
@@ -60,6 +61,10 @@ class WorkflowManager(object):
                                       django_superuser_password: str,
                                       django_directory_path: str,
                                       database_password: str,
+                                      required_services:
+                                      Optional[List[Dict[str, str]]] = None,
+                                      required_service_accounts:
+                                      Optional[List[Dict[str, Any]]] = None,
                                       region: str = 'us-west1',
                                       cloud_sql_proxy_path: str =
                                       'cloud_sql_proxy',
@@ -82,6 +87,18 @@ class WorkflowManager(object):
             django_directory_path: The location where the generated Django
                 project code should be stored.
             database_password: The password for the default database user.
+            required_services: The services needed to be enabled for deployment.
+            required_service_accounts: Service accounts needed to be created for
+                deployment. It should have the following format:
+                {
+                    "id": "service account id",
+                    "name": "Display name",
+                    "file_name": "credentials.json",
+                    "roles": [
+                        "roles/role1",
+                        "roles/role2"
+                    ]
+                }
             region: Where the service is hosted.
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             open_browser: Whether we open the browser to show the deployed app
@@ -136,7 +153,8 @@ class WorkflowManager(object):
         print(
             self._generate_section_header(
                 5, 'Enable Services', self._TOTAL_NEW_STEPS))
-        required_services = self._enable_service_workflow.load_services()
+        if required_services is None:
+            required_services = self._enable_service_workflow.load_services()
         self._enable_service_workflow.enable_required_services(
             project_id, required_services)
 
@@ -151,9 +169,12 @@ class WorkflowManager(object):
             self._generate_section_header(
                 7, 'Create Service Account Necessary For Deployment',
                 self._TOTAL_NEW_STEPS))
-        secrets = self._service_account_workflow.handle_service_accounts(
-            project_id, database_username, database_password
-        )
+        required_service_accounts = (
+            required_service_accounts or
+            self._service_account_workflow.load_service_accounts())
+        secrets = self._generate_secrets(
+            project_id, database_username, database_password,
+            required_service_accounts)
 
         print(
             self._generate_section_header(
@@ -226,3 +247,65 @@ class WorkflowManager(object):
                                  total_steps: int):
         return '\n**Step {} of {}: {}**\n'.format(
             step, total_steps, section_name)
+
+    def _generate_secrets(
+            self,
+            project_id: str,
+            database_username: str,
+            database_password: str,
+            required_service_accounts: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Generate Kubernetes secrets required for deployment.
+
+        Args:
+            project_id: The unique id for your Google Cloud Platform project.
+            database_username: Name of the default database user.
+            database_password: The password for the default database user.
+            required_service_accounts: Service accounts needed by deployment.
+
+        Returns:
+            All secrets necessary for deployment. For example:
+                {
+                    'cloudsql': {
+                        'username': <database_username>,
+                        'password': <database_password>
+                    },
+                    '<service_account_id1>': {
+                        'credentials.json': <service_account_key_content>
+                    }
+                    '<service_account_id2>': {
+                        'credentials.json': <service_account_key_content>
+                    }
+                }
+        """
+
+        secrets = {
+            'cloudsql': self._generate_base_secrets(
+                database_username, database_password)
+        }
+        for service_account_dict in required_service_accounts:
+            key_data = (
+                self._service_account_workflow.create_service_account_and_key(
+                    project_id, service_account_dict['id'],
+                    service_account_dict['name'],
+                    service_account_dict['roles']))
+            secrets[service_account_dict['id']] = {
+                service_account_dict['file_name']: key_data
+            }
+        return secrets
+
+    @staticmethod
+    def _generate_base_secrets(database_username: str,
+                               database_password: str) -> Dict[str, str]:
+        """Generates base secrets not related to service accounts.
+
+        Args:
+            database_username: Name of the database user.
+            database_password: Password of the database.
+
+        Returns:
+            secrets: Base secret data used by kubernetes.
+        """
+        return {
+            'username': database_username,
+            'password': database_password
+        }
