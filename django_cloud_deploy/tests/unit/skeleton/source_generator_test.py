@@ -140,11 +140,12 @@ class DjangoFileGeneratorTest(FileGeneratorTest):
 
             self.assertIn(project_name + '-db', settings_content)
 
-    def test_remote_settings_customize_database_name(self):
+    def test_customize_remote_settings(self):
         project_name = 'test_remote_settings_customize_database_name'
         project_id = project_name + 'project_id'
         self._django_file_generator.generate_project_files(
-            project_id, project_name, self._project_dir, 'customize-db')
+            project_id, project_name, self._project_dir, 'customize-db',
+            'customize-bucket')
 
         with open(
                 os.path.join(self._project_dir, project_name,
@@ -161,7 +162,7 @@ class DjangoFileGeneratorTest(FileGeneratorTest):
             self.assertNotIn('DEBUG = True', settings_content)
 
             # Test remote settings use GCS buckets to serve static files
-            self.assertIn(project_id + '/static', settings_content)
+            self.assertIn('customize-bucket' + '/static', settings_content)
 
             self.assertIn('customize-db', settings_content)
 
@@ -245,8 +246,8 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
         files_list = os.listdir(self._project_dir)
         self.assertIn(project_name + '.yaml', files_list)
 
-    def test_yaml_file_content(self):
-        project_id = project_name = 'test_generate_yaml_file'
+    def test_default_yaml_file_content(self):
+        project_id = project_name = 'test_default_yaml_file_content'
         self._yamlfile_generator.generate(self._project_dir, project_name,
                                           project_id)
 
@@ -265,6 +266,42 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
 
             self.assertIn('kind: Deployment', yaml_file_content)
             self.assertIn('kind: Service', yaml_file_content)
+
+            # Assert cloudsql secret is used
+            self.assertIn('name: cloudsql-oauth-credentials', yaml_file_content)
+
+    def test_customized_yaml_file_content(self):
+        project_id = project_name = 'test_customized_yaml_file_content'
+        instance_name = 'fake_instance_name'
+        region = 'fake_region'
+        image_tag = 'fake_image'
+        cloudsql_secrets = ['fakecloudsql_secret1', 'fakecloudsql_secret2']
+        django_app_secrets = [
+            'fakedjango_app_secret1', 'fakedjango_app_secret2'
+        ]
+        self._yamlfile_generator.generate(
+            self._project_dir, project_name, project_id, instance_name,
+            region, image_tag, cloudsql_secrets, django_app_secrets)
+
+        yaml_file_path = os.path.join(self._project_dir, project_name + '.yaml')
+        with open(yaml_file_path) as yaml_file:
+            yaml_file_content = yaml_file.read()
+
+            # Test cloud sql connection string is used in template rendering
+            cloud_sql_connection_string = '{}:{}:{}'.format(
+                project_id, region, instance_name)
+            self.assertIn(cloud_sql_connection_string, yaml_file_content)
+
+            # Test docker image path is correct
+            self.assertIn(image_tag, yaml_file_content)
+
+            for secret in cloudsql_secrets:
+                # Assert cloudsql secret is used
+                self.assertIn('name: ' + secret, yaml_file_content)
+
+            for secret in django_app_secrets:
+                # Assert django_app secret is used
+                self.assertIn('name: ' + secret, yaml_file_content)
 
 
 class DjangoSourceFileGeneratorTest(FileGeneratorTest):

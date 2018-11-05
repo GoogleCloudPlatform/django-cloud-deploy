@@ -35,4 +35,4 @@ DATABASES = {
     }
 }
 
-STATIC_URL = 'https://storage.googleapis.com/{{ project_id }}/static/'
+STATIC_URL = 'https://storage.googleapis.com/{{ bucket_name }}/static/'

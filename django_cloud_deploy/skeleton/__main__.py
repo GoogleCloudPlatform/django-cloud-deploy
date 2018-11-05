@@ -40,6 +40,15 @@ def add_arguments(parser):
         '--destination',
         default='~/djangogke_project',
         help='The output folder of your Django project.')
+    parser.add_argument(
+        '--database_user',
+        default='postgres',
+        help='Name of the user of the database your Django app want to use.')
+    parser.add_argument(
+        '--database_password',
+        default='fakepassword',
+        help=('Password of the user of the database your Django app want to '
+              'use.'))
 
 
 def main():
@@ -51,7 +60,9 @@ def main():
         project_id=args.project_id,
         project_name=args.project_name,
         app_names=args.app_names,
-        destination=args.destination)
+        destination=args.destination,
+        database_user=args.database_user,
+        database_password=args.database_password)
 
 
 if __name__ == '__main__':

@@ -59,6 +59,14 @@ spec:
             # [END cloudsql_secrets]
         ports:
         - containerPort: 8080
+        {% if django_app_secrets is not none -%}
+        volumeMounts:
+          {% for secret in django_app_secrets -%}
+          - name: {{ secret }}
+            mountPath: /secrets/django_app
+            readOnly: true
+          {% endfor -%}
+        {% endif -%}
 
       # [START proxy_container]
       - image: b.gcr.io/cloudsql-docker/gce-proxy:1.05
@@ -67,9 +75,11 @@ spec:
                   "-instances={{ cloud_sql_connection_string }}=tcp:5432",
                   "-credential_file=/secrets/cloudsql/credentials.json"]
         volumeMounts:
-          - name: cloudsql-oauth-credentials
+          {% for secret in cloudsql_secrets -%}
+          - name: {{ secret }}
             mountPath: /secrets/cloudsql
             readOnly: true
+          {% endfor -%}
           - name: ssl-certs
             mountPath: /etc/ssl/certs
           - name: cloudsql
@@ -77,9 +87,20 @@ spec:
       # [END proxy_container]
       # [START volumes]
       volumes:
-        - name: cloudsql-oauth-credentials
+        {% if cloudsql_secrets is not none -%}
+        {% for secret in cloudsql_secrets -%}
+        - name: {{ secret }}
           secret:
-            secretName: cloudsql-oauth-credentials
+            secretName: {{ secret }}
+        {% endfor -%}
+        {% endif -%}
+        {% if django_app_secrets is not none -%}
+        {% for secret in django_app_secrets -%}
+        - name: {{ secret }}
+          secret:
+            secretName: {{ secret }}
+        {% endfor -%}
+        {% endif -%}
         - name: ssl-certs
           hostPath:
             path: /etc/ssl/certs
