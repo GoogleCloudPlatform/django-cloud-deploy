@@ -15,7 +15,7 @@
 """Generate source files of a django app ready to be deployed to GKE."""
 import os
 import sys
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import django
 from django.core.management import utils
@@ -26,7 +26,7 @@ import jinja2
 class _FileGenerator(object):
     """An abstract class to generate files using templates."""
 
-    def _get_template_folder_path(self):
+    def _get_template_folder_path(self) -> str:
         dirname, _ = os.path.split(os.path.abspath(__file__))
         return os.path.join(dirname, 'templates')
 
@@ -41,28 +41,40 @@ class _Jinja2FileGenerator(_FileGenerator):
     def __init__(self):
         self._template_env = jinja2.Environment()
 
-    def _render_file(self, template_path, output_path, **options):
+    def _render_file(self,
+                     template_path: str,
+                     output_path: str,
+                     options: Optional[Dict[str, Any]] = None):
+        """Render a single file with template.
+
+        Args:
+            template_path: Absolute path of the template to render a file.
+            output_path: Absolute path of the output file.
+            options: Options used to render the file.
+        """
+        if not options:
+            options = {}
         with open(template_path) as template_file:
             content = template_file.read()
         template = self._template_env.from_string(content)
-        content = template.render(**options)
+        content = template.render(options)
         with open(output_path, 'w') as new_file:
             new_file.write(content)
 
     def _render_directory(self,
-                          template_dir,
-                          output_dir,
-                          template_replacement=None,
-                          **options):
+                          template_dir: str,
+                          output_dir: str,
+                          template_replacement: Optional[Dict[str, str]] = None,
+                          options: Optional[Dict[str, Any]] = None):
         """Render all templates in a directory.
 
         Args:
-            template_dir: str, absolute path of the folder containing all
-                template files.
-            output_dir: str, absolute path of the output folder.
-            template_replacement: None or Dict[str, str], strings in template
-                file names to get replaced in the output.
-            **options: Dict[str, str], options used to render the templates.
+            template_dir: Absolute path of the folder containing all template
+                files.
+            output_dir: Absolute path of the output folder.
+            template_replacement: Strings in template file names to get replaced
+                in the output.
+            options: Options used to render the directory.
         """
 
         prefix_length = len(template_dir) + 1
@@ -88,7 +100,7 @@ class _Jinja2FileGenerator(_FileGenerator):
                     if new_path.endswith(old_suffix):
                         new_path = new_path[:-len(old_suffix)] + new_suffix
                         break  # Only rewrite once
-                self._render_file(old_path, new_path, **options)
+                self._render_file(old_path, new_path, options)
 
 
 class _DjangoFileGenerator(_Jinja2FileGenerator):
@@ -132,18 +144,19 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
             'project_name': site,
         }
         self._render_directory(project_templates_dir, destination,
-                               template_replacement, **options)
+                               template_replacement, options)
 
     def generate_app_files(self,
-                           app_name,
-                           destination,
-                           template_folder=APP_TEMPLATE_FOLDER):
+                           app_name: str,
+                           destination: str,
+                           template_folder:
+                           Optional[str] = APP_TEMPLATE_FOLDER):
         """Create a django app using our template.
 
         Args:
-            app_name: str, name of the app to be created.
-            destination: str, the destination path to hold files of the app.
-            template_folder: str, the template folder name
+            app_name: Name of the app to be created.
+            destination: The destination path to hold files of the app.
+            template_folder: The template folder name
         """
         app_templates_dir = os.path.join(self._get_template_folder_path(),
                                          template_folder)
@@ -155,7 +168,7 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
             'docs_version': version.get_docs_version(),
             'django_version': django.__version__,
         }
-        self._render_directory(app_templates_dir, app_destination, **options)
+        self._render_directory(app_templates_dir, app_destination, options)
 
     def generate_admin_files(self, destination):
         self.generate_app_files('cloud_admin', destination,
@@ -165,12 +178,12 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
 class _DockerfileGenerator(_Jinja2FileGenerator):
     """Generate Dockerfile to build image for the Django project."""
 
-    def generate(self, project_name, destination):
+    def generate(self, project_name: str, destination: str):
         """Generate Dockerfile and .dockerignore.
 
         Args:
-            project_name: str, the name of your Django project.
-            destination: str, the destination directory path to put Dockerfile.
+            project_name: The name of your Django project.
+            destination: The destination directory path to put Dockerfile.
         """
         file_names = ('Dockerfile', '.dockerignore')
         options = {'project_name': project_name}
@@ -178,20 +191,19 @@ class _DockerfileGenerator(_Jinja2FileGenerator):
             template_path = os.path.join(self._get_template_folder_path(),
                                          file_name)
             output_path = os.path.join(destination, file_name)
-            self._render_file(template_path, output_path, **options)
+            self._render_file(template_path, output_path, options)
 
 
 class _DependencyFileGenerator(_Jinja2FileGenerator):
     """Generate dependencis needed by Django project."""
 
-    def generate(self, destination):
+    def generate(self, destination: str):
         """Generate requirements.txt.
 
         Dependencies are hardcoded.
 
         Args:
-            destination: str, the destination directory path to put
-                requirements.txt.
+            destination: The destination directory path to put requirements.txt.
         """
 
         # TODO: Find a way to determine the correct package version
@@ -254,7 +266,7 @@ class _YAMLFileGenerator(_Jinja2FileGenerator):
         template_path = os.path.join(self._get_template_folder_path(),
                                      file_name)
         output_path = os.path.join(destination, project_name + '.yaml')
-        self._render_file(template_path, output_path, **options)
+        self._render_file(template_path, output_path, options)
 
 
 class DjangoSourceFileGenerator(_FileGenerator):
