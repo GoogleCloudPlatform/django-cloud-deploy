@@ -44,7 +44,7 @@ def unit_test(session, python_version):
     # Run unit tests against all supported versions of Python.
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('py.test', '--ignore=tests/integration')
+    session.run('py.test', 'tests/unit')
 
 
 @nox.session
@@ -58,8 +58,18 @@ def lint(session):
 @nox.session
 @nox.parametrize('python_version', ['3.5'])
 def integration_test(session, python_version):
-    """Run the unit test suite."""
+    """Run the integration test suite."""
 
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
     session.run('py.test', 'tests/integration', '--forked')
+
+
+@nox.session
+@nox.parametrize('python_version', ['3.5'])
+def e2e_test(session, python_version):
+    """Run the e2e test suite."""
+
+    session.interpreter = 'python{}'.format(python_version)
+    session.install(*PACKAGES)
+    session.run('py.test', 'tests/e2e')
