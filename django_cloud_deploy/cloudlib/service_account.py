@@ -20,8 +20,6 @@ https://cloud.google.com/resource-manager/reference/rest/
 """
 
 import base64
-import json
-from typing import Dict
 from typing import List
 
 from googleapiclient import discovery
@@ -152,7 +150,7 @@ class ServiceAccountClient(object):
                  .format(service_account_id, response)))
 
     def create_key(self, project_id: str,
-                   service_account_id: str) -> Dict[str, str]:
+                   service_account_id: str) -> str:
         """Create a new key of the given service account.
 
         Args:
@@ -167,7 +165,7 @@ class ServiceAccountClient(object):
 
         Returns:
             Service account file content in the following format:
-                {
+                "{
                   "type": "service_account",
                   "project_id": "...",
                   "private_key_id": "...",
@@ -178,7 +176,7 @@ class ServiceAccountClient(object):
                   "token_uri": "...",
                   "auth_provider_x509_cert_url": "...",
                   "client_x509_cert_url": "..."
-                }
+                }"
         """
 
         service_account_email = ('{}@{}.iam.gserviceaccount.com'.format(
@@ -206,6 +204,5 @@ class ServiceAccountClient(object):
             raise ServiceAccountKeyCreationError(
                 ('unexpected response creating service account key "{}": {}'.
                  format(service_account_id, response)))
-        key_data = base64.standard_b64decode(
+        return base64.standard_b64decode(
             response['privateKeyData']).decode('utf-8')
-        return json.loads(key_data)

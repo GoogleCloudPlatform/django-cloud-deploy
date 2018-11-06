@@ -14,7 +14,6 @@
 """Tests for the cloudlib.service_account module."""
 
 import base64
-import json
 from unittest import mock
 
 from absl.testing import absltest
@@ -278,8 +277,7 @@ class ServiceAccountClientTestCase(absltest.TestCase):
         key = self._service_account_client.create_key(PROJECT_ID,
                                                       service_account_id)
 
-        self.assertDictEqual(key,
-                             json.loads(PRIVATE_KEY_DECRYPTED.decode('utf-8')))
+        self.assertEqual(key, PRIVATE_KEY_DECRYPTED.decode('utf-8'))
 
         key_count = (self._iam_service_fake.projects_fake.service_accounts_fake.
                      service_account_keys_fake.key_count)
