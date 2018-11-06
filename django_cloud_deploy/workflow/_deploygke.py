@@ -45,7 +45,7 @@ class DeploygkeWorkflow(object):
                             app_directory: str,
                             app_name: str,
                             image_name: str,
-                            secrets: Dict[str, str],
+                            secrets: Dict[str, Dict[str, str]],
                             region: str = 'us-west1',
                             zone: str = 'us-west1-a') -> str:
         """Deploy a Django app to gke.
