@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Integration tests for module django_cloud_deploy.workflow."""
 
 import json
@@ -109,11 +108,10 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
         member = 'serviceAccount:{}'.format(service_account_email)
         with self.delete_service_account(service_account_email):
             with self.reset_iam_policy(member, self.ROLES):
-                key_data = (
-                    self.service_account_workflow.
-                    create_service_account_and_key(
-                        self.project_id, service_account_id,
-                        'Test Service Account', self.ROLES))
+                key_data = (self.service_account_workflow.
+                            create_service_account_and_key(
+                                self.project_id, service_account_id,
+                                'Test Service Account', self.ROLES))
                 self.assert_valid_service_account_key(json.loads(key_data))
                 # Assert the service account is created
                 all_service_accounts = self._list_service_accounts()
@@ -192,7 +190,8 @@ class ProjectWorkflowIntegrationTest(test_base.BaseTest):
         with self.assertRaisesRegex(_project.ProjectionCreationError,
                                     exception_regex):
             self._project_workflow.create_project(
-                project_name, project_id,
+                project_name,
+                project_id,
                 project_creation=_project.CreationMode.MUST_EXIST)
 
     def test_create_new_project_already_exist(self):
@@ -207,11 +206,13 @@ class ProjectWorkflowIntegrationTest(test_base.BaseTest):
 
     def test_create_new_project_already_exist_create_if_needed(self):
         self._project_workflow.create_project(
-            self.project_name, self.project_id,
+            self.project_name,
+            self.project_id,
             project_creation=_project.CreationMode.CREATE_IF_NEEDED)
-        output = subprocess.check_output(
-            ['gcloud', 'config', 'list', 'project',
-             '--format=csv(core.project)'], universal_newlines=True)
+        output = subprocess.check_output([
+            'gcloud', 'config', 'list', 'project', '--format=csv(core.project)'
+        ],
+                                         universal_newlines=True)
         self.assertIn(self.project_id, output)
 
 

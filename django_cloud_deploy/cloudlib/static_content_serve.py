@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Manages resources about static content serving of Django projects."""
 
 import os
@@ -98,8 +97,8 @@ class StaticContentServeClient(object):
             response = request.execute()
             if 'bindings' not in response:
                 raise StaticContentServeError(
-                    'Unexpected responses getting iam policy of bucket "{}"'
-                    .format(bucket_name))
+                    'Unexpected responses getting iam policy of bucket "{}"'.
+                    format(bucket_name))
         except errors.HttpError as e:
             if e.resp.status == 403:
                 raise StaticContentServeError(
@@ -110,28 +109,24 @@ class StaticContentServeClient(object):
                     'Bucket "{}" not found.'.format(bucket_name))
             else:
                 raise StaticContentServeError(
-                    'Unexpected error getting iam policy of bucket "{}"'
-                    .format(bucket_name)) from e
+                    'Unexpected error getting iam policy of bucket "{}"'.format(
+                        bucket_name)) from e
 
         bindings = response['bindings']
         new_binding = {
             'role': 'roles/storage.objectViewer',
-            'members': [
-                'allUsers'
-            ]
+            'members': ['allUsers']
         }
         bindings.append(new_binding)
-        body = {
-            'bindings': bindings
-        }
+        body = {'bindings': bindings}
         request = self._storage_service.buckets().setIamPolicy(
             bucket=bucket_name, body=body)
         try:
             response = request.execute()
             if 'bindings' not in response:
                 raise StaticContentServeError(
-                    'Unexpected responses setting iam policy of bucket "{}"'
-                    .format(bucket_name))
+                    'Unexpected responses setting iam policy of bucket "{}"'.
+                    format(bucket_name))
         except errors.HttpError as e:
             if e.resp.status == 403:
                 raise StaticContentServeError(
@@ -142,8 +137,8 @@ class StaticContentServeClient(object):
                     'Bucket "{}" not found.'.format(bucket_name))
             else:
                 raise StaticContentServeError(
-                    'Unexpected error setting iam policy of bucket "{}"'
-                    .format(bucket_name)) from e
+                    'Unexpected error setting iam policy of bucket "{}"'.format(
+                        bucket_name)) from e
 
     def upload_static_content(self, bucket_name: str, static_content_dir: str):
         """Upload static content in the given directory to a GCS bucket.
@@ -181,8 +176,8 @@ class StaticContentServeClient(object):
                     if 'name' not in response:
                         raise StaticContentServeError(
                             'Unexpected responses when uploading file "{}" to '
-                            'bucket "{}"'.format(
-                                absolute_file_path, bucket_name))
+                            'bucket "{}"'.format(absolute_file_path,
+                                                 bucket_name))
                 except errors.HttpError as e:
                     if e.resp.status == 403:
                         raise StaticContentServeError(
@@ -194,8 +189,8 @@ class StaticContentServeClient(object):
                     else:
                         raise StaticContentServeError(
                             'Unexpected error when uploading file "{}" to '
-                            'bucket "{}"'.format(
-                                absolute_file_path, bucket_name)) from e
+                            'bucket "{}"'.format(absolute_file_path,
+                                                 bucket_name)) from e
 
                 # http.MediaFileUpload opens a file but never closes it. So we
                 # need to manually close the file to avoid "ResourceWarning:

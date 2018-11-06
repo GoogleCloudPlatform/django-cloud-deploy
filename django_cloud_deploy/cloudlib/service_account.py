@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Manages Google Cloud Platform service accounts and iam policies.
 
 See
@@ -149,8 +148,7 @@ class ServiceAccountClient(object):
                 ('unexpected response granting roles to service account "{}":{}'
                  .format(service_account_id, response)))
 
-    def create_key(self, project_id: str,
-                   service_account_id: str) -> str:
+    def create_key(self, project_id: str, service_account_id: str) -> str:
         """Create a new key of the given service account.
 
         Args:

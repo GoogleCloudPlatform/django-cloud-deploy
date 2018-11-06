@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for the cloudlib.billing module."""
 
 from absl.testing import absltest
@@ -96,17 +95,17 @@ class BillingClientTestCase(absltest.TestCase):
         self.assertFalse(self._billing_client.check_billing_enabled(PROJECT_ID))
 
     def test_enable_project_billing(self):
-        self._billing_client.enable_project_billing(
-            PROJECT_ID, BILLING_ACCOUNT_NAME)
+        self._billing_client.enable_project_billing(PROJECT_ID,
+                                                    BILLING_ACCOUNT_NAME)
         self.assertIn(
             'projects/{}'.format(PROJECT_ID),
-            self._cloudbillingservice_fake .projects().project_billing_map)
+            self._cloudbillingservice_fake.projects().project_billing_map)
         self.assertTrue(self._billing_client.check_billing_enabled(PROJECT_ID))
 
     def test_enable_project_billing_fail(self):
         with self.assertRaises(billing.BillingError):
-            self._billing_client.enable_project_billing(
-                'invalid-project-id', BILLING_ACCOUNT_NAME)
+            self._billing_client.enable_project_billing('invalid-project-id',
+                                                        BILLING_ACCOUNT_NAME)
 
     def test_list_billing_accounts(self):
         accounts = self._billing_client.list_billing_accounts()

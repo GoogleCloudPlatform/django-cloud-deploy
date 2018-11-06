@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Integration tests for tool_requirements.py."""
 import os
 
@@ -43,8 +42,7 @@ class ToolRequirementsNegativeTest(absltest.TestCase):
             tool_requirements.check_and_handle_requirements(self.test_console)
 
         exception = cm.exception
-        self.assertEqual(req.NAME,
-                         exception.missing_requirements[0].name)
+        self.assertEqual(req.NAME, exception.missing_requirements[0].name)
 
     def test_gcloud_missing(self):
         gcloud = tool_requirements.Gcloud

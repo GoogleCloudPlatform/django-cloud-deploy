@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Manages Google Cloud Platform projects.
 
 See https://gcloud-python.readthedocs.io/en/latest/resource-manager/api.html
@@ -75,9 +74,7 @@ class ProjectClient(object):
 
     def _is_google_account(self) -> bool:
         """Returns whether the user logged in with a google.com account."""
-        body = {
-            'filter': 'domain:google.com'
-        }
+        body = {'filter': 'domain:google.com'}
         request = self._cloudresourcemanager_service.organizations().search(
             body=body)
         response = request.execute()
@@ -94,10 +91,7 @@ class ProjectClient(object):
         }
 
         if self._is_google_account():
-            body['parent'] = {
-                'id': _DEFAULT_GOOGLE_FOLDER_ID,
-                'type': 'folder'
-            }
+            body['parent'] = {'id': _DEFAULT_GOOGLE_FOLDER_ID, 'type': 'folder'}
 
         request = self._cloudresourcemanager_service.projects().create(
             body=body)

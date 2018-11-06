@@ -30,14 +30,11 @@ class OrganizationsFake(object):
 
     def search(self, body):
         if self._is_google:
-            return http_fake.HttpRequestFake(
-                {
-                    'organizations': [
-                        {
-                          'displayName': 'google.com',
-                        }
-                    ]
-                })
+            return http_fake.HttpRequestFake({
+                'organizations': [{
+                    'displayName': 'google.com',
+                }]
+            })
         else:
             return http_fake.HttpRequestFake({})
 
@@ -103,16 +100,15 @@ class ProjectClientTestCase(absltest.TestCase):
         service_fake = ServiceFake(is_google=True)
         project_client = project.ProjectClient(service_fake)
         project_client.create_project('fn123', 'Friendly Name')
-        self.assertEqual(
-            service_fake.projects_fake.projects,
-            [{
-                'name': 'Friendly Name',
-                'projectId': 'fn123',
-                'parent': {
-                    'id': project._DEFAULT_GOOGLE_FOLDER_ID,
-                    'type': 'folder'
-                }
-            }])
+        self.assertEqual(service_fake.projects_fake.projects,
+                         [{
+                             'name': 'Friendly Name',
+                             'projectId': 'fn123',
+                             'parent': {
+                                 'id': project._DEFAULT_GOOGLE_FOLDER_ID,
+                                 'type': 'folder'
+                             }
+                         }])
 
     def test_create_project_exists(self):
         self._project_client.create_project('fn123', 'Friendly Name')

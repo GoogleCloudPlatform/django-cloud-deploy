@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Workflow for managing database of the Django app."""
 
 from typing import Callable
@@ -63,12 +62,12 @@ class DatabaseWorkflow(object):
         """
 
         self._database_client.create_instance_sync(project_id, instance_name)
-        self._database_client.create_database_sync(
-            project_id, instance_name, database_name)
+        self._database_client.create_database_sync(project_id, instance_name,
+                                                   database_name)
         self._database_client.set_database_password(
             project_id, instance_name, database_user, database_password)
-        self._database_client.migrate_database(
-            project_id, instance_name, cloud_sql_proxy_path, region)
+        self._database_client.migrate_database(project_id, instance_name,
+                                               cloud_sql_proxy_path, region)
         self._database_client.create_super_user(
             superuser_name, superuser_email, superuser_password, project_id,
             instance_name, cloud_sql_proxy_path, region)
@@ -94,8 +93,8 @@ class DatabaseWorkflow(object):
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             region: Where the Cloud SQL instance is in.
         """
-        self._database_client.migrate_database(
-            project_id, instance_name, cloud_sql_proxy_path, region)
+        self._database_client.migrate_database(project_id, instance_name,
+                                               cloud_sql_proxy_path, region)
 
     def with_cloud_sql_proxy(self,
                              project_id: str,

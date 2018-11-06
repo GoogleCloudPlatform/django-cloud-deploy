@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITconsoleNS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissconsolens and
 # limitatconsolens under the License.
-
 """Prompts the user for information e.g. project name."""
 
 import abc
@@ -37,9 +36,11 @@ class Prompt(object):
 
     @classmethod
     @abc.abstractmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None) -> Any:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> Any:
         """Prompt the user to enter some information.
 
         Args:
@@ -86,9 +87,11 @@ class NamePrompt(Prompt):
         """The default name to use."""
 
     @classmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None) -> str:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to enter some sort of name.
 
         Args:
@@ -127,15 +130,17 @@ class GoogleCloudProjectNamePrompt(NamePrompt):
         return 'Django Project'
 
     @classmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None) -> str:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> str:
 
         if ('project_creation_mode' not in arguments or
             (arguments['project_creation_mode'] !=
              workflow.ProjectCreationMode.MUST_EXIST)):
-            return (
-                super().prompt(console, step_prompt, arguments, credentials))
+            return (super().prompt(console, step_prompt, arguments,
+                                   credentials))
 
         assert 'project_id' in arguments, 'project_id must be set'
         project_id = arguments['project_id']
@@ -290,9 +295,11 @@ class ProjectIdPrompt(Prompt):
                                 random.randint(100000, 1000000))
 
     @classmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None) -> str:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to a Google Cloud Platform project id.
 
         Args:
@@ -307,8 +314,7 @@ class ProjectIdPrompt(Prompt):
             The value entered by the user.
         """
         default_project_id = cls._generate_default_project_id(
-            arguments.get('project_name', None)
-        )
+            arguments.get('project_name', None))
         while True:
             console.tell(('{} Enter a Google Cloud Platform Project ID, '
                           'or leave blank to use').format(step_prompt))
@@ -344,9 +350,11 @@ class ProjectIdUpdatePrompt(ProjectIdPrompt):
     """Allow the user to enter a GCP project id."""
 
     @classmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None) -> str:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to a Google Cloud Platform project id.
 
         Args:
@@ -387,9 +395,11 @@ class DjangoFilesystemPath(Prompt):
             return r == 'y'
 
     @classmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None) -> str:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to enter a file system path for their project.
 
         Args:
@@ -433,9 +443,11 @@ class DjangoFilesystemPathUpdate(Prompt):
     """Allow the user to file system path for their project."""
 
     @classmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None) -> str:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to enter a file system path for their project.
 
         Args:
@@ -503,9 +515,11 @@ class PasswordPrompt(Prompt):
         pass
 
     @classmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None) -> str:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to enter a password.
 
         Args:
@@ -571,9 +585,11 @@ class PostgresPasswordUpdatePrompt(PasswordPrompt):
         return 'Enter the password for the default database user "postgres"'
 
     @classmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None) -> str:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to enter a password.
 
         Args:
@@ -607,10 +623,12 @@ class DjangoSuperuserPasswordPrompt(PasswordPrompt):
 class CredentialsPrompt(Prompt):
 
     @classmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None
-    ) -> credentials.Credentials:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None
+              ) -> credentials.Credentials:
         """Prompt the user for access to the Google credentials.
 
         Args:
@@ -639,8 +657,7 @@ class BillingPrompt(Prompt):
 
     @staticmethod
     def _get_new_billing_account(
-            console: io.IO,
-            existing_billing_accounts: List[Dict[str, Any]],
+            console: io.IO, existing_billing_accounts: List[Dict[str, Any]],
             billing_client: billing.BillingClient) -> str:
         """Ask the user to create a new billing account and return name of it.
 
@@ -653,18 +670,18 @@ class BillingPrompt(Prompt):
         Returns:
             Name of the user's newly created billing account.
         """
-        webbrowser.open(
-            'https://console.cloud.google.com/billing/create')
+        webbrowser.open('https://console.cloud.google.com/billing/create')
         existing_billing_account_names = [
-            account['name'] for account in existing_billing_accounts]
-        console.tell(
-            'Waiting for billing account to be created.')
+            account['name'] for account in existing_billing_accounts
+        ]
+        console.tell('Waiting for billing account to be created.')
         while True:
             billing_accounts = billing_client.list_billing_accounts(
                 only_open_accounts=True)
             if len(existing_billing_accounts) != len(billing_accounts):
                 billing_account_names = [
-                    account['name'] for account in billing_accounts]
+                    account['name'] for account in billing_accounts
+                ]
                 diff = list(
                     set(billing_account_names) -
                     set(existing_billing_account_names))
@@ -672,9 +689,11 @@ class BillingPrompt(Prompt):
             time.sleep(2)
 
     @classmethod
-    def prompt(
-            cls, console: io.IO, step_prompt: str, arguments: Dict[str, Any],
-            credentials: Optional[credentials.Credentials] = None) -> str:
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user for a billing account to use for deployment.
 
         Args:
@@ -691,16 +710,15 @@ class BillingPrompt(Prompt):
         billing_client = billing.BillingClient.from_credentials(credentials)
 
         if ('project_creation_mode' in arguments and
-            (arguments['project_creation_mode'] ==
-             workflow.ProjectCreationMode.MUST_EXIST)):
+            (arguments['project_creation_mode'] == workflow.ProjectCreationMode.
+             MUST_EXIST)):
 
             assert 'project_id' in arguments, 'project_id must be set'
             project_id = arguments['project_id']
-            billing_account = (
-                billing_client.get_billing_account(project_id))
+            billing_account = (billing_client.get_billing_account(project_id))
             if billing_account.get('billingEnabled', False):
-                msg = ('{} Billing is already enabled on this project.'
-                       .format(step_prompt))
+                msg = ('{} Billing is already enabled on this project.'.format(
+                    step_prompt))
                 console.tell(msg)
                 return billing_account.get('billingAccountName')
 
@@ -714,8 +732,8 @@ class BillingPrompt(Prompt):
         if billing_accounts:
             console.tell('You have the following existing billing accounts: ')
             for i, account_info in enumerate(billing_accounts):
-                console.tell('{}. {}'.format(
-                    i + 1, account_info['displayName']))
+                console.tell('{}. {}'.format(i + 1,
+                                             account_info['displayName']))
             choice = console.ask(
                 ('Please enter your numeric choice or press [Enter] to create '
                  'a new billing account: '))
@@ -723,18 +741,18 @@ class BillingPrompt(Prompt):
                 if not choice:
                     return cls._get_new_billing_account(
                         console, billing_accounts, billing_client)
-                if (not choice.isdigit() or int(choice) <= 0
-                        or int(choice) > len(billing_accounts)):
+                if (not choice.isdigit() or int(choice) <= 0 or
+                        int(choice) > len(billing_accounts)):
                     if len(billing_accounts) == 1:
                         choice = console.ask(
                             ('Please enter "1" to use "{}" or press '
                              '[Enter] to create a new account: ').format(
-                                billing_accounts[0]['displayName']))
+                                 billing_accounts[0]['displayName']))
                     else:
                         choice = console.ask(
                             ('Please enter a value between 1 and {} or press '
                              '[Enter] to create a new account: ').format(
-                                len(billing_accounts)))
+                                 len(billing_accounts)))
                 else:
                     return billing_accounts[int(choice) - 1]['name']
         else:
@@ -742,8 +760,8 @@ class BillingPrompt(Prompt):
             # the user to create a new one.
             console.tell('You do not have existing billing accounts.')
             console.ask('Press [Enter] to create a new billing account.')
-            return cls._get_new_billing_account(
-                console, billing_accounts, billing_client)
+            return cls._get_new_billing_account(console, billing_accounts,
+                                                billing_client)
 
     @staticmethod
     def validate(s, credentials: Optional[credentials.Credentials] = None):
@@ -760,6 +778,7 @@ class BillingPrompt(Prompt):
         billing_client = billing.BillingClient(credentials)
         billing_accounts = billing_client.list_billing_accounts()
         billing_account_names = [
-            account['name'] for account in billing_accounts]
+            account['name'] for account in billing_accounts
+        ]
         if s not in billing_account_names:
             raise ValueError('The provided billing account does not exist.')

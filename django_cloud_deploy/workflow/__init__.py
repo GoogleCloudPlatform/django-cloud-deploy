@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """A module to manage workflow for deployment of Django apps."""
 
 import os
@@ -121,21 +120,21 @@ class WorkflowManager(object):
 
         # TODO: Use progress bar to show status info instead of print statement
         print(
-            self._generate_section_header(
-                1, 'Create GCP Project', self._TOTAL_NEW_STEPS))
-        self._project_workflow.create_project(
-            project_name, project_id, project_creation_mode)
+            self._generate_section_header(1, 'Create GCP Project',
+                                          self._TOTAL_NEW_STEPS))
+        self._project_workflow.create_project(project_name, project_id,
+                                              project_creation_mode)
 
         print(
-            self._generate_section_header(
-                2, 'Billing Set Up', self._TOTAL_NEW_STEPS))
+            self._generate_section_header(2, 'Billing Set Up',
+                                          self._TOTAL_NEW_STEPS))
         if not self._billing_client.check_billing_enabled(project_id):
-            self._billing_client.enable_project_billing(
-                project_id, billing_account_name)
+            self._billing_client.enable_project_billing(project_id,
+                                                        billing_account_name)
 
         print(
-            self._generate_section_header(
-                3, 'Django Source Generation', self._TOTAL_NEW_STEPS))
+            self._generate_section_header(3, 'Django Source Generation',
+                                          self._TOTAL_NEW_STEPS))
         self._source_generator.generate_all_source_files(
             project_id=project_id,
             project_name=django_project_name,
@@ -151,12 +150,12 @@ class WorkflowManager(object):
         self._database_workflow.create_and_setup_database(
             project_id, database_instance_name, database_name,
             database_password, django_superuser_name, django_superuser_email,
-            django_superuser_password, database_username,
-            cloud_sql_proxy_path, region)
+            django_superuser_password, database_username, cloud_sql_proxy_path,
+            region)
 
         print(
-            self._generate_section_header(
-                5, 'Enable Services', self._TOTAL_NEW_STEPS))
+            self._generate_section_header(5, 'Enable Services',
+                                          self._TOTAL_NEW_STEPS))
         if required_services is None:
             required_services = self._enable_service_workflow.load_services()
         self._enable_service_workflow.enable_required_services(
@@ -176,9 +175,9 @@ class WorkflowManager(object):
         required_service_accounts = (
             required_service_accounts or
             self._service_account_workflow.load_service_accounts())
-        secrets = self._generate_secrets(
-            project_id, database_username, database_password,
-            required_service_accounts)
+        secrets = self._generate_secrets(project_id, database_username,
+                                         database_password,
+                                         required_service_accounts)
 
         print(
             self._generate_section_header(
@@ -226,20 +225,20 @@ class WorkflowManager(object):
             database_password)
 
         print(
-            self._generate_section_header(
-                1, 'Database Migration', self._TOTAL_UPDATE_STEPS))
+            self._generate_section_header(1, 'Database Migration',
+                                          self._TOTAL_UPDATE_STEPS))
         self._database_workflow.migrate_database(
             project_id, database_instance_name, cloud_sql_proxy_path, region)
 
         print(
-            self._generate_section_header(
-                2, 'Static Content Update', self._TOTAL_UPDATE_STEPS))
+            self._generate_section_header(2, 'Static Content Update',
+                                          self._TOTAL_UPDATE_STEPS))
         self._statitc_content_workflow.update_static_content(
             cloud_storage_bucket_name, static_content_dir)
 
         print(
-            self._generate_section_header(
-                3, 'Update Deployment', self._TOTAL_UPDATE_STEPS))
+            self._generate_section_header(3, 'Update Deployment',
+                                          self._TOTAL_UPDATE_STEPS))
         admin_url = self._deploygke_workflow.update_app_sync(
             project_id, cluster_name, django_directory_path,
             django_project_name, image_name)
@@ -249,13 +248,11 @@ class WorkflowManager(object):
 
     def _generate_section_header(self, step: str, section_name: str,
                                  total_steps: int):
-        return '\n**Step {} of {}: {}**\n'.format(
-            step, total_steps, section_name)
+        return '\n**Step {} of {}: {}**\n'.format(step, total_steps,
+                                                  section_name)
 
     def _generate_secrets(
-            self,
-            project_id: str,
-            database_username: str,
+            self, project_id: str, database_username: str,
             database_password: str,
             required_service_accounts: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Generate Kubernetes secrets required for deployment.
@@ -283,8 +280,8 @@ class WorkflowManager(object):
         """
 
         secrets = {
-            'cloudsql': self._generate_base_secrets(
-                database_username, database_password)
+            'cloudsql':
+            self._generate_base_secrets(database_username, database_password)
         }
         for service_account_dict in required_service_accounts:
             key_data = (
@@ -309,7 +306,4 @@ class WorkflowManager(object):
         Returns:
             secrets: Base secret data used by kubernetes.
         """
-        return {
-            'username': database_username,
-            'password': database_password
-        }
+        return {'username': database_username, 'password': database_password}

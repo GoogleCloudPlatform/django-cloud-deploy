@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for the cloudlib.static_content_serve module."""
 
 import os
@@ -31,9 +30,7 @@ FAKE_IAM_POLICY = {
 
 PUBLIC_READ_BINDING = {
     'role': 'roles/storage.objectViewer',
-    'members': [
-        'allUsers'
-    ]
+    'members': ['allUsers']
 }
 
 INVALID_IAM_POLICY = {'invalid_key': 'invalid_value'}
@@ -110,10 +107,8 @@ class StaticContentServeClientTest(absltest.TestCase):
                 self._storage_service_fake))
 
     def test_create_bucket_success(self):
-        self._static_content_serve_client.create_bucket(
-            PROJECT_ID, BUCKET_NAME)
-        self.assertIn(BUCKET_NAME,
-                      self._storage_service_fake.buckets().buckets)
+        self._static_content_serve_client.create_bucket(PROJECT_ID, BUCKET_NAME)
+        self.assertIn(BUCKET_NAME, self._storage_service_fake.buckets().buckets)
 
     def test_create_bucket_no_permission(self):
         project_id = 'project_no_permission'

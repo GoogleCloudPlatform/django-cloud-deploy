@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Workflow for serving static content of Django projects."""
 
 from django_cloud_deploy.cloudlib import static_content_serve
@@ -27,9 +26,7 @@ class StaticContentServeWorkflow(object):
             static_content_serve.StaticContentServeClient.from_credentials(
                 credentials))
 
-    def serve_static_content(self,
-                             project_id: str,
-                             bucket_name: str,
+    def serve_static_content(self, project_id: str, bucket_name: str,
                              static_content_dir: str):
         """Do all the work for serving static content of the provided project.
 
@@ -48,9 +45,7 @@ class StaticContentServeWorkflow(object):
         self._static_content_serve_client.upload_static_content(
             bucket_name, static_content_dir)
 
-    def update_static_content(self,
-                              bucket_name: str,
-                              static_content_dir: str):
+    def update_static_content(self, bucket_name: str, static_content_dir: str):
         """Update GCS bucket after user modified the Django app.
 
         Args:

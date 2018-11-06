@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITconsoleNS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissconsolens and
 # limitatconsolens under the License.
-
 """Create and deploy a new Django project on GKE."""
 
 import argparse
@@ -86,8 +85,8 @@ def main(args: argparse.Namespace):
     except tool_requirements.MissingRequirementsError as e:
         console.tell('Please install the following requirements:')
         for req in e.missing_requirements:
-            console.tell(
-                '* {}: {}'.format(req.name, req.how_to_install_message))
+            console.tell('* {}: {}'.format(req.name,
+                                           req.how_to_install_message))
         return
 
     prompt_order = [
@@ -163,8 +162,7 @@ def main(args: argparse.Namespace):
 
     try:
         workflow_manager.create_and_deploy_new_project(
-            actual_parameters['project_name'],
-            actual_parameters['project_id'],
+            actual_parameters['project_name'], actual_parameters['project_id'],
             actual_parameters['project_creation_mode'],
             actual_parameters['billing_account_name'],
             actual_parameters['django_project_name'],

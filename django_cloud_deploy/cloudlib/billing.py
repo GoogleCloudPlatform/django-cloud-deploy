@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Manages user's Google Cloud Platform billing setup."""
 
 from typing import Any, Dict, List
@@ -44,8 +43,8 @@ class BillingClient(object):
         Returns:
             Is billing enabled for the given project.
         """
-        return (self.get_billing_account(project_id)
-                .get('billingEnabled', False))
+        return (self.get_billing_account(project_id).get(
+            'billingEnabled', False))
 
     def get_billing_account(self, project_id: str) -> Dict[str, Any]:
         """Gets the billing information for the given project.
@@ -105,13 +104,14 @@ class BillingClient(object):
             raise BillingError('Unexpected response listing billing accounts.')
         all_billing_accounts = response['billingAccounts']
         if only_open_accounts:
-            return [account for account in all_billing_accounts
-                    if account.get('open', False)]
+            return [
+                account for account in all_billing_accounts
+                if account.get('open', False)
+            ]
         else:
             return all_billing_accounts
 
-    def enable_project_billing(self,
-                               project_id: str,
+    def enable_project_billing(self, project_id: str,
                                billing_account_name: str):
         """Enable billing for the given project.
 

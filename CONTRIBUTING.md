@@ -24,7 +24,15 @@ information on using pull requests.
 
 ## Style guidelines
 
-All code submissions should follow the [Google Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md).
+All code submissions should follow the [Google Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md) and should
+be formatted using [YAPF](https://github.com/google/yapf).
+
+YAPF can be installed and run with:
+
+```bash
+pip install yapf
+yapf -i <file>  # Updates the formatting of <file>
+```
 
 ## Community Guidelines
 

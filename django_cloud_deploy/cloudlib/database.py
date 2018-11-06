@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Manages Google Cloud SQL instances, databases and users.
 
 See https://cloud.google.com/sql/docs/
@@ -210,8 +209,7 @@ class DatabaseClient(object):
                 project_id, region, instance_name)
             instance_flag = '-instances={}=tcp:{}'.format(
                 instance_connection_string, port)
-            process = pexpect.spawn(
-                cloud_sql_proxy_path, args=[instance_flag])
+            process = pexpect.spawn(cloud_sql_proxy_path, args=[instance_flag])
             # Make sure cloud sql proxy is started before doing the real work
             process.expect('Ready for new connections', timeout=5)
             yield
@@ -246,10 +244,8 @@ class DatabaseClient(object):
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             region: Where the Cloud SQL instance is in.
         """
-        with self.with_cloud_sql_proxy(project_id,
-                                       instance_name,
-                                       cloud_sql_proxy_path,
-                                       region):
+        with self.with_cloud_sql_proxy(project_id, instance_name,
+                                       cloud_sql_proxy_path, region):
             # "makemigrations" will generate migration files based on
             # definitions in models.py.
             management.call_command(
@@ -287,12 +283,11 @@ class DatabaseClient(object):
             region: Where the Cloud SQL instance is in.
         """
 
-        with self.with_cloud_sql_proxy(project_id,
-                                       instance_name,
-                                       cloud_sql_proxy_path,
-                                       region):
+        with self.with_cloud_sql_proxy(project_id, instance_name,
+                                       cloud_sql_proxy_path, region):
             # This can only be imported after django.setup() is called
             from django.contrib.auth.models import User
             User.objects.create_superuser(
-                username=superuser_name, email=superuser_email,
+                username=superuser_name,
+                email=superuser_email,
                 password=superuser_password)

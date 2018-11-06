@@ -51,8 +51,8 @@ def unit_test(session, python_version):
 def lint(session):
     """Run linters."""
     session.interpreter = 'python3.5'
-    session.install('flake8')
-    session.run('flake8')
+    session.install('yapf')
+    session.run('yapf', '--diff', '-r', 'cli', 'cloudlib', 'tests', 'workflow')
 
 
 @nox.session

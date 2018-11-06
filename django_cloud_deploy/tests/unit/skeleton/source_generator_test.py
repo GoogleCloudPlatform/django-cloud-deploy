@@ -280,8 +280,8 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
             'fakedjango_app_secret1', 'fakedjango_app_secret2'
         ]
         self._yamlfile_generator.generate(
-            self._project_dir, project_name, project_id, instance_name,
-            region, image_tag, cloudsql_secrets, django_app_secrets)
+            self._project_dir, project_name, project_id, instance_name, region,
+            image_tag, cloudsql_secrets, django_app_secrets)
 
         yaml_file_path = os.path.join(self._project_dir, project_name + '.yaml')
         with open(yaml_file_path) as yaml_file:

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Manages Resources related to Google Kubernetes Engine.
 
 For example, docker image build and push, cluster creation, deployment and

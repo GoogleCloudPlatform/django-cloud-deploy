@@ -35,8 +35,8 @@ def _load_test_config():
 
     dirname, _ = os.path.split(
         os.path.abspath(django_cloud_deploy.tests.__file__))
-    config_path = os.path.join(
-        dirname, 'integration', 'data', 'integration_test_config.yaml')
+    config_path = os.path.join(dirname, 'integration', 'data',
+                               'integration_test_config.yaml')
     with open(config_path) as config_file:
         config_file_content = config_file.read()
     return yaml.load(config_file_content)
@@ -131,8 +131,7 @@ class ResourceCleanUpTest(BaseTest):
                 clusterId=cluster_name)
             request.execute()
 
-    def _delete_objects(self,
-                        bucket_name: str,
+    def _delete_objects(self, bucket_name: str,
                         storage_service: googleapiclient.discovery.Resource):
         """Delete all objects in the given bucket.
 

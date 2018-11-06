@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITconsoleNS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissconsolens and
 # limitatconsolens under the License.
-
 """Create and deploy a new Django project on GKE."""
 
 import argparse
@@ -89,8 +88,7 @@ def main(args: argparse.Namespace):
     if remaining_parameters_to_prompt:
 
         num_steps = len(remaining_parameters_to_prompt)
-        console.tell(
-            '<b>{} steps to update project</b>'.format(num_steps))
+        console.tell('<b>{} steps to update project</b>'.format(num_steps))
         console.tell()
         parameter_and_prompt = sorted(
             remaining_parameters_to_prompt.items(),
@@ -103,11 +101,10 @@ def main(args: argparse.Namespace):
 
     workflow_manager = workflow.WorkflowManager(
         actual_parameters['credentials'])
-    workflow_manager.update_project(
-        actual_parameters['project_id'],
-        actual_parameters['django_project_name'],
-        actual_parameters['django_directory_path'],
-        actual_parameters['database_password'])
+    workflow_manager.update_project(actual_parameters['project_id'],
+                                    actual_parameters['django_project_name'],
+                                    actual_parameters['django_directory_path'],
+                                    actual_parameters['database_password'])
 
 
 if __name__ == '__main__':
