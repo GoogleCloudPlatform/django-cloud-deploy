@@ -203,13 +203,13 @@ class DatabaseClient(object):
         Raises:
             DatabaseError: If cloud sql proxy failed to start after 5 seconds.
         """
+        db.close_old_connections()
+        instance_connection_string = '{0}:{1}:{2}'.format(
+            project_id, region, instance_name)
+        instance_flag = '-instances={}=tcp:{}'.format(
+            instance_connection_string, port)
+        process = pexpect.spawn(cloud_sql_proxy_path, args=[instance_flag])
         try:
-            db.close_old_connections()
-            instance_connection_string = '{0}:{1}:{2}'.format(
-                project_id, region, instance_name)
-            instance_flag = '-instances={}=tcp:{}'.format(
-                instance_connection_string, port)
-            process = pexpect.spawn(cloud_sql_proxy_path, args=[instance_flag])
             # Make sure cloud sql proxy is started before doing the real work
             process.expect('Ready for new connections', timeout=5)
             yield
