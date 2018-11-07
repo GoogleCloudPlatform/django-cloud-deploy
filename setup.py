@@ -37,7 +37,7 @@ install_requires=[
 setuptools.setup(
     name='django-cloud-deploy',
 
-    version='0.0.9',
+    version='0.0.10',
 
     description='Tool to deploy a Django App onto GCP',
     long_description=long_description,
