@@ -91,8 +91,8 @@ class ContainerClient(object):
                 pass
         self._temp_ca_files = []
 
-    def _get_default_kubernetes_version(self, project_id, region='us-west1'):
-        name = 'projects/{}/locations/{}'.format(project_id, region)
+    def _get_default_kubernetes_version(self, project_id, zone='us-west1-a'):
+        name = 'projects/{}/locations/{}'.format(project_id, zone)
         request = self._container_service.projects().locations(
         ).getServerConfig(name=name)
         response = request.execute()
@@ -123,7 +123,7 @@ class ContainerClient(object):
 
         template = ContainerClient._load_cluster_definition_template()
         kubernetes_version = self._get_default_kubernetes_version(
-            project_id, region)
+            project_id, zone)
         cluster_definition = template.render({
             'cluster_name':
             cluster_name,
