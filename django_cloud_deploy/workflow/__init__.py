@@ -67,6 +67,7 @@ class WorkflowManager(object):
             database_password: str,
             required_services: Optional[List[Dict[str, str]]] = None,
             required_service_accounts: Optional[List[Dict[str, Any]]] = None,
+            cloud_storage_bucket_name: str = None,
             region: str = 'us-west1',
             cloud_sql_proxy_path: str = 'cloud_sql_proxy',
             open_browser: bool = True):
@@ -76,8 +77,8 @@ class WorkflowManager(object):
             project_name: The name of the Google Cloud Platform project.
             project_id: The unique id to use when creating the Google Cloud
                 Platform project.
-            project_creation: Whether we want to create the GCP project or use
-                an existing project.
+            project_creation_mode: Whether we want to create the GCP project or
+                use an existing project.
             billing_account_name: Name of the billing account user want to use
                 for their Google Cloud Platform project. Should look like
                 "billingAccounts/12345-678901-234567"
@@ -102,15 +103,21 @@ class WorkflowManager(object):
                         "roles/role2"
                     ]
                 }
+            cloud_storage_bucket_name: Name of the Google Cloud Storage Bucket
+                we use to serve static content. By default it is equal to
+                project id.
             region: Where the service is hosted.
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             open_browser: Whether we open the browser to show the deployed app
                 at the end.
+
+        Returns:
+            Admin site url of the deployed Django app.
         """
 
         # A bunch of variables necessary for deployment we hardcode for user.
         database_username = 'postgres'
-        cloud_storage_bucket_name = project_id
+        cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
         cluster_name = django_project_name
         database_name = django_project_name + '-db'
         database_instance_name = django_project_name + '-instance'
@@ -135,13 +142,24 @@ class WorkflowManager(object):
         print(
             self._generate_section_header(3, 'Django Source Generation',
                                           self._TOTAL_NEW_STEPS))
+
+        # Source generation requires service account ids.
+        required_service_accounts = (
+            required_service_accounts or
+            self._service_account_workflow.load_service_accounts())
+        service_account_ids = [sa['id'] for sa in required_service_accounts]
         self._source_generator.generate_all_source_files(
             project_id=project_id,
             project_name=django_project_name,
             app_names=[django_app_name],
             destination=django_directory_path,
             database_user=database_username,
-            database_password=database_password)
+            database_password=database_password,
+            instance_name=database_instance_name,
+            database_name=database_name,
+            cloud_storage_bucket_name=cloud_storage_bucket_name,
+            cloudsql_secrets=service_account_ids,
+            image_tag=image_name)
 
         print(
             self._generate_section_header(
@@ -172,9 +190,6 @@ class WorkflowManager(object):
             self._generate_section_header(
                 7, 'Create Service Account Necessary For Deployment',
                 self._TOTAL_NEW_STEPS))
-        required_service_accounts = (
-            required_service_accounts or
-            self._service_account_workflow.load_service_accounts())
         secrets = self._generate_secrets(project_id, database_username,
                                          database_password,
                                          required_service_accounts)
@@ -188,6 +203,7 @@ class WorkflowManager(object):
         print('Your app is running at {}.'.format(admin_url))
         if open_browser:
             webbrowser.open(admin_url)
+        return admin_url
 
     def update_project(self,
                        project_id: str,

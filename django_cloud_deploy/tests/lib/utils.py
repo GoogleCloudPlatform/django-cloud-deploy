@@ -16,21 +16,23 @@ import datetime
 import random
 import string
 
-TIMESTAMP_FORMAT = '%Y%m%d-%H%M%S'
+TIMESTAMP_FORMAT = '%Y%m%d%H%M%S'
 
 
-def get_resource_name(resource_type='',
-                      hash_len=4,
-                      timestamp_format=TIMESTAMP_FORMAT) -> str:
+def get_resource_name(resource_type: str = '',
+                      hash_len: int = 4,
+                      timestamp_format: str = TIMESTAMP_FORMAT,
+                      delimiter: chr = '-') -> str:
     """Generate resource names as TYPE-YYYYMMDD-HHMMSS-HASH.
 
     This function is useful to avoid operations on the same resource when
     running integration tests simultaneously.
 
     Args:
-        resource_type: str, type of the resource which needs to generated name.
-        hash_len: int, the length of hash at the end of generated name.
-        timestamp_format: str, the timestamp format used to generate the name.
+        resource_type: Type of the resource which needs to generated name.
+        hash_len: The length of hash at the end of generated name.
+        timestamp_format: The timestamp format used to generate the name.
+        delimiter: The character to delimit the random strings.
 
     Returns:
         Generated name with the format mentioned above.
@@ -41,4 +43,4 @@ def get_resource_name(resource_type='',
         random.SystemRandom().choice(string.ascii_lowercase + string.digits)
         for _ in range(hash_len)
     ])
-    return '-'.join([resource_type, timestamp, hash_str])
+    return delimiter.join([resource_type, timestamp, hash_str])

@@ -76,10 +76,35 @@ def add_arguments(parser):
         action='store_true',
         help='Flag to indicate using a new or existing project.')
 
+    parser.add_argument(
+        '--credentials',
+        dest='credentials',
+        help=('The file path of the credentials file to use for deployment. '
+              'Test only, do not use.'))
 
-def main(args: argparse.Namespace):
+    parser.add_argument(
+        '--bucket-name',
+        dest='bucket_name',
+        help=('Name of the GCS bucket to serve static content. '
+              'Test only, do not use.'))
 
-    console = io.ConsoleIO()
+    parser.add_argument(
+        '--service-accounts',
+        dest='service_accounts',
+        nargs='+',
+        help=('Service account objects to create for deployment. '
+              'Test only, do not use.'))
+
+    parser.add_argument(
+        '--services',
+        dest='services',
+        nargs='+',
+        help=('Services necessary for the deployment. '
+              'Test only, do not use.'))
+
+
+def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
+
     try:
         tool_requirements.check_and_handle_requirements(console)
     except tool_requirements.MissingRequirementsError as e:
@@ -121,7 +146,10 @@ def main(args: argparse.Namespace):
     remaining_parameters_to_prompt = {}
 
     actual_parameters = {
-        'project_creation_mode': workflow.ProjectCreationMode.CREATE
+        'project_creation_mode': workflow.ProjectCreationMode.CREATE,
+        'bucket_name': getattr(args, 'bucket_name', None),
+        'service_accounts': getattr(args, 'service_accounts', None),
+        'services': getattr(args, 'services', None)
     }
 
     for parameter_name, prompter in required_parameters_to_prompt.items():
@@ -161,17 +189,23 @@ def main(args: argparse.Namespace):
         actual_parameters['credentials'])
 
     try:
-        workflow_manager.create_and_deploy_new_project(
-            actual_parameters['project_name'], actual_parameters['project_id'],
-            actual_parameters['project_creation_mode'],
-            actual_parameters['billing_account_name'],
-            actual_parameters['django_project_name'],
-            actual_parameters['django_app_name'],
-            actual_parameters['django_superuser_login'],
-            actual_parameters['django_superuser_email'],
-            actual_parameters['django_superuser_password'],
-            actual_parameters['django_directory_path'],
-            actual_parameters['database_password'])
+        admin_url = workflow_manager.create_and_deploy_new_project(
+            project_name=actual_parameters['project_name'],
+            project_id=actual_parameters['project_id'],
+            project_creation_mode=actual_parameters['project_creation_mode'],
+            billing_account_name=actual_parameters['billing_account_name'],
+            django_project_name=actual_parameters['django_project_name'],
+            django_app_name=actual_parameters['django_app_name'],
+            django_superuser_name=actual_parameters['django_superuser_login'],
+            django_superuser_email=actual_parameters['django_superuser_email'],
+            django_superuser_password=actual_parameters[
+                'django_superuser_password'],
+            django_directory_path=actual_parameters['django_directory_path'],
+            database_password=actual_parameters['database_password'],
+            required_services=actual_parameters['services'],
+            required_service_accounts=actual_parameters['service_accounts'],
+            cloud_storage_bucket_name=actual_parameters['bucket_name'])
+        return admin_url
     except workflow.ProjectExistsError:
         console.error('A project with id "{}" already exists'.format(
             actual_parameters['project_id']))
