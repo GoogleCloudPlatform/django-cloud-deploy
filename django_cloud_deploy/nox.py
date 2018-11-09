@@ -58,6 +58,20 @@ def lint(session):
 
 
 @nox.session
+def type_check(session):
+    """Run type checking using pytype."""
+    session.interpreter = 'python3.5'
+    session.install('..', 'pytype')
+    session.run('pytype', '--python-version=3.5',
+                '--exclude', 'tests', 'nox.py',
+                '--disable=pyi-error',
+                '../django_cloud_deploy',
+                # TODO: When pytype passes cleanly, remove allowing
+                # all success codes.
+                success_codes=range(256))
+
+
+@nox.session
 @nox.parametrize('python_version', ['3.5'])
 def integration_test(session, python_version):
     """Run the integration test suite."""
