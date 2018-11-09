@@ -273,7 +273,7 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
             self.assertIn('kind: Deployment', yaml_file_content)
             self.assertIn('kind: Service', yaml_file_content)
 
-            # Assert cloudsql secret is used
+            # Assert cloudsql secret is used as default
             self.assertIn('name: cloudsql-oauth-credentials', yaml_file_content)
 
     def test_customized_yaml_file_content(self):

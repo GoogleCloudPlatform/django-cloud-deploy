@@ -249,7 +249,7 @@ class _YAMLFileGenerator(_Jinja2FileGenerator):
                  region: Optional[str] = 'us-west1',
                  image_tag: Optional[str] = None,
                  cloudsql_secrets: Optional[List[str]] = None,
-                 django_app_secrets: Optional[List[str]] = None):
+                 django_secrets: Optional[List[str]] = None):
         """Generate YAML file which defines Kubernete deployment and service.
 
         Args:
@@ -265,7 +265,7 @@ class _YAMLFileGenerator(_Jinja2FileGenerator):
             image_tag: A customized docker image tag used in integration tests.
             cloudsql_secrets: A list of secrets needed by cloud sql proxy
                 container.
-            django_app_secrets: A list of secrets needed by Django app
+            django_secrets: A list of secrets needed by Django app
                 container.
         """
         file_name = 'project_name.yaml'
@@ -276,15 +276,16 @@ class _YAMLFileGenerator(_Jinja2FileGenerator):
         # your cloud sql instance.
         cloud_sql_connection_string = '{}:{}:{}'.format(project_id, region,
                                                         instance_name)
-        cloudsql_secrets = (
-            cloudsql_secrets or ['cloudsql-oauth-credentials'])
+        cloudsql_secrets = cloudsql_secrets or ['cloudsql-oauth-credentials']
+        django_secrets = django_secrets or []
+
         options = {
             'project_name': project_name,
             'project_id': project_id,
             'cloud_sql_connection_string': cloud_sql_connection_string,
             'image_tag': image_tag,
             'cloudsql_secrets': cloudsql_secrets,
-            'django_app_secrets': django_app_secrets
+            'django_secrets': django_secrets
         }
         template_path = os.path.join(self._get_template_folder_path(),
                                      file_name)
@@ -367,8 +368,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
                                   cloud_storage_bucket_name:
                                   Optional[str] = None,
                                   cloudsql_secrets: Optional[List[str]] = None,
-                                  django_app_secrets:
-                                  Optional[List[str]] = None,
+                                  django_secrets: Optional[List[str]] = None,
                                   instance_name: Optional[str] = None,
                                   database_name: Optional[str] = None,
                                   region: Optional[str] = 'us-west1',
@@ -389,7 +389,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
                 serve static content.
             cloudsql_secrets: A list of secrets needed by cloud sql proxy
                 container.
-            django_app_secrets: A list of secrets needed by Django app
+            django_secrets: A list of secrets needed by Django app
                 container.
             instance_name: The name of cloud sql instance for database or the
                 Django project. The default value for instance_name should be
@@ -409,6 +409,6 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.dependency_file_generator.generate(destination)
         self.yaml_file_generator.generate(destination, project_name, project_id,
                                           instance_name, region, image_tag,
-                                          cloudsql_secrets, django_app_secrets)
+                                          cloudsql_secrets, django_secrets)
         self.setup_django_environment(
             destination, project_name, database_user, database_password)

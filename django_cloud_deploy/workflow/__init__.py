@@ -66,7 +66,8 @@ class WorkflowManager(object):
             django_directory_path: str,
             database_password: str,
             required_services: Optional[List[Dict[str, str]]] = None,
-            required_service_accounts: Optional[List[Dict[str, Any]]] = None,
+            required_service_accounts: Optional[
+                Dict[str, List[Dict[str, Any]]]] = None,
             cloud_storage_bucket_name: str = None,
             region: str = 'us-west1',
             cloud_sql_proxy_path: str = 'cloud_sql_proxy',
@@ -94,14 +95,16 @@ class WorkflowManager(object):
             required_services: The services needed to be enabled for deployment.
             required_service_accounts: Service accounts needed to be created for
                 deployment. It should have the following format:
-                {
-                    "id": "service account id",
-                    "name": "Display name",
-                    "file_name": "credentials.json",
-                    "roles": [
-                        "roles/role1",
-                        "roles/role2"
-                    ]
+                { 
+                    "cloud_sql": [{
+                        "id": "service account id",
+                        "name": "Display name",
+                        "file_name": "credentials.json",
+                        "roles": [
+                            "roles/role1",
+                            "roles/role2"
+                        ]
+                    }],
                 }
             cloud_storage_bucket_name: Name of the Google Cloud Storage Bucket
                 we use to serve static content. By default it is equal to
@@ -147,7 +150,8 @@ class WorkflowManager(object):
         required_service_accounts = (
             required_service_accounts or
             self._service_account_workflow.load_service_accounts())
-        service_account_ids = [sa['id'] for sa in required_service_accounts]
+        cloud_sql_secrets, django_secrets = self._load_secret_names(
+            required_service_accounts)
         self._source_generator.generate_all_source_files(
             project_id=project_id,
             project_name=django_project_name,
@@ -158,7 +162,8 @@ class WorkflowManager(object):
             instance_name=database_instance_name,
             database_name=database_name,
             cloud_storage_bucket_name=cloud_storage_bucket_name,
-            cloudsql_secrets=service_account_ids,
+            cloudsql_secrets=cloud_sql_secrets,
+            django_secrets=django_secrets,
             image_tag=image_name)
 
         print(
@@ -262,15 +267,16 @@ class WorkflowManager(object):
         if open_browser:
             webbrowser.open(admin_url)
 
-    def _generate_section_header(self, step: str, section_name: str,
+    def _generate_section_header(self, step: int, section_name: str,
                                  total_steps: int):
-        return '\n**Step {} of {}: {}**\n'.format(step, total_steps,
-                                                  section_name)
+        return '\n**Step {} of {}: {}**\n'.format(
+            str(step), total_steps, section_name)
 
     def _generate_secrets(
             self, project_id: str, database_username: str,
             database_password: str,
-            required_service_accounts: List[Dict[str, Any]]) -> Dict[str, Any]:
+            required_service_accounts: Dict[str, List[Dict[str, Any]]]
+    ) -> Dict[str, Any]:
         """Generate Kubernetes secrets required for deployment.
 
         Args:
@@ -299,15 +305,14 @@ class WorkflowManager(object):
             'cloudsql':
             self._generate_base_secrets(database_username, database_password)
         }
-        for service_account_dict in required_service_accounts:
-            key_data = (
-                self._service_account_workflow.create_service_account_and_key(
-                    project_id, service_account_dict['id'],
-                    service_account_dict['name'],
-                    service_account_dict['roles']))
-            secrets[service_account_dict['id']] = {
-                service_account_dict['file_name']: key_data
-            }
+
+        for _, container_secrets in required_service_accounts.items():
+            for s_a in container_secrets:
+                key_data = (self._service_account_workflow.
+                            create_service_account_and_key(
+                                project_id, s_a['id'], s_a['name'],
+                                s_a['roles']))
+                secrets[s_a['id']] = {s_a['file_name']: key_data}
         return secrets
 
     @staticmethod
@@ -323,3 +328,19 @@ class WorkflowManager(object):
             secrets: Base secret data used by kubernetes.
         """
         return {'username': database_username, 'password': database_password}
+
+    @staticmethod
+    def _load_secret_names(required_service_accounts: Optional[
+            Dict[str, List[Dict[str, Any]]]] = None) -> (List[str], List[str]):
+        """ Retrieves list of secret names for containers.
+        
+        Args:
+             required_service_accounts: Service accounts needed by deployment.
+         Returns:
+             List of secrets for cloud_sql and django container.
+        """
+        cloud_sql_secrets = required_service_accounts.get('cloud_sql', [])
+        django_secrets = required_service_accounts.get('django', [])
+        cloud_sql_secrets = [sa['id'] for sa in cloud_sql_secrets]
+        django_secrets = [sa['id'] for sa in django_secrets]
+        return cloud_sql_secrets, django_secrets

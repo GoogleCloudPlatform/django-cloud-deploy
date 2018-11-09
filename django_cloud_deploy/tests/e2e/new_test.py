@@ -87,7 +87,9 @@ class NewProjectE2ETest(test_base.ResourceCleanUpTest):
             test_io.password_answers.append(fake_password)
             test_io.answers.append('')  # django_superuser_email
 
-            fake_service_accounts = [self._FAKE_CLOUDSQL_SERVICE_ACCOUNT]
+            fake_service_accounts = {
+                'cloud_sql': [self._FAKE_CLOUDSQL_SERVICE_ACCOUNT]
+            }
 
             arguments = types.SimpleNamespace(
                 credentials=self.credentials,

@@ -59,9 +59,9 @@ spec:
             # [END cloudsql_secrets]
         ports:
         - containerPort: 8080
-        {% if django_app_secrets is not none -%}
+        {% if django_secrets is not none -%}
         volumeMounts:
-          {% for secret in django_app_secrets -%}
+          {% for secret in django_secrets -%}
           - name: {{ secret }}
             mountPath: /secrets/django_app
             readOnly: true
