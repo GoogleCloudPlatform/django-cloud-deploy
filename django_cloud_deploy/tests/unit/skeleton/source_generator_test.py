@@ -37,20 +37,18 @@ class DjangoFileGeneratorTest(FileGeneratorTest):
     APP_ROOT_FOLDER_FILES = ('__init__.py', 'admin.py', 'apps.py', 'models.py',
                              'tests.py', 'views.py')
     PROJECT_ROOT_FOLDER_FILES = ('manage.py',)
-    DJANGO_ROOT_FOLDER_FILES = ('__init__.py', 'base_settings.py',
-                                'local_settings.py', 'urls.py', 'wsgi.py',
-                                'remote_settings.py')
+    DJANGO_ROOT_FOLDER_FILES = ('__init__.py', 'urls.py', 'wsgi.py')
 
     @classmethod
     def setUpClass(cls):
         cls._django_file_generator = source_generator._DjangoFileGenerator()
 
     def test_project_root_structure(self):
-        project_id = project_name = 'test_project_root'
+        project_name = 'test_project_root'
         django_root_dir = os.path.join(self._project_dir, project_name)
 
         self._django_file_generator.generate_project_files(
-            project_id, project_name, self._project_dir)
+            project_name, self._project_dir)
         self.assertTrue(os.path.exists(django_root_dir))
 
         files_list = os.listdir(self._project_dir)
@@ -58,17 +56,17 @@ class DjangoFileGeneratorTest(FileGeneratorTest):
         self.assertCountEqual(self.PROJECT_ROOT_FOLDER_FILES, files_list)
 
     def test_django_root_structure(self):
-        project_id = project_name = 'test_django_root'
+        project_name = 'test_django_root'
         self._django_file_generator.generate_project_files(
-            project_id, project_name, self._project_dir)
+            project_name, self._project_dir)
 
         files_list = os.listdir(os.path.join(self._project_dir, project_name))
         self.assertCountEqual(self.DJANGO_ROOT_FOLDER_FILES, files_list)
 
     def test_wsgi_module_uses_remote_settings(self):
-        project_id = project_name = 'test_wsgi_module_uses_remote_settings'
+        project_name = 'test_wsgi_module_uses_remote_settings'
         self._django_file_generator.generate_project_files(
-            project_id, project_name, self._project_dir)
+            project_name, self._project_dir)
 
         with open(os.path.join(self._project_dir, project_name,
                                'wsgi.py')) as wsgi_file:
@@ -77,14 +75,35 @@ class DjangoFileGeneratorTest(FileGeneratorTest):
             # Test wsgi uses remote settings.
             self.assertIn('remote_settings', wsgi_content)
 
+    def test_app_root_structure(self):
+        app_name = 'test_app_root'
+        app_folder_path = os.path.join(self._project_dir, app_name)
+        self._django_file_generator.generate_app_files(app_name,
+                                                       self._project_dir)
+        self.assertTrue(os.path.exists(app_folder_path))
+
+        files_list = os.listdir(app_folder_path)
+        # Assert migrations folder exist
+        self.assertIn('migrations', files_list)
+        files_list.remove('migrations')
+        self.assertCountEqual(self.APP_ROOT_FOLDER_FILES, files_list)
+
+
+class SettingsFileGeneratorTest(FileGeneratorTest):
+    """Unit test for source_generator._SettingsFileGenerator."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._settings_file_generator = source_generator._SettingsFileGenerator()
+
     def test_base_settings(self):
         project_id = project_name = 'test_base_settings'
-        self._django_file_generator.generate_project_files(
-            project_id, project_name, self._project_dir)
+        self._settings_file_generator.generate_new(project_id, project_name,
+                                                   self._project_dir)
 
-        with open(
-                os.path.join(self._project_dir, project_name,
-                             'base_settings.py')) as settings:
+        settings_file_path = os.path.join(self._project_dir, project_name,
+                                          'base_settings.py')
+        with open(settings_file_path) as settings:
             settings_content = settings.read()
 
             # Test base settings generate secret keys.
@@ -95,12 +114,12 @@ class DjangoFileGeneratorTest(FileGeneratorTest):
 
     def test_local_settings(self):
         project_id = project_name = 'test_local_settings'
-        self._django_file_generator.generate_project_files(
-            project_id, project_name, self._project_dir)
+        self._settings_file_generator.generate_new(project_id, project_name,
+                                                   self._project_dir)
 
-        with open(
-                os.path.join(self._project_dir, project_name,
-                             'local_settings.py')) as settings:
+        settings_file_path = os.path.join(self._project_dir, project_name,
+                                          'local_settings.py')
+        with open(settings_file_path) as settings:
             settings_content = settings.read()
 
             # Test local settings imports base settings
@@ -118,12 +137,12 @@ class DjangoFileGeneratorTest(FileGeneratorTest):
     def test_remote_settings(self):
         project_name = 'test_remote_settings'
         project_id = project_name + 'project_id'
-        self._django_file_generator.generate_project_files(
-            project_id, project_name, self._project_dir)
+        self._settings_file_generator.generate_new(project_id, project_name,
+                                                   self._project_dir)
 
-        with open(
-                os.path.join(self._project_dir, project_name,
-                             'remote_settings.py')) as settings:
+        settings_file_path = os.path.join(self._project_dir, project_name,
+                                          'remote_settings.py')
+        with open(settings_file_path) as settings:
             settings_content = settings.read()
 
             # Test remote settings imports base settings
@@ -143,13 +162,13 @@ class DjangoFileGeneratorTest(FileGeneratorTest):
     def test_customize_remote_settings(self):
         project_name = 'test_remote_settings_customize_database_name'
         project_id = project_name + 'project_id'
-        self._django_file_generator.generate_project_files(
+        self._settings_file_generator.generate_new(
             project_id, project_name, self._project_dir, 'customize-db',
             'customize-bucket')
 
-        with open(
-                os.path.join(self._project_dir, project_name,
-                             'remote_settings.py')) as settings:
+        settings_file_path = os.path.join(self._project_dir, project_name,
+                                          'remote_settings.py')
+        with open(settings_file_path) as settings:
             settings_content = settings.read()
 
             # Test remote settings imports base settings
@@ -162,22 +181,9 @@ class DjangoFileGeneratorTest(FileGeneratorTest):
             self.assertNotIn('DEBUG = True', settings_content)
 
             # Test remote settings use GCS buckets to serve static files
-            self.assertIn('customize-bucket' + '/static', settings_content)
+            self.assertIn('customize-bucket/static', settings_content)
 
             self.assertIn('customize-db', settings_content)
-
-    def test_app_root_structure(self):
-        app_name = 'test_app_root'
-        app_folder_path = os.path.join(self._project_dir, app_name)
-        self._django_file_generator.generate_app_files(app_name,
-                                                       self._project_dir)
-        self.assertTrue(os.path.exists(app_folder_path))
-
-        files_list = os.listdir(app_folder_path)
-        # Assert migrations folder exist
-        self.assertIn('migrations', files_list)
-        files_list.remove('migrations')
-        self.assertCountEqual(self.APP_ROOT_FOLDER_FILES, files_list)
 
 
 class DockerfileGeneratorTest(FileGeneratorTest):
@@ -309,6 +315,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
     DOCKER_FILES = ('Dockerfile', '.dockerignore')
     DEPENDENCY_FILE = ('requirements.txt',)
     PROJECT_ROOT_FOLDER_FILES = ('manage.py',)
+    SETTINGS_FILES = ('base_settings.py', 'local_settings.py',
+                      'remote_settings.py')
 
     @classmethod
     def setUpClass(cls):
@@ -322,6 +330,9 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         self.assertContainsSubset(app_names, files_list)
         self.assertIn(project_name + '.yaml', files_list)
         self.assertIn(project_name, files_list)
+
+        files_list = os.listdir(os.path.join(project_dir, project_name))
+        self.assertContainsSubset(self.SETTINGS_FILES, files_list)
 
     def test_generate_all_source_files(self):
         project_id = project_name = 'test_generate_all_source_file'
