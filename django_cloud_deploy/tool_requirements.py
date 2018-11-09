@@ -161,8 +161,9 @@ class Docker(Requirement):
             # TODO: Check output for error message given when user has
             # not ran the command
             msg = ('Docker is installed but not correctly set up.'
-                   'Use the following command to fix it: '
-                   'sudo usermod -a -G docker $USER\n'
+                   'Use the following command to fix it: \n'
+                   '$ sudo groupadd docker\n'
+                   '$ sudo usermod -a -G docker $USER\n'
                    'Then log out/log back in')
             raise MissingRequirementError(cls.NAME, msg)
 
