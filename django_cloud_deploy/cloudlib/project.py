@@ -108,7 +108,9 @@ class ProjectClient(object):
                 'unexpected response creating project "{}": {}'.format(
                     project_id, response))
 
-        self._confirm_project_creation(project_id)
+        if not self._confirm_project_creation(project_id):
+            raise ProjectError(
+                'Project "{}" is not successfully created.'.format(project_id))
 
     def create_and_set_project(self, project_id: str, project_name: str):
         self.create_project(project_id, project_name)
