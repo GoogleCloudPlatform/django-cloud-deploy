@@ -17,6 +17,7 @@ import shutil
 import tempfile
 
 from absl.testing import absltest
+from django.core import management
 
 from django_cloud_deploy.skeleton import source_generator
 
@@ -184,6 +185,59 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
             self.assertIn('customize-bucket/static', settings_content)
 
             self.assertIn('customize-db', settings_content)
+
+    def test_generate_settings_from_settings_generated_by_django_admin(self):
+        project_name = 'test_generate_from_existing_settings'
+        project_id = project_name + 'project_id'
+
+        # Generate Django project files
+        management.call_command('startproject', project_name, self._project_dir)
+
+        self._settings_file_generator.generate_from_existing(
+            project_id, project_name, self._project_dir)
+
+        expected_settings_files = ('base_settings.py', 'local_settings.py',
+                                   'remote_settings.py')
+        files_list = os.listdir(os.path.join(self._project_dir, project_name))
+        self.assertContainsSubset(expected_settings_files, files_list)
+
+        # Test local settings
+        local_settings_path = os.path.join(self._project_dir, project_name,
+                                           'local_settings.py')
+        with open(local_settings_path) as settings:
+            settings_content = settings.read()
+
+            # Test local settings imports base settings
+            self.assertIn('base_settings', settings_content)
+
+            # Test local settings use sqlite
+            self.assertIn('sqlite3', settings_content)
+
+            # Test local settings use DEBUG mode
+            self.assertIn('DEBUG = True', settings_content)
+
+            # Test local settings use local file systems to serve static files
+            self.assertIn('STATIC_URL = \'/static/\'', settings_content)
+
+        # Test remote settings
+        remote_settings_path = os.path.join(self._project_dir, project_name,
+                                            'remote_settings.py')
+        with open(remote_settings_path) as settings:
+            settings_content = settings.read()
+
+            # Test remote settings imports base settings
+            self.assertIn('base_settings', settings_content)
+
+            # Test remote settings use Postgres
+            self.assertIn('postgresql', settings_content)
+
+            # Test remote settings does not use DEBUG mode
+            self.assertNotIn('DEBUG = True', settings_content)
+
+            # Test remote settings use GCS buckets to serve static files
+            self.assertIn(project_id + '/static', settings_content)
+
+            self.assertIn(project_name + '-db', settings_content)
 
 
 class DockerfileGeneratorTest(FileGeneratorTest):

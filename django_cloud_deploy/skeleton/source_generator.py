@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Generate source files of a django app ready to be deployed to GKE."""
+
 import os
 import sys
 from typing import Any, Dict, List, Optional
@@ -29,6 +30,11 @@ class _FileGenerator(object):
     def _get_template_folder_path(self) -> str:
         dirname, _ = os.path.split(os.path.abspath(__file__))
         return os.path.join(dirname, 'templates')
+
+    @staticmethod
+    def exist(project_dir: str, project_name: str) -> bool:
+        """Returns whether the directory contains files to be generated."""
+        raise NotImplementedError()
 
 
 class _Jinja2FileGenerator(_FileGenerator):
@@ -111,6 +117,19 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
     ADMIN_TEMPLATE_FOLDER = 'admin_template'
     PROJECT_TEMPLATE_FOLDER = 'project_template'
     TEMPLATES_TEMPLATE_FOLDER = 'templates_template'
+
+    @staticmethod
+    def exist(project_dir: str, project_name: str) -> bool:
+        """Returns whether the directory contains Django files."""
+
+        # TODO: Be able to handle more complex cases
+        files_list = os.listdir(project_dir)
+        if 'manage.py' not in files_list or project_name not in files_list:
+            return False
+        files_list = os.listdir(os.path.join(project_dir, project_name))
+        if 'urls.py' not in files_list:
+            return False
+        return True
 
     def generate_project_files(self, site: str, destination: str):
         """Create a django project using our template.
@@ -200,6 +219,14 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
 
     _SETTINGS_TEMPLATE_DIRECTORY = 'settings_template'
 
+    @staticmethod
+    def exist(project_dir: str, project_name: str) -> bool:
+        """Returns whether the directory contains Django fils."""
+
+        # TODO: Be able to handle more complex cases
+        files_list = os.listdir(project_dir)
+        return 'settings.py' in files_list
+
     def generate_new(self,
                      project_id: str,
                      site: str,
@@ -232,6 +259,63 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
         }
         self._render_directory(settings_templates_dir, destination,
                                options=options)
+
+    def generate_from_existing(self,
+                               project_id: str,
+                               site: str,
+                               destination: str,
+                               database_name: Optional[str] = None,
+                               cloud_storage_bucket_name: Optional[str] = None):
+        """Create Django settings file from an existing settings file.
+
+        We made several assumptions:
+            1. The existing settings file is in
+               <project_dir>/<project_name>/settings.py
+            2. There is only one settings file.
+
+        This is achieved by rename the existing settings file to
+        "base_settings.py", then create "local_settings.py" and
+        "remote_settings.py" from our templates. "local_settings.py" and
+        "remote_settings.py" inherits "base_settings.py", so the existing
+        settings file still have effects, and we only override what we need to.
+
+        Args:
+            project_id: GCP project id.
+            site: Name of the project to be created.
+            destination: The destination path to hold files of the project.
+            database_name: Name of your cloud database.
+            cloud_storage_bucket_name: Google Cloud Storage bucket name to
+                serve static content.
+        """
+        database_name = database_name or site + '-db'
+        cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
+
+        settings_templates_dir = os.path.join(self._get_template_folder_path(),
+                                              self._SETTINGS_TEMPLATE_DIRECTORY)
+        local_settings_tpl_path = os.path.join(settings_templates_dir,
+                                               'local_settings.py-tpl')
+        remote_settings_tpl_path = os.path.join(settings_templates_dir,
+                                                'remote_settings.py-tpl')
+        project_dir = os.path.join(destination, site)
+
+        # TODO: Make it smart enough to find settings file instead of hard
+        # coding settings file path.
+        settings_file_path = os.path.join(project_dir, 'settings.py')
+        base_settings_path = os.path.join(project_dir, 'base_settings.py')
+        local_settings_path = os.path.join(project_dir, 'local_settings.py')
+        remote_settings_path = os.path.join(project_dir, 'remote_settings.py')
+        os.rename(settings_file_path, base_settings_path)
+        options = {
+            'project_id': project_id,
+            'project_name': site,
+            'docs_version': version.get_docs_version(),
+            'secret_key': utils.get_random_secret_key(),
+            'database_name': database_name,
+            'bucket_name': cloud_storage_bucket_name
+        }
+        self._render_file(local_settings_tpl_path, local_settings_path, options)
+        self._render_file(remote_settings_tpl_path, remote_settings_path,
+                          options)
 
 
 class _DockerfileGenerator(_Jinja2FileGenerator):
@@ -450,5 +534,60 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.yaml_file_generator.generate(destination, project_name, project_id,
                                           instance_name, region, image_tag,
                                           cloudsql_secrets, django_secrets)
+        self.setup_django_environment(
+            destination, project_name, database_user, database_password)
+
+    def generate_missing_source_files(self,
+                                      project_id: str,
+                                      project_name: str,
+                                      destination: str,
+                                      database_user: str,
+                                      database_password: str,
+                                      cloud_storage_bucket_name:
+                                      Optional[str] = None,
+                                      cloudsql_secrets:
+                                      Optional[List[str]] = None,
+                                      django_app_secrets:
+                                      Optional[List[str]] = None,
+                                      instance_name: Optional[str] = None,
+                                      database_name: Optional[str] = None,
+                                      region: Optional[str] = 'us-west1',
+                                      image_tag: Optional[str] = None):
+        """Generate all source files of a Django app to be deployed to GKE.
+
+        Args:
+            project_id: Your GCP project id. This can be got from your GCP
+                console.
+            project_name: Name of your Django project.
+            destination: The destination directory path to put your Django
+                project.
+            database_user: The name of the database user. By default it is
+                "postgres". This is required for Django app to access database.
+            database_password: The database password to set.
+            cloud_storage_bucket_name: Google Cloud Storage bucket name to
+                serve static content.
+            cloudsql_secrets: A list of secrets needed by cloud sql proxy
+                container.
+            django_app_secrets: A list of secrets needed by Django app
+                container.
+            instance_name: The name of cloud sql instance for database or the
+                Django project. The default value for instance_name should be
+                the project name.
+            database_name: Name of your cloud database.
+            region: Where to host the Django project.
+            image_tag: A customized docker image tag used in integration tests.
+        """
+        destination = os.path.abspath(os.path.expanduser(destination))
+        self.settings_file_generator.generate_from_existing(
+            project_id, project_name, destination, database_name,
+            cloud_storage_bucket_name)
+
+        self.docker_file_generator.generate(project_name, destination)
+
+        # TODO: Generate requirements.txt based on existing file.
+        self.dependency_file_generator.generate(destination)
+        self.yaml_file_generator.generate(destination, project_name, project_id,
+                                          instance_name, region, image_tag,
+                                          cloudsql_secrets, django_app_secrets)
         self.setup_django_environment(
             destination, project_name, database_user, database_password)

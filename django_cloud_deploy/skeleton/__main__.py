@@ -49,6 +49,11 @@ def add_arguments(parser):
         default='fakepassword',
         help=('Password of the user of the database your Django app want to '
               'use.'))
+    parser.add_argument(
+        '--from-existing',
+        default=False,
+        help=('Should the generator generate files based on an existing '
+              'project'))
 
 
 def main():
@@ -56,13 +61,21 @@ def main():
     add_arguments(parser)
     args = parser.parse_args()
     generator = source_generator.DjangoSourceFileGenerator()
-    generator.generate_all_source_files(
-        project_id=args.project_id,
-        project_name=args.project_name,
-        app_names=args.app_names,
-        destination=args.destination,
-        database_user=args.database_user,
-        database_password=args.database_password)
+    if args.from_existing:
+        generator.generate_missing_source_files(
+            project_id=args.project_id,
+            project_name=args.project_name,
+            destination=args.destination,
+            database_user=args.database_user,
+            database_password=args.database_password)
+    else:
+        generator.generate_all_source_files(
+            project_id=args.project_id,
+            project_name=args.project_name,
+            app_names=args.app_names,
+            destination=args.destination,
+            database_user=args.database_user,
+            database_password=args.database_password)
 
 
 if __name__ == '__main__':
