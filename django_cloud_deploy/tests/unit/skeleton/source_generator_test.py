@@ -229,7 +229,9 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
 
     def test_dependencies(self):
         dependencies = ('Django==2.1.2', 'mysqlclient==1.3.13', 'wheel==0.31.1',
-                        'gunicorn==19.9.0', 'psycopg2-binary==2.7.5')
+                        'gunicorn==19.9.0', 'psycopg2-binary==2.7.5',
+                        'google-cloud-logging==1.8.0',
+                        'google-api-python-client==1.7.4')
         self._dependency_generator.generate(self._project_dir)
         dependency_file_path = os.path.join(self._project_dir,
                                             'requirements.txt')
@@ -282,12 +284,10 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
         region = 'fake_region'
         image_tag = 'fake_image'
         cloudsql_secrets = ['fakecloudsql_secret1', 'fakecloudsql_secret2']
-        django_app_secrets = [
-            'fakedjango_app_secret1', 'fakedjango_app_secret2'
-        ]
+        django_secrets = ['fakedjango_app_secret1', 'fakedjango_app_secret2']
         self._yamlfile_generator.generate(
             self._project_dir, project_name, project_id, instance_name, region,
-            image_tag, cloudsql_secrets, django_app_secrets)
+            image_tag, cloudsql_secrets, django_secrets)
 
         yaml_file_path = os.path.join(self._project_dir, project_name + '.yaml')
         with open(yaml_file_path) as yaml_file:
@@ -305,7 +305,7 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
                 # Assert cloudsql secret is used
                 self.assertIn('name: ' + secret, yaml_file_content)
 
-            for secret in django_app_secrets:
+            for secret in django_secrets:
                 # Assert django_app secret is used
                 self.assertIn('name: ' + secret, yaml_file_content)
 

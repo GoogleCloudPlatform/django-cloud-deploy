@@ -1,5 +1,5 @@
-from django.apps import AppConfig
+from django.contrib.admin.apps import AdminConfig
 
 
-class {{ camel_case_app_name }}Config(AppConfig):
-    name = '{{ app_name }}'
+class CloudAdminConfig(AdminConfig):
+    default_site = 'cloud_admin.admin.CloudAdminSite'

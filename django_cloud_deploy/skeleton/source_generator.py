@@ -36,7 +36,8 @@ class _Jinja2FileGenerator(_FileGenerator):
 
     REWRITE_TEMPLATE_SUFFIXES = (
         # Allow shipping invalid .py files without byte-compilation.
-        ('.py-tpl', '.py'),)
+        ('.py-tpl', '.py'),
+        ('.html-tpl', '.html'),)
 
     def __init__(self):
         self._template_env = jinja2.Environment()
@@ -109,6 +110,7 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
     APP_TEMPLATE_FOLDER = 'app_template'
     ADMIN_TEMPLATE_FOLDER = 'admin_template'
     PROJECT_TEMPLATE_FOLDER = 'project_template'
+    TEMPLATES_TEMPLATE_FOLDER = 'templates_template'
 
     def generate_project_files(self, site: str, destination: str):
         """Create a django project using our template.
@@ -117,46 +119,80 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
             site: Name of the project to be created.
             destination: The destination path to hold files of the project.
         """
-        project_templates_dir = os.path.join(self._get_template_folder_path(),
-                                             self.PROJECT_TEMPLATE_FOLDER)
         options = {
             'project_name': site,
             'docs_version': version.get_docs_version(),
         }
-        template_replacement = {
+        filename_template_replacement = {
             'project_name': site,
         }
-        self._render_directory(project_templates_dir, destination,
-                               template_replacement, options)
+        self._generate_files(self.PROJECT_TEMPLATE_FOLDER, destination,
+                             filename_template_replacement, options)
 
-    def generate_app_files(self,
-                           app_name: str,
-                           destination: str,
-                           template_folder:
-                           Optional[str] = APP_TEMPLATE_FOLDER):
+    def generate_app_files(self, app_name: str, destination: str):
         """Create a django app using our template.
 
         Args:
             app_name: Name of the app to be created.
-            destination: The destination path to hold files of the app.
-            template_folder: The template folder name
+            destination: Destination path to hold files of the app.
         """
-        app_templates_dir = os.path.join(self._get_template_folder_path(),
-                                         template_folder)
         app_destination = os.path.join(destination, app_name)
         camel_case_value = ''.join(x for x in app_name.title() if x != '_')
         options = {
             'app_name': app_name,
-            'camel_case_app_name': camel_case_value,
-            'docs_version': version.get_docs_version(),
-            'django_version': django.__version__,
+            'camel_case_app_name': camel_case_value
         }
-        self._render_directory(app_templates_dir, app_destination,
-                               options=options)
+        self._generate_files(self.APP_TEMPLATE_FOLDER,
+                             app_destination, options=options)
 
-    def generate_admin_files(self, destination):
-        self.generate_app_files('cloud_admin', destination,
-                                self.ADMIN_TEMPLATE_FOLDER)
+    def generate_admin_files(self,
+                             project_id: str,
+                             project_name: str,
+                             destination: str):
+        """Create the django admin using our template.
+
+        Args:
+            project_id: The GCP project id.
+            project_name: Name of the project to be created.
+            destination: Destination path to hold files.
+        """
+        options = {
+            'project_id': project_id,
+            'project_name': project_name
+        }
+        admin_destination = os.path.join(destination, 'cloud_admin')
+        self._generate_files(self.ADMIN_TEMPLATE_FOLDER,
+                             admin_destination,
+                             options=options)
+
+    def generate_templates_files(self, destination: str):
+        """Create the django templates using our template.
+
+        Args:
+            destination: Destination path to hold files.
+        """
+        templates_destination = os.path.join(destination, 'templates')
+        self._generate_files(self.TEMPLATES_TEMPLATE_FOLDER,
+                             templates_destination)
+
+    def _generate_files(self, folder_name: str, destination: str,
+                        filename_template_replacement=None, options=None):
+        """Consolidates duplicate code that calls render_directory.
+
+        Args:
+            folder_name: Name of the folder that holds the templates
+            destination: The destination path to hold files of the app.
+            filename_template_replacement: Strings in template file names to
+                get replaced in the output.
+            options: Options used to render the directory.
+        """
+        if options is None:
+            options = {}
+        destination = os.path.abspath(os.path.expanduser(destination))
+        templates_dir = os.path.join(self._get_template_folder_path(),
+                                     folder_name)
+        self._render_directory(templates_dir, destination,
+                               filename_template_replacement, options)
 
 
 class _SettingsFileGenerator(_Jinja2FileGenerator):
@@ -327,7 +363,11 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.django_file_generator.generate_project_files(
             project_name, destination)
 
-        self.django_file_generator.generate_admin_files(destination)
+        self.django_file_generator.generate_admin_files(project_id,
+                                                        project_name,
+                                                        destination)
+
+        self.django_file_generator.generate_templates_files(destination)
         for app_name in app_names:
             self.django_file_generator.generate_app_files(app_name, destination)
         self.settings_file_generator.generate_new(

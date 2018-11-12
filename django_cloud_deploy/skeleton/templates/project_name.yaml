@@ -94,8 +94,8 @@ spec:
             secretName: {{ secret }}
         {% endfor -%}
         {% endif -%}
-        {% if django_app_secrets is not none -%}
-        {% for secret in django_app_secrets -%}
+        {% if django_secrets is not none -%}
+        {% for secret in django_secrets -%}
         - name: {{ secret }}
           secret:
             secretName: {{ secret }}
