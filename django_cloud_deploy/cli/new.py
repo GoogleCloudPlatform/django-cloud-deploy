@@ -169,6 +169,8 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
             workflow.ProjectCreationMode.MUST_EXIST)
         remaining_parameters_to_prompt['project_name'] = (
             prompt.GoogleCloudProjectNamePrompt)
+        remaining_parameters_to_prompt['project_id'] = (
+            prompt.ExistingProjectIdPrompt)
 
     if remaining_parameters_to_prompt:
         num_steps = len(remaining_parameters_to_prompt)

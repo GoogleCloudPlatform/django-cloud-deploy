@@ -381,6 +381,62 @@ class ProjectIdUpdatePrompt(ProjectIdPrompt):
             return project_id
 
 
+class ExistingProjectIdPrompt(ProjectIdPrompt):
+    """Allow the user to enter a GCP project id."""
+
+    @classmethod
+    def prompt(cls,
+               console: io.IO,
+               step_prompt: str,
+               arguments: Dict[str, Any],
+               credentials: Optional[credentials.Credentials] = None) -> str:
+        """Prompt the user to a Google Cloud Platform project id.
+
+        Args:
+            console: Object to use for user I/O.
+            step_prompt: A prefix showing the current step number e.g. "[1/3]".
+            arguments: The arguments that have already been collected from the
+                user e.g. {"project_id", "project-123"}
+            credentials: The OAuth2 Credentials object to use for api calls
+                during prompt.
+
+        Returns:
+            The value entered by the user.
+        """
+        while True:
+            console.tell(
+                ('{} Enter the existing Google Cloud Platform Project ID '
+                 'to use.').format(step_prompt))
+            project_id = console.ask('Project ID: ')
+            try:
+                cls.validate(project_id)
+            except ValueError as e:
+                console.error(e)
+                continue
+            return project_id
+
+    @staticmethod
+    def validate(s, credentials: Optional[credentials.Credentials] = None):
+        """Validates that a string is a valid project id.
+
+        Args:
+            s: The string to validate.
+            credentials: The OAuth2 Credentials object to use for api calls
+                during validation.
+
+        Raises:
+            ValueError: if the input string is not valid.
+        """
+        if not re.match(r'[a-z][a-z0-9\-]{5,29}', s):
+            raise ValueError(('Invalid Google Cloud Platform Project ID "{}": '
+                              'must be between 6 and 30 characters and contain '
+                              'lowercase letters, digits or hyphens').format(s))
+
+        project_client = project.ProjectClient.from_credentials(credentials)
+        if not project_client.project_exists(s):
+            raise ValueError('Project {} does not exist'.format(s))
+
+
 class DjangoFilesystemPath(Prompt):
     """Allow the user to file system path for their project."""
 
