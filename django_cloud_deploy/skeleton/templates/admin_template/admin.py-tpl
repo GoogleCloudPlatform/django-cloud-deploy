@@ -10,7 +10,7 @@ class CloudAdminSite(admin.AdminSite):
     def get_urls(self):
         urls = super().get_urls()
         my_urls = [
-            path('cloud/', self.admin_view(self.cloud_view)),
+            path('cloud/', self.admin_view(self.cloud_view), name='cloud-logs'),
         ]
         return my_urls + urls
 

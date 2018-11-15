@@ -1,0 +1,4 @@
+/* Custom */
+.inline-block-child {
+  display: inline-block;
+}

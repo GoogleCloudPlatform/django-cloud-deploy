@@ -43,7 +43,8 @@ class _Jinja2FileGenerator(_FileGenerator):
     REWRITE_TEMPLATE_SUFFIXES = (
         # Allow shipping invalid .py files without byte-compilation.
         ('.py-tpl', '.py'),
-        ('.html-tpl', '.html'),)
+        ('.html-tpl', '.html'),
+        ('.css-tpl', '.css'),)
 
     def __init__(self):
         self._template_env = jinja2.Environment()
@@ -117,6 +118,7 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
     ADMIN_TEMPLATE_FOLDER = 'admin_template'
     PROJECT_TEMPLATE_FOLDER = 'project_template'
     TEMPLATES_TEMPLATE_FOLDER = 'templates_template'
+    STATIC_TEMPLATE_FOLDER = 'static_template'
 
     @staticmethod
     def exist(project_dir: str, project_name: str) -> bool:
@@ -193,6 +195,16 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
         templates_destination = os.path.join(destination, 'templates')
         self._generate_files(self.TEMPLATES_TEMPLATE_FOLDER,
                              templates_destination)
+
+    def generate_static_files(self, destination: str):
+        """Create our custom static files for the django app.
+
+        Args:
+            destination: Destination path to hold files.
+        """
+        static_destination = os.path.join(destination, 'staticfiles')
+        self._generate_files(self.STATIC_TEMPLATE_FOLDER,
+                             static_destination)
 
     def _generate_files(self, folder_name: str, destination: str,
                         filename_template_replacement=None, options=None):
@@ -452,6 +464,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
                                                         destination)
 
         self.django_file_generator.generate_templates_files(destination)
+        self.django_file_generator.generate_static_files(destination)
         for app_name in app_names:
             self.django_file_generator.generate_app_files(app_name, destination)
         self.settings_file_generator.generate_new(
