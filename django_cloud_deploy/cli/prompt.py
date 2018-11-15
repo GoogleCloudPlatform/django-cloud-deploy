@@ -525,8 +525,8 @@ class DjangoFilesystemPathUpdate(Prompt):
 
         while True:
             console.tell(
-                ('{} Enter the directory of the Django project you want to '
-                 'update:'.format(step_prompt)))
+                ('{} Enter a new directory path to store project source, '
+                 'or leave blank to use').format(step_prompt))
             directory = console.ask('[{}]: '.format(default_directory))
             if not directory.strip():
                 directory = default_directory
