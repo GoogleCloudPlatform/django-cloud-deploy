@@ -478,8 +478,9 @@ class DjangoFilesystemPath(Prompt):
                 ' ', '-'))
 
         while True:
-            console.tell('{} Enter a directory or leave blank to use'.format(
-                step_prompt))
+            console.tell(
+                ('{} Enter a new directory path to store project source, '
+                 'or leave blank to use').format(step_prompt))
             directory = console.ask('[{}]: '.format(default_directory))
             if not directory.strip():
                 directory = default_directory
