@@ -77,6 +77,12 @@ def add_arguments(parser):
         help='Flag to indicate using a new or existing project.')
 
     parser.add_argument(
+        '--use-gke',
+        dest='--use_gke',
+        action='store_true',
+        help='Flag to indicate to deploy on Google Kubernetes Engine')
+
+    parser.add_argument(
         '--credentials',
         dest='credentials',
         help=('The file path of the credentials file to use for deployment. '
@@ -206,7 +212,8 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
             database_password=actual_parameters['database_password'],
             required_services=actual_parameters['services'],
             required_service_accounts=actual_parameters['service_accounts'],
-            cloud_storage_bucket_name=actual_parameters['bucket_name'])
+            cloud_storage_bucket_name=actual_parameters['bucket_name'],
+            use_gke=getattr(args, 'use_gke', False))
         return admin_url
     except workflow.ProjectExistsError:
         console.error('A project with id "{}" already exists'.format(

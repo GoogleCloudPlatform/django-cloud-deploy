@@ -133,19 +133,19 @@ class _DjangoFileGenerator(_Jinja2FileGenerator):
             return False
         return True
 
-    def generate_project_files(self, site: str, destination: str):
+    def generate_project_files(self, project_name: str, destination: str):
         """Create a django project using our template.
 
         Args:
-            site: Name of the project to be created.
+            project_name: Name of the project to be created.
             destination: The destination path to hold files of the project.
         """
         options = {
-            'project_name': site,
+            'project_name': project_name,
             'docs_version': version.get_docs_version(),
         }
         filename_template_replacement = {
-            'project_name': site,
+            'project_name': project_name,
         }
         self._generate_files(self.PROJECT_TEMPLATE_FOLDER, destination,
                              filename_template_replacement, options)
@@ -241,40 +241,44 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
 
     def generate_new(self,
                      project_id: str,
-                     site: str,
+                     project_name: str,
                      destination: str,
+                     cloud_sql_connection: str,
                      database_name: Optional[str] = None,
                      cloud_storage_bucket_name: Optional[str] = None):
         """Create Django settings file using our template.
 
         Args:
             project_id: GCP project id.
-            site: Name of the project to be created.
+            project_name: Name of the project to be created.
             destination: The destination path to hold files of the project.
             database_name: Name of your cloud database.
             cloud_storage_bucket_name: Google Cloud Storage bucket name to
                 serve static content.
+            cloud_sql_connection: Connection string to allow the django app
+                to connect to the cloud sql proxy.
         """
-        database_name = database_name or site + '-db'
+        database_name = database_name or project_name + '-db'
         destination = os.path.join(
-            os.path.abspath(os.path.expanduser(destination)), site)
+            os.path.abspath(os.path.expanduser(destination)), project_name)
         cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
         settings_templates_dir = os.path.join(self._get_template_folder_path(),
                                               self._SETTINGS_TEMPLATE_DIRECTORY)
         options = {
             'project_id': project_id,
-            'project_name': site,
+            'project_name': project_name,
             'docs_version': version.get_docs_version(),
             'secret_key': utils.get_random_secret_key(),
             'database_name': database_name,
-            'bucket_name': cloud_storage_bucket_name
+            'bucket_name': cloud_storage_bucket_name,
+            'cloud_sql_connection': cloud_sql_connection
         }
         self._render_directory(settings_templates_dir, destination,
                                options=options)
 
     def generate_from_existing(self,
                                project_id: str,
-                               site: str,
+                               project_name: str,
                                destination: str,
                                database_name: Optional[str] = None,
                                cloud_storage_bucket_name: Optional[str] = None):
@@ -293,13 +297,13 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
 
         Args:
             project_id: GCP project id.
-            site: Name of the project to be created.
+            project_name: Name of the project to be created.
             destination: The destination path to hold files of the project.
             database_name: Name of your cloud database.
             cloud_storage_bucket_name: Google Cloud Storage bucket name to
                 serve static content.
         """
-        database_name = database_name or site + '-db'
+        database_name = database_name or project_name + '-db'
         cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
 
         settings_templates_dir = os.path.join(self._get_template_folder_path(),
@@ -308,7 +312,7 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
                                                'local_settings.py-tpl')
         remote_settings_tpl_path = os.path.join(settings_templates_dir,
                                                 'remote_settings.py-tpl')
-        project_dir = os.path.join(destination, site)
+        project_dir = os.path.join(destination, project_name)
 
         # TODO: Make it smart enough to find settings file instead of hard
         # coding settings file path.
@@ -319,7 +323,7 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
         os.rename(settings_file_path, base_settings_path)
         options = {
             'project_id': project_id,
-            'project_name': site,
+            'project_name': project_name,
             'docs_version': version.get_docs_version(),
             'secret_key': utils.get_random_secret_key(),
             'database_name': database_name,
@@ -347,6 +351,42 @@ class _DockerfileGenerator(_Jinja2FileGenerator):
                                          file_name)
             output_path = os.path.join(destination, file_name)
             self._render_file(template_path, output_path, options)
+
+class _AppEngineFileGenerator(_Jinja2FileGenerator):
+    """Generate App Engine Files for the Django project."""
+
+    # TODO: remove database_password
+    def generate(self, project_name: str, destination: str,
+                 database_password: str):
+        """Generate Dockerfile and .dockerignore.
+
+        Args:
+            project_name: The name of your Django project.
+            destination: The destination directory path to put Dockerfile.
+            database_password: Plaintext password of the database.
+        """
+        self._generate_ignore(destination)
+        self._generate_yaml(destination, project_name, database_password)
+
+    def _generate_ignore(self, destination: str):
+        file_name = '.gcloudignore'
+        template_path = os.path.join(self._get_template_folder_path(),
+                                     file_name)
+        output_path = os.path.join(destination, file_name)
+        self._render_file(template_path, output_path)
+
+    def _generate_yaml(self, destination: str,
+                       project_name: str,
+                       database_password: str):
+        file_name = 'app.yaml'
+        options = {
+            'project_name': project_name,
+            'db_password': database_password
+        }
+        template_path = os.path.join(self._get_template_folder_path(),
+                                     file_name)
+        output_path = os.path.join(destination, file_name)
+        self._render_file(template_path, output_path, options)
 
 
 class _DependencyFileGenerator(_Jinja2FileGenerator):
@@ -434,6 +474,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.dependency_file_generator = _DependencyFileGenerator()
         self.settings_file_generator = _SettingsFileGenerator()
         self.yaml_file_generator = _YAMLFileGenerator()
+        self.app_engine_file_generator = _AppEngineFileGenerator()
 
     def _generate_django_source_files(self,
                                       project_id: str,
@@ -441,7 +482,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
                                       app_names: List[str],
                                       destination: str,
                                       database_name: str,
-                                      cloud_storage_bucket_name: str):
+                                      cloud_storage_bucket_name: str,
+                                      cloud_sql_connection: str):
         """Generate Django project and settings file.
 
         Args:
@@ -454,6 +496,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
             database_name: Name of your cloud database.
             cloud_storage_bucket_name: Google Cloud Storage bucket name to
                 serve static content.
+            cloud_sql_connection: Connection string to allow the django app
+                to connect to the cloud sql proxy.
         """
 
         self.django_file_generator.generate_project_files(
@@ -468,8 +512,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
         for app_name in app_names:
             self.django_file_generator.generate_app_files(app_name, destination)
         self.settings_file_generator.generate_new(
-            project_id, project_name, destination, database_name,
-            cloud_storage_bucket_name)
+            project_id, project_name, destination, cloud_sql_connection,
+            database_name, cloud_storage_bucket_name)
 
     def setup_django_environment(self,
                                  destination: str,
@@ -539,16 +583,28 @@ class DjangoSourceFileGenerator(_FileGenerator):
         # Create the folder if not exist.
         destination = os.path.abspath(os.path.expanduser(destination))
         os.makedirs(destination, exist_ok=True)
+
+        # This string is used by cloud sql proxy and specifies how to connect to
+        # your cloud sql instance.
+        instance_name = instance_name or project_name + '-instance'
+        cloud_sql_connection_string = (
+            '{}:{}:{}'.format(project_id, region, instance_name))
+
         self._generate_django_source_files(project_id, project_name, app_names,
                                            destination, database_name,
-                                           cloud_storage_bucket_name)
+                                           cloud_storage_bucket_name,
+                                           cloud_sql_connection_string)
         self.docker_file_generator.generate(project_name, destination)
         self.dependency_file_generator.generate(destination)
+
         self.yaml_file_generator.generate(destination, project_name, project_id,
                                           instance_name, region, image_tag,
                                           cloudsql_secrets, django_secrets)
         self.setup_django_environment(
             destination, project_name, database_user, database_password)
+        self.app_engine_file_generator.generate(project_name,
+                                                destination,
+                                                database_password)
 
     def generate_missing_source_files(self,
                                       project_id: str,

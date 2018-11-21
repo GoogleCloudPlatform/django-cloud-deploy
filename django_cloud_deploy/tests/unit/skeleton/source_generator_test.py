@@ -99,8 +99,11 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
 
     def test_base_settings(self):
         project_id = project_name = 'test_base_settings'
+        cloud_sql_connection_string = ('{}:{}:{}'.format(
+            project_id, 'us-west', 'instance'))
         self._settings_file_generator.generate_new(project_id, project_name,
-                                                   self._project_dir)
+                                                   self._project_dir,
+                                                   cloud_sql_connection_string)
 
         settings_file_path = os.path.join(self._project_dir, project_name,
                                           'base_settings.py')
@@ -115,8 +118,12 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
 
     def test_local_settings(self):
         project_id = project_name = 'test_local_settings'
+        cloud_sql_connection_string = ('{}:{}:{}'.format(
+            project_id, 'us-west', 'instance'))
+
         self._settings_file_generator.generate_new(project_id, project_name,
-                                                   self._project_dir)
+                                                   self._project_dir,
+                                                   cloud_sql_connection_string)
 
         settings_file_path = os.path.join(self._project_dir, project_name,
                                           'local_settings.py')
@@ -138,8 +145,11 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
     def test_remote_settings(self):
         project_name = 'test_remote_settings'
         project_id = project_name + 'project_id'
+        cloud_sql_connection_string = ('{}:{}:{}'.format(
+            project_id, 'us-west', 'instance'))
         self._settings_file_generator.generate_new(project_id, project_name,
-                                                   self._project_dir)
+                                                   self._project_dir,
+                                                   cloud_sql_connection_string)
 
         settings_file_path = os.path.join(self._project_dir, project_name,
                                           'remote_settings.py')
@@ -160,12 +170,20 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
 
             self.assertIn(project_name + '-db', settings_content)
 
+            # Test cloud sql connection string is in host for GAE
+            value = 'HOST\': \'/cloudsql/{}\''.format(
+                cloud_sql_connection_string)
+            self.assertIn(value, settings_content)
+
     def test_customize_remote_settings(self):
         project_name = 'test_remote_settings_customize_database_name'
         project_id = project_name + 'project_id'
+        cloud_sql_connection_string = ('{}:{}:{}'.format(
+            project_id, 'us-west', 'instance'))
+
         self._settings_file_generator.generate_new(
-            project_id, project_name, self._project_dir, 'customize-db',
-            'customize-bucket')
+            project_id, project_name, self._project_dir,
+            cloud_sql_connection_string, 'customize-db', 'customize-bucket')
 
         settings_file_path = os.path.join(self._project_dir, project_name,
                                           'remote_settings.py')

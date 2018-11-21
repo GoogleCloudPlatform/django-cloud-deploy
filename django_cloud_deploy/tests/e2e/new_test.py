@@ -95,7 +95,8 @@ class NewProjectE2ETest(test_base.ResourceCleanUpTest):
                 credentials=self.credentials,
                 use_existing_project=True,
                 bucket_name=cloud_storage_bucket_name,
-                service_accounts=fake_service_accounts)
+                service_accounts=fake_service_accounts,
+                use_gke=True)
             admin_url = new.main(arguments, test_io)
 
             # Assert answers are all used.

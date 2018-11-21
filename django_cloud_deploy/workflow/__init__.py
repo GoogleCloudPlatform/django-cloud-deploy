@@ -21,6 +21,7 @@ from django_cloud_deploy.cloudlib import billing
 from django_cloud_deploy.skeleton import source_generator
 from django_cloud_deploy.workflow import _database
 from django_cloud_deploy.workflow import _deploygke
+from django_cloud_deploy.workflow import _deploygae
 from django_cloud_deploy.workflow import _enable_service
 from django_cloud_deploy.workflow import _project
 from django_cloud_deploy.workflow import _service_account
@@ -45,11 +46,12 @@ class WorkflowManager(object):
         self._project_workflow = _project.ProjectWorkflow(credentials)
         self._database_workflow = _database.DatabaseWorkflow(credentials)
         self._deploygke_workflow = _deploygke.DeploygkeWorkflow(credentials)
+        self._deploygae_workflow = _deploygae.DeploygaeWorkflow()
         self._enable_service_workflow = _enable_service.EnableServiceWorkflow(
             credentials)
         self._service_account_workflow = (
             _service_account.ServiceAccountKeyGenerationWorkflow(credentials))
-        self._statitc_content_workflow = (
+        self._static_content_workflow = (
             _static_content_serve.StaticContentServeWorkflow(credentials))
 
     def create_and_deploy_new_project(
@@ -71,6 +73,7 @@ class WorkflowManager(object):
             cloud_storage_bucket_name: str = None,
             region: str = 'us-west1',
             cloud_sql_proxy_path: str = 'cloud_sql_proxy',
+            use_gke=False,
             open_browser: bool = True):
         """Workflow of deploying a newly generated Django app to GKE.
 
@@ -188,24 +191,41 @@ class WorkflowManager(object):
             self._generate_section_header(
                 6, 'Static Content Serve Set Up (Take Up To 5 Minutes)',
                 self._TOTAL_NEW_STEPS))
-        self._statitc_content_workflow.serve_static_content(
+        self._static_content_workflow.serve_static_content(
             project_id, cloud_storage_bucket_name, static_content_dir)
 
-        print(
-            self._generate_section_header(
-                7, 'Create Service Account Necessary For Deployment',
-                self._TOTAL_NEW_STEPS))
-        secrets = self._generate_secrets(project_id, database_username,
-                                         database_password,
-                                         required_service_accounts)
+        if use_gke:
+            print(
+                self._generate_section_header(
+                    7, 'Create Service Account Necessary For Deployment',
+                    self._TOTAL_NEW_STEPS))
+            secrets = self._generate_secrets(project_id, database_username,
+                                             database_password,
+                                             required_service_accounts)
 
-        print(
-            self._generate_section_header(
-                8, 'Deployment (Take Up To 20 Minutes)', self._TOTAL_NEW_STEPS))
-        admin_url = self._deploygke_workflow.deploy_new_app_sync(
-            project_id, cluster_name, django_directory_path,
-            django_project_name, image_name, secrets)
+            print(
+                self._generate_section_header(
+                    8, 'Deployment (Take Up To 20 Minutes)',
+                    self._TOTAL_NEW_STEPS))
+            admin_url = self._deploygke_workflow.deploy_new_app_sync(
+                project_id, cluster_name, django_directory_path,
+                django_project_name, image_name, secrets)
+        else:
+            print(
+                self._generate_section_header(
+                    7,
+                    'Create Service Account Necessary For Deployment *SKIPPED*',
+                    self._TOTAL_NEW_STEPS))
+            print(
+                self._generate_section_header(
+                    8, 'Deployment (Take Up To 5 Minutes)',
+                    self._TOTAL_NEW_STEPS))
+
+            admin_url = self._deploygae_workflow.deploy_gae_app(
+                project_id, django_directory_path)
+
         print('Your app is running at {}.'.format(admin_url))
+
         if open_browser:
             webbrowser.open(admin_url)
         return admin_url
