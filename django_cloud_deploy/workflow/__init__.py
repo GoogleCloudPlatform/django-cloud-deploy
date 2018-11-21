@@ -13,7 +13,9 @@
 # limitations under the License.
 """A module to manage workflow for deployment of Django apps."""
 
+import json
 import os
+import shutil
 from typing import Any, Dict, List, Optional
 import webbrowser
 
@@ -116,6 +118,7 @@ class WorkflowManager(object):
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             open_browser: Whether we open the browser to show the deployed app
                 at the end.
+            use_gke: Flag to indicate to deploy onto Google Kubernetes Engine.
 
         Returns:
             Admin site url of the deployed Django app.
@@ -194,15 +197,15 @@ class WorkflowManager(object):
         self._static_content_workflow.serve_static_content(
             project_id, cloud_storage_bucket_name, static_content_dir)
 
-        if use_gke:
-            print(
-                self._generate_section_header(
-                    7, 'Create Service Account Necessary For Deployment',
-                    self._TOTAL_NEW_STEPS))
-            secrets = self._generate_secrets(project_id, database_username,
-                                             database_password,
-                                             required_service_accounts)
+        print(
+            self._generate_section_header(
+                7, 'Create Service Account Necessary For Deployment',
+                self._TOTAL_NEW_STEPS))
+        secrets = self._generate_secrets(project_id, database_username,
+                                         database_password,
+                                         required_service_accounts)
 
+        if use_gke:
             print(
                 self._generate_section_header(
                     8, 'Deployment (Take Up To 20 Minutes)',
@@ -211,16 +214,11 @@ class WorkflowManager(object):
                 project_id, cluster_name, django_directory_path,
                 django_project_name, image_name, secrets)
         else:
-            print(
-                self._generate_section_header(
-                    7,
-                    'Create Service Account Necessary For Deployment *SKIPPED*',
-                    self._TOTAL_NEW_STEPS))
+            self._upload_secrets_to_bucket(project_id, secrets)
             print(
                 self._generate_section_header(
                     8, 'Deployment (Take Up To 5 Minutes)',
                     self._TOTAL_NEW_STEPS))
-
             admin_url = self._deploygae_workflow.deploy_gae_app(
                 project_id, django_directory_path)
 
@@ -352,7 +350,7 @@ class WorkflowManager(object):
     @staticmethod
     def _load_secret_names(required_service_accounts: Optional[
             Dict[str, List[Dict[str, Any]]]] = None) -> (List[str], List[str]):
-        """ Retrieves list of secret names for containers.
+        """Retrieves list of secret names for containers.
         
         Args:
              required_service_accounts: Service accounts needed by deployment.
@@ -364,3 +362,42 @@ class WorkflowManager(object):
         cloud_sql_secrets = [sa['id'] for sa in cloud_sql_secrets]
         django_secrets = [sa['id'] for sa in django_secrets]
         return cloud_sql_secrets, django_secrets
+
+    def _upload_secrets_to_bucket(self, project_id: str,
+                                  secrets: Dict[str, Any]):
+        """Creates files then uploads to GCP, finally removes the files.
+
+        Args:
+            project_id: Project to upload secret files to.
+            secrets: Contains the information regarding the credentials.
+        """
+        # Create static dir for secrets
+        secrets_dir = '~/.config/django_cloud/{}'.format(project_id)
+        secrets_dir = os.path.abspath(os.path.expanduser(secrets_dir))
+        self._create_files_for_secrets(secrets_dir, secrets)
+        # Upload secrets to gcs bucket
+        secrets_bucket_name = 'secrets-{}'.format(project_id)
+        self._static_content_workflow.serve_secret_content(
+            project_id, secrets_bucket_name, secrets_dir)
+        shutil.rmtree(secrets_dir)
+
+    @staticmethod
+    def _create_files_for_secrets(path: str, secrets: Dict[str, Any]):
+        """Create secret files for GAE that will be uploaded to GCS buckets.
+
+        Currently, only needed for database password.
+
+        Generates JSON files that will be used by the django on GAE.
+
+        Args:
+              path: Path to create secret files to be uploaded.
+              secrets: Contains the information regarding the credentials.
+        """
+        os.makedirs(path)
+        secret_name = 'cloudsql'
+        content = secrets['cloudsql']
+        filename = '{}.json'.format(secret_name)
+        file_path = os.path.join(path, filename)
+        with open(file_path, 'w') as file:
+            if secret_name == 'cloudsql':
+                json.dump(content, file)

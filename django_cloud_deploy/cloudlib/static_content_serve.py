@@ -140,14 +140,18 @@ class StaticContentServeClient(object):
                     'Unexpected error setting iam policy of bucket "{}"'.format(
                         bucket_name)) from e
 
-    def upload_static_content(self, bucket_name: str, static_content_dir: str):
-        """Upload static content in the given directory to a GCS bucket.
+    def upload_content(self,
+                       bucket_name: str,
+                       static_content_dir: str,
+                       folder_root: str = None):
+        """Upload content in the given directory to a GCS bucket.
 
         Args:
             bucket_name: Name of the bucket you want to upload static content
                 to.
             static_content_dir: Absolute path of the directory containing
                 static files of the Django app.
+            folder_root: Name of root folder for files in GCS bucket.
 
         Raises:
             StaticContentServeError: When failed to upload files.
@@ -160,9 +164,9 @@ class StaticContentServeClient(object):
         for root, _, files in os.walk(static_content_dir):
             relative_dir = root[prefix_length + 1:]
             for relative_file_path in files:
-
+                folder_root = folder_root or self.GCS_ROOT
                 # Path of the file in GCS bucket
-                gcs_file_path = os.path.join(self.GCS_ROOT, relative_dir,
+                gcs_file_path = os.path.join(folder_root, relative_dir,
                                              relative_file_path)
 
                 # Local absolute path of the file

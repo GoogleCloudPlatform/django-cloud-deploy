@@ -42,8 +42,25 @@ class StaticContentServeWorkflow(object):
         self._static_content_serve_client.collect_static_content()
         self._static_content_serve_client.create_bucket(project_id, bucket_name)
         self._static_content_serve_client.make_bucket_public(bucket_name)
-        self._static_content_serve_client.upload_static_content(
+        self._static_content_serve_client.upload_content(
             bucket_name, static_content_dir)
+
+    def serve_secret_content(self, project_id: str, bucket_name: str,
+                             secrec_content_dir: str):
+        """Do all the work for serving secret content of the provided project.
+
+        The secret content is served with a Google Cloud Storage Bucket.
+
+        Args:
+            project_id: Id of GCP project.
+            bucket_name: Name of the bucket to create and serve secret content.
+            secrec_content_dir: Absolute path of the directory for secret
+                content.
+        """
+
+        self._static_content_serve_client.create_bucket(project_id, bucket_name)
+        self._static_content_serve_client.upload_content(
+            bucket_name, secrec_content_dir, folder_root='secrets')
 
     def update_static_content(self, bucket_name: str, static_content_dir: str):
         """Update GCS bucket after user modified the Django app.
@@ -54,5 +71,5 @@ class StaticContentServeWorkflow(object):
                 content.
         """
         self._static_content_serve_client.collect_static_content()
-        self._static_content_serve_client.upload_static_content(
+        self._static_content_serve_client.upload_content(
             bucket_name, static_content_dir)

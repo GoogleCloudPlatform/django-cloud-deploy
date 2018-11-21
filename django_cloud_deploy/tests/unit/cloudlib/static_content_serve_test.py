@@ -163,7 +163,7 @@ class StaticContentServeClientTest(absltest.TestCase):
             with open(tmp_file_path, 'w') as tmp_file:
                 tmp_file.write('file2')
 
-            self._static_content_serve_client.upload_static_content(
+            self._static_content_serve_client.upload_content(
                 BUCKET_NAME, tmp_dir_root)
             file1_gcs_path = os.path.join(
                 self._static_content_serve_client.GCS_ROOT, 'file1')
