@@ -37,7 +37,7 @@ def add_arguments(parser):
         default=['polls'],
         help='A list of names of apps to create')
     parser.add_argument(
-        '--destination',
+        '--project_dir',
         default='~/djangogke_project',
         help='The output folder of your Django project.')
     parser.add_argument(
@@ -61,21 +61,13 @@ def main():
     add_arguments(parser)
     args = parser.parse_args()
     generator = source_generator.DjangoSourceFileGenerator()
-    if args.from_existing:
-        generator.generate_missing_source_files(
-            project_id=args.project_id,
-            project_name=args.project_name,
-            destination=args.destination,
-            database_user=args.database_user,
-            database_password=args.database_password)
-    else:
-        generator.generate_all_source_files(
-            project_id=args.project_id,
-            project_name=args.project_name,
-            app_names=args.app_names,
-            destination=args.destination,
-            database_user=args.database_user,
-            database_password=args.database_password)
+    generator.generate_all_source_files(
+        project_id=args.project_id,
+        project_name=args.project_name,
+        app_names=args.app_names,
+        project_dir=args.project_dir,
+        database_user=args.database_user,
+        database_password=args.database_password)
 
 
 if __name__ == '__main__':

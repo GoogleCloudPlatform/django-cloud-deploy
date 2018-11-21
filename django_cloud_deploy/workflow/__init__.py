@@ -100,7 +100,7 @@ class WorkflowManager(object):
             required_services: The services needed to be enabled for deployment.
             required_service_accounts: Service accounts needed to be created for
                 deployment. It should have the following format:
-                { 
+                {
                     "cloud_sql": [{
                         "id": "service account id",
                         "name": "Display name",
@@ -162,7 +162,7 @@ class WorkflowManager(object):
             project_id=project_id,
             project_name=django_project_name,
             app_names=[django_app_name],
-            destination=django_directory_path,
+            project_dir=django_directory_path,
             database_user=database_username,
             database_password=database_password,
             instance_name=database_instance_name,

@@ -96,7 +96,7 @@ class DjangoFileGeneratorTest(BaseTest):
             project_id=self.project_id,
             project_name=self.project_name,
             app_names=app_names,
-            destination=self.project_dir,
+            project_dir=self.project_dir,
             database_user=self.database_user,
             database_password=self.database_password,
             instance_name=self.instance_name,
