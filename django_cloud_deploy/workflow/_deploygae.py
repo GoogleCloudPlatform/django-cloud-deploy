@@ -47,8 +47,8 @@ class DeploygaeWorkflow(object):
         app_yaml_path = os.path.join(django_directory_path, 'app.yaml')
         project = '--project={}'.format(project_id)
         args = ['app', 'deploy', app_yaml_path, project]
+        process = pexpect.spawn('gcloud', args)
         try:
-            process = pexpect.spawn('gcloud', args)
             index = process.expect(
                 ['\[{}\]\s*{}'.format(i, region) for i in range(1, 10)])
             process.sendline(str(index))
