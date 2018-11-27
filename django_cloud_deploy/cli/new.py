@@ -79,7 +79,7 @@ def add_arguments(parser):
     parser.add_argument(
         '--backend',
         dest='backend',
-        type='str',
+        type=str,
         default='gke',
         choices=['gae', 'gke'],
         help='The desired backend to deploy the Django App on.')
