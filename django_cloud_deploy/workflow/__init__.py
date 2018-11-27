@@ -75,7 +75,7 @@ class WorkflowManager(object):
             cloud_storage_bucket_name: str = None,
             region: str = 'us-west1',
             cloud_sql_proxy_path: str = 'cloud_sql_proxy',
-            use_gke=False,
+            backend='gke',
             open_browser: bool = True):
         """Workflow of deploying a newly generated Django app to GKE.
 
@@ -118,7 +118,7 @@ class WorkflowManager(object):
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             open_browser: Whether we open the browser to show the deployed app
                 at the end.
-            use_gke: Flag to indicate to deploy onto Google Kubernetes Engine.
+            backend: The desired backend to deploy the Django App on.
 
         Returns:
             Admin site url of the deployed Django app.
@@ -205,7 +205,7 @@ class WorkflowManager(object):
                                          database_password,
                                          required_service_accounts)
 
-        if use_gke:
+        if backend == 'gke':
             print(
                 self._generate_section_header(
                     8, 'Deployment (Take Up To 20 Minutes)',
