@@ -45,8 +45,9 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
     def test_project_root_structure(self):
         project_name = 'test_project_root'
         django_root_dir = os.path.join(self._project_dir, project_name)
+        app_name = 'test_app_name'
 
-        self._generator.generate(project_name, self._project_dir)
+        self._generator.generate(project_name, self._project_dir, app_name)
         self.assertTrue(os.path.exists(django_root_dir))
 
         files_list = os.listdir(self._project_dir)
@@ -55,22 +56,25 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
 
     def test_generate_files_twice(self):
         project_name = 'test_generate_files_twice'
+        app_name = 'test_app_name'
         django_root_dir = os.path.join(self._project_dir, project_name)
-        self._generator.generate(project_name, self._project_dir)
-        self._generator.generate('generate_again', self._project_dir)
+        self._generator.generate(project_name, self._project_dir, app_name)
+        self._generator.generate('generate_again', self._project_dir, app_name)
         self.assertTrue(os.path.exists(django_root_dir))
         self.assertFalse(os.path.exists('generate_again'))
 
     def test_django_root_structure(self):
         project_name = 'test_django_root'
-        self._generator.generate(project_name, self._project_dir)
+        app_name = 'test_app_name'
+        self._generator.generate(project_name, self._project_dir, app_name)
 
         files_list = os.listdir(os.path.join(self._project_dir, project_name))
         self.assertCountEqual(self.DJANGO_ROOT_FOLDER_FILES, files_list)
 
     def test_wsgi_module_uses_remote_settings(self):
         project_name = 'test_wsgi_module_uses_remote_settings'
-        self._generator.generate(project_name, self._project_dir)
+        app_name = 'test_app_name'
+        self._generator.generate(project_name, self._project_dir, app_name)
 
         with open(os.path.join(self._project_dir, project_name,
                                'wsgi.py')) as wsgi_file:
@@ -83,7 +87,7 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
 class DjangoAppFileGeneratorTest(FileGeneratorTest):
 
     APP_ROOT_FOLDER_FILES = ('__init__.py', 'admin.py', 'apps.py', 'models.py',
-                             'tests.py', 'views.py')
+                             'tests.py', 'urls.py', 'views.py')
 
     @classmethod
     def setUpClass(cls):
@@ -432,12 +436,12 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
     def setUpClass(cls):
         cls._generator = source_generator.DjangoSourceFileGenerator()
 
-    def _test_project_structure(self, project_name, app_names, project_dir):
+    def _test_project_structure(self, project_name, app_name, project_dir):
         files_list = os.listdir(project_dir)
         self.assertContainsSubset(self.PROJECT_ROOT_FOLDER_FILES, files_list)
         self.assertContainsSubset(self.DOCKER_FILES, files_list)
         self.assertContainsSubset(self.DEPENDENCY_FILE, files_list)
-        self.assertContainsSubset(app_names, files_list)
+        self.assertIn(app_name, files_list)
         self.assertIn(project_name + '.yaml', files_list)
         self.assertIn(project_name, files_list)
 
@@ -446,39 +450,39 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
 
     def test_generate_all_source_files(self):
         project_id = project_name = 'test_generate_all_source_file'
-        app_names = ['polls1', 'polls2']
+        app_name = 'polls'
         self._generator.generate_all_source_files(
-            project_id, project_name, app_names, self._project_dir,
+            project_id, project_name, app_name, self._project_dir,
             'fake_db_user', 'fake_db_password')
-        self._test_project_structure(project_name, app_names, self._project_dir)
+        self._test_project_structure(project_name, app_name, self._project_dir)
 
     def test_file_generation_same_place(self):
         project_id = project_name = 'test_file_generation_same_place'
-        app_names = ['polls1', 'polls2']
+        app_name = 'polls'
 
         # Test generating Django files at the same place multiple times.
         # This should not throw exceptions.
         for _ in range(3):
             self._generator.generate_all_source_files(
-                project_id, project_name, app_names, self._project_dir,
+                project_id, project_name, app_name, self._project_dir,
                 'fake_db_user', 'fake_db_password')
-        self._test_project_structure(project_name, app_names, self._project_dir)
+        self._test_project_structure(project_name, app_name, self._project_dir)
 
     def test_file_generation_directory_not_exist(self):
         project_id = project_name = 'test_file_generation_same_place'
-        app_names = ['polls1', 'polls2']
+        app_name = 'polls'
 
         project_dir = os.path.join(self._project_dir, 'dir_not_exist')
         self._generator.generate_all_source_files(
-            project_id, project_name, app_names, project_dir, 'fake_db_user',
+            project_id, project_name, app_name, project_dir, 'fake_db_user',
             'fake_db_password')
-        self._test_project_structure(project_name, app_names, project_dir)
+        self._test_project_structure(project_name, app_name, project_dir)
 
     def test_generate_missing_source_files(self):
         project_id = project_name = 'test_generate_missing_source_files'
-        app_names = ['polls1', 'polls2']
+        app_name = 'polls'
         management.call_command('startproject', project_name, self._project_dir)
         self._generator.generate_all_source_files(
-            project_id, project_name, app_names, self._project_dir,
+            project_id, project_name, app_name, self._project_dir,
             'fake_db_user', 'fake_db_password')
-        self._test_project_structure(project_name, app_names, self._project_dir)
+        self._test_project_structure(project_name, app_name, self._project_dir)

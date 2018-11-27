@@ -16,6 +16,7 @@
 import json
 import os
 import subprocess
+import urllib.parse
 
 from django_cloud_deploy.tests.lib import test_base
 from django_cloud_deploy.tests.lib import utils
@@ -152,13 +153,14 @@ class DeploygkeWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest,
         }
         with self.clean_up_cluster(cluster_name):
             with self.clean_up_docker_image(self.image_tag):
-                admin_url = self.deploygke_workflow.deploy_new_app_sync(
+                url = self.deploygke_workflow.deploy_new_app_sync(
                     project_id=self.project_id,
                     cluster_name=cluster_name,
                     app_directory=self.project_dir,
                     app_name=self.project_name,
                     image_name=self.image_tag,
                     secrets=secrets)
+                admin_url = urllib.parse.urljoin(url, '/admin')
                 response = requests.get(admin_url)
                 self.assertIn('Django administration', response.text)
 

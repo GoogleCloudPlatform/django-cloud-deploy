@@ -176,18 +176,20 @@ class _DjangoProjectFileGenerator(_Jinja2FileGenerator):
             return False
         return True
 
-    def generate(self, project_name: str, project_dir: str):
+    def generate(self, project_name: str, project_dir: str, app_name: str):
         if not self.generated(project_dir, project_name):
-            self._generate_new(project_name, project_dir)
+            self._generate_new(project_name, project_dir, app_name)
 
-    def _generate_new(self, project_name: str, project_dir: str):
+    def _generate_new(self, project_name: str, project_dir: str, app_name: str):
         """Create a django project using our template.
 
         Args:
             project_name: Name of the project to be created.
             project_dir: The destination path to hold files of the project.
+            app_name: The app that you want to create in your project.
         """
         options = {
+            'app_name': app_name,
             'project_name': project_name,
             'docs_version': version.get_docs_version(),
         }
@@ -641,7 +643,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
     def _generate_django_source_files(self,
                                       project_id: str,
                                       project_name: str,
-                                      app_names: List[str],
+                                      app_name: str,
                                       project_dir: str,
                                       database_name: str,
                                       cloud_storage_bucket_name: str,
@@ -652,7 +654,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
             project_id: Your GCP project id. This can be got from your GCP
                 console.
             project_name: Name of your Django project.
-            app_names: A list of apps you want to create in your project.
+            app_name: The app that you want to create in your project.
             project_dir: The destination directory path to put your Django
                 project.
             database_name: Name of your cloud database.
@@ -662,11 +664,10 @@ class DjangoSourceFileGenerator(_FileGenerator):
                 to connect to the cloud sql proxy.
         """
 
-        self.django_project_generator.generate(project_name, project_dir)
+        self.django_project_generator.generate(project_name, project_dir, app_name)
         self.django_admin_overwrite_generator.generate(project_id, project_name,
                                                        project_dir)
-        for app_name in app_names:
-            self.django_app_generator.generate(app_name, project_dir)
+        self.django_app_generator.generate(app_name, project_dir)
         self.settings_file_generator.generate(project_id, project_name,
                                               project_dir, cloud_sql_connection,
                                               database_name,
@@ -699,7 +700,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
     def generate_all_source_files(self,
                                   project_id: str,
                                   project_name: str,
-                                  app_names: List[str],
+                                  app_name: str,
                                   project_dir: str,
                                   database_user: str,
                                   database_password: str,
@@ -717,7 +718,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
             project_id: Your GCP project id. This can be got from your GCP
                 console.
             project_name: Name of your Django project.
-            app_names: A list of apps you want to create in your project.
+            app_name: The app that you want to create in your project.
             project_dir: The destination directory path to put your Django
                 project.
             database_user: The name of the database user. By default it is
@@ -742,7 +743,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
         instance_name = instance_name or project_name + '-instance'
         cloud_sql_connection_string = (
             '{}:{}:{}'.format(project_id, region, instance_name))
-        self._generate_django_source_files(project_id, project_name, app_names,
+        self._generate_django_source_files(project_id, project_name, app_name,
                                            project_dir,
                                            database_name,
                                            cloud_storage_bucket_name,

@@ -16,6 +16,7 @@
 import shutil
 import tempfile
 import types
+import urllib.parse
 
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import new
@@ -97,7 +98,7 @@ class NewProjectE2ETest(test_base.ResourceCleanUpTest):
                 bucket_name=cloud_storage_bucket_name,
                 service_accounts=fake_service_accounts,
                 backend='gke')
-            admin_url = new.main(arguments, test_io)
+            url = new.main(arguments, test_io)
 
             # Assert answers are all used.
             self.assertEqual(len(test_io.answers), 0)
@@ -108,7 +109,11 @@ class NewProjectE2ETest(test_base.ResourceCleanUpTest):
             chrome_options.add_argument('--headless')  # No browser
             driver = webdriver.Chrome(options=chrome_options)
 
-            # Assert the web app is deployed
+            # Assert the web app is available
+            driver.get(url)
+
+            # Assert the web app admin page is available
+            admin_url = urllib.parse.urljoin(url, '/admin')
             driver.get(admin_url)
             self.assertEqual(driver.title, 'Log in | Django site admin')
 

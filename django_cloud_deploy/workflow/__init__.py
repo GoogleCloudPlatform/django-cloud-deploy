@@ -121,7 +121,7 @@ class WorkflowManager(object):
             backend: The desired backend to deploy the Django App on.
 
         Returns:
-            Admin site url of the deployed Django app.
+            The url of the deployed Django app.
         """
 
         # A bunch of variables necessary for deployment we hardcode for user.
@@ -161,7 +161,7 @@ class WorkflowManager(object):
         self._source_generator.generate_all_source_files(
             project_id=project_id,
             project_name=django_project_name,
-            app_names=[django_app_name],
+            app_name=django_app_name,
             project_dir=django_directory_path,
             database_user=database_username,
             database_password=database_password,
@@ -210,7 +210,7 @@ class WorkflowManager(object):
                 self._generate_section_header(
                     8, 'Deployment (Take Up To 20 Minutes)',
                     self._TOTAL_NEW_STEPS))
-            admin_url = self._deploygke_workflow.deploy_new_app_sync(
+            app_url = self._deploygke_workflow.deploy_new_app_sync(
                 project_id, cluster_name, django_directory_path,
                 django_project_name, image_name, secrets)
         else:
@@ -219,14 +219,14 @@ class WorkflowManager(object):
                 self._generate_section_header(
                     8, 'Deployment (Take Up To 5 Minutes)',
                     self._TOTAL_NEW_STEPS))
-            admin_url = self._deploygae_workflow.deploy_gae_app(
+            app_url = self._deploygae_workflow.deploy_gae_app(
                 project_id, django_directory_path)
 
-        print('Your app is running at {}.'.format(admin_url))
+        print('Your app is running at {}.'.format(app_url))
 
         if open_browser:
-            webbrowser.open(admin_url)
-        return admin_url
+            webbrowser.open(app_url)
+        return app_url
 
     def update_project(self,
                        project_id: str,
@@ -278,12 +278,12 @@ class WorkflowManager(object):
         print(
             self._generate_section_header(3, 'Update Deployment',
                                           self._TOTAL_UPDATE_STEPS))
-        admin_url = self._deploygke_workflow.update_app_sync(
+        app_url = self._deploygke_workflow.update_app_sync(
             project_id, cluster_name, django_directory_path,
             django_project_name, image_name)
-        print('Your app is running at {}.'.format(admin_url))
+        print('Your app is running at {}.'.format(app_url))
         if open_browser:
-            webbrowser.open(admin_url)
+            webbrowser.open(app_url)
 
     def _generate_section_header(self, step: int, section_name: str,
                                  total_steps: int):

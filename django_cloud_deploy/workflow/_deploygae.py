@@ -41,7 +41,7 @@ class DeploygaeWorkflow(object):
             DeployNewAppError: If unable to deploy the app.
 
         Returns:
-            Admin site url of the new app.
+            The url of the deployed Django app.
         """
 
         app_yaml_path = os.path.join(django_directory_path, 'app.yaml')
@@ -61,4 +61,4 @@ class DeploygaeWorkflow(object):
                  'of process: \n{}').format(process.before))
         finally:
             process.close()
-        return 'https://{}.appspot.com/admin'.format(project_id)
+        return 'https://{}.appspot.com/'.format(project_id)

@@ -90,12 +90,12 @@ class DjangoFileGeneratorTest(BaseTest):
         self.instance_name = utils.get_resource_name(
             resource_type='sql-instance')
         self.database_name = utils.get_resource_name(resource_type='db')
-        app_names = ['fake_app']
+        app_name = 'fake_app'
         generator = source_generator.DjangoSourceFileGenerator()
         generator.generate_all_source_files(
             project_id=self.project_id,
             project_name=self.project_name,
-            app_names=app_names,
+            app_name=app_name,
             project_dir=self.project_dir,
             database_user=self.database_user,
             database_password=self.database_password,

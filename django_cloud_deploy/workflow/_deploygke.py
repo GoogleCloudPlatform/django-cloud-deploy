@@ -65,7 +65,7 @@ class DeploygkeWorkflow(object):
             DeployNewAppError: If unable to deploy the app.
 
         Returns:
-            The admin site url of the deployed Django app.
+            The url of the deployed Django app.
         """
 
         self._container_client.create_cluster_sync(project_id, cluster_name,
@@ -106,8 +106,7 @@ class DeploygkeWorkflow(object):
         self._wait_for_deployment_ready(kube_config, app_name)
         self._container_client.create_service(service_data, kube_config)
         ingress_url = self._get_ingress_url(kube_config)
-        admin_url = urllib.parse.urljoin(ingress_url, '/admin')
-        return admin_url
+        return ingress_url
 
     def update_app_sync(self,
                         project_id: str,
@@ -131,7 +130,7 @@ class DeploygkeWorkflow(object):
             DeployNewAppError: If unable to deploy the app.
 
         Returns:
-            The admin site url of the deployed Django app.
+            The url of the deployed Django app.
         """
         self._container_client.build_docker_image(image_name, app_directory)
         self._container_client.push_docker_image(image_name)
@@ -152,8 +151,7 @@ class DeploygkeWorkflow(object):
         self._container_client.update_deployment(deployment_data, kube_config)
         self._wait_for_deployment_ready(kube_config, app_name)
         ingress_url = self._get_ingress_url(kube_config)
-        admin_url = urllib.parse.urljoin(ingress_url, '/admin')
-        return admin_url
+        return ingress_url
 
     def _get_ingress_url(self,
                          kube_config: kubernetes.client.Configuration) -> str:

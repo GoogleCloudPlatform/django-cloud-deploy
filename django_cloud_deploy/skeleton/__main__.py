@@ -15,7 +15,7 @@
 r"""Create a django app ready to be deployed to gke.
 
 Example: python -m django_cloud_deploy.skeleton --project_name <project_name>
-         --app_names <app_name1> <app_name2> \
+         --app_name <app_name> \
          --destination <destination_path>
 """
 
@@ -32,13 +32,12 @@ def add_arguments(parser):
         default='mysite',
         help='The name of your Django project.')
     parser.add_argument(
-        '--app_names',
-        nargs='+',
-        default=['polls'],
-        help='A list of names of apps to create')
+        '--app_name',
+        default='home',
+        help='The name of the app to create')
     parser.add_argument(
         '--project_dir',
-        default='~/djangogke_project',
+        default='~/django_cloud_project',
         help='The output folder of your Django project.')
     parser.add_argument(
         '--database_user',
@@ -64,7 +63,7 @@ def main():
     generator.generate_all_source_files(
         project_id=args.project_id,
         project_name=args.project_name,
-        app_names=args.app_names,
+        app_name=args.app_name,
         project_dir=args.project_dir,
         database_user=args.database_user,
         database_password=args.database_password)
