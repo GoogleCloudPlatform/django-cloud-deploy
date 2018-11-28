@@ -16,9 +16,10 @@ Currently, **Django Deploy** can only
 
 **Django Deploy** is an experimental project not official supported by Google.
 
-# Usage
+# Setting Started
 
-For detailed instructions see [USAGE](USAGE.md).
+For detailed instructions on how to use **Django Deploy**, see the
+[Getting Started Guide](GETTING-STARTED.md).
 
 # Development Workflow (Linux)
 
