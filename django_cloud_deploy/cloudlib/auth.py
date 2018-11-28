@@ -21,16 +21,6 @@ from google.auth import credentials
 class AuthClient(object):
     """A class for GCP authentication."""
 
-    def gcloud_login(self):
-        """Sets the user account in the Gcloud CLI.
-
-        Uses subprocess call to gcloud auth login. This is needed as the user
-        must have the current account active via the Gcloud CLI.
-        """
-        command = ['gcloud', 'auth', 'login', '-q']
-        subprocess.check_call(
-            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
     def create_default_credentials(self) -> credentials.Credentials:
         """Retrieves google application default credentials for authentication.
 
@@ -45,13 +35,3 @@ class AuthClient(object):
             command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         creds, _ = google.auth.default()
         return creds
-
-    def authenticate_docker(self):
-        """To authenticate to Container Registry we use gcloud to help Docker.
-
-        See
-        https://cloud.google.com/container-registry/docs/advanced-authentication
-        """
-        command = ['gcloud', 'auth', 'configure-docker', '-q']
-        subprocess.check_call(
-            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

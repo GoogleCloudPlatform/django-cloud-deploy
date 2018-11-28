@@ -68,13 +68,30 @@ class ContainerClient(object):
     # remove them after the program exists.
     _temp_ca_files = []
 
-    def __init__(self, container_service: discovery.Resource):
+    def __init__(self, container_service: discovery.Resource,
+                 credentials: credentials.Credentials):
         self._container_service = container_service
-        self._docker_client = docker.from_env()
+        self._create_docker_client(credentials)
+
+    def _create_docker_client(self, credentials: credentials.Credentials):
+        # credentials.token is a bearer token that can be used in HTTP headers
+        # to make authenticated requests. When the given credentials does not
+        # have token, we need to force it to get a new token.
+        if not credentials.token:
+            credentials.refresh(requests.Request())
+
+        # See https://cloud.google.com/container-registry/docs/advanced-authentication
+        self._docker_client = docker.DockerClient()
+        self._docker_client.login(
+            username='oauth2accesstoken',
+            password=credentials.token,
+            registry='https://gcr.io')
 
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
-        return cls(discovery.build('container', 'v1', credentials=credentials))
+        return cls(
+            discovery.build('container', 'v1', credentials=credentials),
+            credentials)
 
     @staticmethod
     def _load_cluster_definition_template():

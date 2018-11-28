@@ -21,6 +21,7 @@ from absl.testing import absltest
 
 from django_cloud_deploy.cloudlib import container
 from django_cloud_deploy.tests.unit.cloudlib.lib import http_fake
+import google
 
 PROJECT_ID = 'fake_project_id'
 CLUSTER_NAME = 'fake_cluster'
@@ -121,9 +122,14 @@ class ContainerClientTestCase(absltest.TestCase):
     """Test case for container.ContainerClient."""
 
     def setUp(self):
+        mock_credentials = mock.Mock(spec=google.auth.credentials.Credentials)
+        patcher = mock.patch('django_cloud_deploy.cloudlib.container.'
+                             'ContainerClient._create_docker_client')
+        self.addCleanup(patcher.stop)
+        patcher.start()
         self._container_service = ContainerServiceFake()
         self._container_client = container.ContainerClient(
-            self._container_service)
+            self._container_service, mock_credentials)
 
     def test_create_cluster_simple_success(self):
         cluster_name = 'first_success'

@@ -704,8 +704,6 @@ class CredentialsPrompt(Prompt):
              'Deploy to access your Google account.').format(step_prompt))
         console.ask('Press [Enter] to open a browser window to allow access')
         auth_client = auth.AuthClient()
-        auth_client.gcloud_login()
-        auth_client.authenticate_docker()
         return auth_client.create_default_credentials()
 
 
