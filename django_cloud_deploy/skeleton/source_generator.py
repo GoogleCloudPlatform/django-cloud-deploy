@@ -487,19 +487,16 @@ class _AppEngineFileGenerator(_Jinja2FileGenerator):
                 return False
         return True
 
-    # TODO: remove database_password
-    def generate(self, project_name: str, project_dir: str,
-                 database_password: str):
+    def generate(self, project_name: str, project_dir: str):
         """Generate app.yaml and .gcloudignore.
 
         Args:
             project_name: The name of your Django project.
             project_dir: The destination directory path to put Dockerfile.
-            database_password: Plaintext password of the database.
         """
         if not self.generated(project_dir):
             self._generate_ignore(project_dir)
-            self._generate_yaml(project_dir, project_name, database_password)
+            self._generate_yaml(project_dir, project_name)
 
     def _generate_ignore(self, project_dir: str):
         file_name = '.gcloudignore'
@@ -508,13 +505,11 @@ class _AppEngineFileGenerator(_Jinja2FileGenerator):
         output_path = os.path.join(project_dir, file_name)
         self._render_file(template_path, output_path)
 
-    def _generate_yaml(self, project_dir: str, project_name: str,
-                       database_password: str):
+    def _generate_yaml(self, project_dir: str, project_name: str):
         """Generate a yaml file to define how to deploy a Django app to GAE."""
         file_name = 'app.yaml'
         options = {
-            'project_name': project_name,
-            'db_password': database_password
+            'project_name': project_name
         }
         template_path = os.path.join(self._get_template_folder_path(),
                                      file_name)
@@ -712,7 +707,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
                                   database_name: Optional[str] = None,
                                   region: Optional[str] = 'us-west1',
                                   image_tag: Optional[str] = None):
-        """Generate all source files of a Django app to be deployed to GKE.
+        """Generate all source files of a Django app to be deployed to GCP.
 
         Args:
             project_id: Your GCP project id. This can be got from your GCP
@@ -753,5 +748,6 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.yaml_file_generator.generate(project_dir, project_name, project_id,
                                           instance_name, region, image_tag,
                                           cloudsql_secrets, django_secrets)
+        self.app_engine_file_generator.generate(project_name, project_dir)
         self.setup_django_environment(
             project_dir, project_name, database_user, database_password)

@@ -11,8 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
+from google.cloud import storage
 
 from .base_settings import *
+
+def get_database_password():
+    client = storage.Client()
+    bucket = client.get_bucket('secrets-{{ project_id }}')
+    blob = bucket.get_blob('secrets/cloudsql.json')
+    creds = json.loads(blob.download_as_string())
+    return creds['password']
 
 
 # SECURITY WARNING: If you deploy a Django app to production, make sure to set
@@ -31,7 +40,7 @@ if os.getenv('GAE_APPLICATION', None):
             'ENGINE': 'django.db.backends.postgresql',
 	        'NAME': '{{ database_name }}',
             'USER': os.environ['DATABASE_USER'],
-            'PASSWORD': os.environ['DATABASE_PASSWORD'],
+            'PASSWORD': get_database_password(),
             'HOST': '/cloudsql/{{ cloud_sql_connection }}',
         }
     }

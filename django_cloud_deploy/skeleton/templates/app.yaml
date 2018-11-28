@@ -2,10 +2,8 @@
 runtime: python37
 entrypoint: gunicorn -b :$PORT --access-logfile - --error-logfile - {{ project_name }}.wsgi
 
-# TODO: replace hard coded values
 env_variables:
   DATABASE_USER: "postgres"
-  DATABASE_PASSWORD: {{ db_password }}
 
 
 handlers:

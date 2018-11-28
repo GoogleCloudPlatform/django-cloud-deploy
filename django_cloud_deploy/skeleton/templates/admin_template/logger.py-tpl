@@ -1,0 +1,55 @@
+import os
+from google.cloud import logging
+from google.cloud.logging import DESCENDING
+from google.oauth2 import service_account
+
+
+def generate_logging_client():
+    if os.getenv('GAE_APPLICATION', None):
+        return logging.Client()
+    try:  # Kubernetes Engine
+        credentials = (
+            service_account.Credentials.from_service_account_file(
+                '/secrets/django_app/logging-credentials.json',
+                scopes=['https://www.googleapis.com/auth/logging.read']))
+
+        return logging.Client(credentials=credentials)
+    except Exception as e:
+        return None
+
+
+def get_logs(logging_client, page_size=10):
+    if logging_client is None:
+        return ['Check console for logs.']
+
+    query_filter = _get_query_filter()
+
+    # Show ten entries
+    iterator = logging_client.list_entries(order_by=DESCENDING,
+                                           filter_=query_filter,
+                                           page_size=page_size)
+    pages = iterator.pages
+
+    logs = [entry.payload for entry in next(pages)]
+    return logs
+
+
+def _get_query_filter():
+    if os.getenv('GAE_APPLICATION', None):
+        log_name = ('logName="projects/{{ project_id }}/logs/stdout" '
+                    'OR "projects/{{ project_id }}/logs/stderr"')
+        query_filter = ([
+            'resource.type="gae_app"',
+            log_name
+        ])
+    else:
+        query_filter = ([
+            'resource.type="container"',
+            'resource.labels.cluster_name="{{ project_name }}"',
+            'resource.labels.namespace_id="default"',
+            'resource.labels.project_id="{{ project_id }}"',
+            'resource.labels.zone:"us-west1-a"',
+            'resource.labels.container_name="{{ project_name }}-app"'
+        ])
+
+    return ' AND '.join(query_filter)

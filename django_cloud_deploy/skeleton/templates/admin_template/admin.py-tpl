@@ -1,10 +1,8 @@
 from django.contrib import admin
 from django.template.response import TemplateResponse
 from django.urls import path
-from google.cloud import logging
-from google.cloud.logging import DESCENDING
-from google.oauth2 import service_account
 
+from cloud_admin import logger
 
 class CloudAdminSite(admin.AdminSite):
     def get_urls(self):
@@ -15,7 +13,7 @@ class CloudAdminSite(admin.AdminSite):
         return my_urls + urls
 
     def cloud_view(self, request):
-        logs = self.get_logs()
+        logs = logger.get_logs(logging_client)
         context = dict(
             # Include common variables for rendering the admin template.
             self.each_context(request),
@@ -26,43 +24,6 @@ class CloudAdminSite(admin.AdminSite):
                                 'cloud_admin/cloud.html',
                                 context)
 
-    def get_logs(self):
-        if logging_client is None:
-            return ['Check console for logs.']
 
-        query_filter = ([
-            'resource.type="container"',
-            'resource.labels.cluster_name="{{ project_name }}"',
-            'resource.labels.namespace_id="default"',
-            'resource.labels.project_id="{{ project_id }}"',
-            'resource.labels.zone:"us-west1-a"',
-            'resource.labels.container_name="{{ project_name }}-app"'
-        ])
-
-        query_filter = ' AND '.join(query_filter)
-
-        # Show ten entries
-        iterator = logging_client.list_entries(order_by=DESCENDING,
-                                               filter_=query_filter,
-                                               page_size=10)
-        pages = iterator.pages
-
-        logs = [entry.payload for entry in next(pages)]
-        return logs
-
-
-def generate_logging_client():
-    try:  # If running on Kubernetes
-        credentials = (
-            service_account.Credentials.from_service_account_file(
-                '/secrets/django_app/logging-credentials.json',
-                scopes=['https://www.googleapis.com/auth/logging.read']))
-
-        logging_client = logging.Client(credentials=credentials)
-    except Exception:
-        logging_client = None
-
-    return logging_client
-
-logging_client = generate_logging_client()
+logging_client = logger.generate_logging_client()
 admin_site = CloudAdminSite()
