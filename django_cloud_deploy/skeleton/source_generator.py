@@ -16,6 +16,7 @@
 
 import abc
 import os
+import shutil
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -668,6 +669,20 @@ class DjangoSourceFileGenerator(_FileGenerator):
                                               database_name,
                                               cloud_storage_bucket_name)
 
+    @staticmethod
+    def _delete_all_files(directory_path: str):
+        """Delete all files under the given directory.
+
+        Args:
+            directory_path: Path to the directory to delete files.
+        """
+        for the_file in os.listdir(directory_path):
+            file_path = os.path.join(directory_path, the_file)
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+
     def setup_django_environment(self,
                                  project_dir: str,
                                  project_name: str,
@@ -706,7 +721,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
                                   instance_name: Optional[str] = None,
                                   database_name: Optional[str] = None,
                                   region: Optional[str] = 'us-west1',
-                                  image_tag: Optional[str] = None):
+                                  image_tag: Optional[str] = None,
+                                  overwrite: Optional[bool] = True):
         """Generate all source files of a Django app to be deployed to GCP.
 
         Args:
@@ -731,10 +747,15 @@ class DjangoSourceFileGenerator(_FileGenerator):
             database_name: Name of your cloud database.
             region: Where to host the Django project.
             image_tag: A customized docker image tag used in integration tests.
+            overwrite: A flag indicating whether to delete existing files in the
+                provided directory.
         """
 
         project_dir = os.path.abspath(os.path.expanduser(project_dir))
         os.makedirs(project_dir, exist_ok=True)
+        if overwrite:
+            self._delete_all_files(project_dir)
+
         instance_name = instance_name or project_name + '-instance'
         cloud_sql_connection_string = (
             '{}:{}:{}'.format(project_id, region, instance_name))

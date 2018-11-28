@@ -457,6 +457,20 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
             'fake_db_user', 'fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)
 
+    def test_delete_existing_files(self):
+        project_id = project_name = 'test_delete_existing_files1'
+        app_name = 'polls1'
+        self._generator.generate_all_source_files(
+            project_id, project_name, app_name, self._project_dir,
+            'fake_db_user', 'fake_db_password')
+        project_id = project_name = 'test_delete_existing_files2'
+        self._generator.generate_all_source_files(
+            project_id, project_name, app_name, self._project_dir,
+            'fake_db_user', 'fake_db_password')
+        self._test_project_structure(project_name, app_name, self._project_dir)
+        files_list = os.listdir(os.path.join(self._project_dir, project_name))
+        self.assertNotIn(project_name, files_list)
+
     def test_file_generation_same_place(self):
         project_id = project_name = 'test_file_generation_same_place'
         app_name = 'polls'
@@ -481,9 +495,17 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
 
     def test_generate_missing_source_files(self):
         project_id = project_name = 'test_generate_missing_source_files'
-        app_name = 'polls'
+        app_name = 'existing_app'
         management.call_command('startproject', project_name, self._project_dir)
+        existing_app_path = os.path.join(self._project_dir, 'existing_app')
+        os.mkdir(existing_app_path)
+        management.call_command('startapp', 'existing_app', existing_app_path)
         self._generator.generate_all_source_files(
-            project_id, project_name, app_name, self._project_dir,
-            'fake_db_user', 'fake_db_password')
+            project_id,
+            project_name,
+            app_name,
+            self._project_dir,
+            'fake_db_user',
+            'fake_db_password',
+            overwrite=False)
         self._test_project_structure(project_name, app_name, self._project_dir)
