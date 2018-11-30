@@ -25,12 +25,6 @@ import django_cloud_deploy.workflow as workflow
 def add_arguments(parser):
 
     parser.add_argument(
-        '--project-id',
-        dest='project_id',
-        help='The unique id to use when creating the Google Cloud Platform '
-        'project. Can not be changed.')
-
-    parser.add_argument(
         '--project-path',
         dest='django_directory_path',
         help='The location where the generated Django project code should be '
@@ -41,11 +35,6 @@ def add_arguments(parser):
         dest='database_password',
         help='The password for the default database user.')
 
-    parser.add_argument(
-        '--django-project-name',
-        dest='django_project_name',
-        help='The name of the Django project e.g. "mysite".')
-
 
 def main(args: argparse.Namespace):
 
@@ -54,18 +43,14 @@ def main(args: argparse.Namespace):
 
     prompt_order = [
         'credentials',
-        'project_id',
         'database_password',
         'django_directory_path',
-        'django_project_name',
     ]
 
     required_parameters_to_prompt = {
         'credentials': prompt.CredentialsPrompt,
-        'project_id': prompt.ProjectIdUpdatePrompt,
         'database_password': prompt.PostgresPasswordUpdatePrompt,
         'django_directory_path': prompt.DjangoFilesystemPathUpdate,
-        'django_project_name': prompt.DjangoProjectNameUpdatePrompt,
     }
 
     # Parameters that were *not* provided as command flags.
@@ -101,9 +86,7 @@ def main(args: argparse.Namespace):
 
     workflow_manager = workflow.WorkflowManager(
         actual_parameters['credentials'])
-    workflow_manager.update_project(actual_parameters['project_id'],
-                                    actual_parameters['django_project_name'],
-                                    actual_parameters['django_directory_path'],
+    workflow_manager.update_project(actual_parameters['django_directory_path'],
                                     actual_parameters['database_password'])
 
 

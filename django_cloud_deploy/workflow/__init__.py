@@ -19,11 +19,12 @@ import shutil
 from typing import Any, Dict, List, Optional
 import webbrowser
 
+from django_cloud_deploy import config
 from django_cloud_deploy.cloudlib import billing
 from django_cloud_deploy.skeleton import source_generator
 from django_cloud_deploy.workflow import _database
-from django_cloud_deploy.workflow import _deploygke
 from django_cloud_deploy.workflow import _deploygae
+from django_cloud_deploy.workflow import _deploygke
 from django_cloud_deploy.workflow import _enable_service
 from django_cloud_deploy.workflow import _project
 from django_cloud_deploy.workflow import _service_account
@@ -33,6 +34,10 @@ from google.auth import credentials
 
 ProjectCreationMode = _project.CreationMode
 ProjectExistsError = _project.ProjectExistsError
+
+
+class InvalidConfigError(Exception):
+    """A error occurred when fail to read required information from config."""
 
 
 class WorkflowManager(object):
@@ -75,7 +80,7 @@ class WorkflowManager(object):
             cloud_storage_bucket_name: str = None,
             region: str = 'us-west1',
             cloud_sql_proxy_path: str = 'cloud_sql_proxy',
-            backend='gke',
+            backend: str = 'gke',
             open_browser: bool = True):
         """Workflow of deploying a newly generated Django app to GKE.
 
@@ -116,9 +121,9 @@ class WorkflowManager(object):
                 project id.
             region: Where the service is hosted.
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
+            backend: The desired backend to deploy the Django App on.
             open_browser: Whether we open the browser to show the deployed app
                 at the end.
-            backend: The desired backend to deploy the Django App on.
 
         Returns:
             The url of the deployed Django app.
@@ -222,6 +227,10 @@ class WorkflowManager(object):
             app_url = self._deploygae_workflow.deploy_gae_app(
                 project_id, django_directory_path)
 
+        # Create configuration file to save information needed in "update"
+        # command.
+        attributes = {'project_id': project_id, 'project_name': project_name}
+        self._save_config(django_directory_path, attributes)
         print('Your app is running at {}.'.format(app_url))
 
         if open_browser:
@@ -229,8 +238,6 @@ class WorkflowManager(object):
         return app_url
 
     def update_project(self,
-                       project_id: str,
-                       django_project_name: str,
                        django_directory_path: str,
                        database_password: str,
                        cloud_sql_proxy_path: str = 'cloud_sql_proxy',
@@ -239,9 +246,6 @@ class WorkflowManager(object):
         """Workflow of updating a deployed Django app on GKE.
 
         Args:
-            project_id: The unique id to use when creating the Google Cloud
-                Platform project.
-            django_project_name: The name of the Django project e.g. "mysite".
             django_directory_path: The location where the generated Django
                 project code should be stored.
             database_password: The password for the default database user.
@@ -249,7 +253,21 @@ class WorkflowManager(object):
             region: Where the service is hosted.
             open_browser: Whether we open the browser to show the deployed app
                 at the end.
+
+        Raises:
+            InvalidConfigError: When failed to read required information in the
+                configuration file.
         """
+
+        config_obj = config.Configuration(django_directory_path)
+        project_id = config_obj.get('project_id')
+        django_project_name = config_obj.get('project_name')
+
+        if not project_id or not django_project_name:
+            raise InvalidConfigError(
+                'Configuration file in [{}] does not contain enough '
+                'information to update a Django project.'.format(
+                    django_directory_path))
 
         # A bunch of variables necessary for deployment we hardcode for user.
         database_username = 'postgres'
@@ -284,6 +302,13 @@ class WorkflowManager(object):
         print('Your app is running at {}.'.format(app_url))
         if open_browser:
             webbrowser.open(app_url)
+
+    @staticmethod
+    def _save_config(django_directory_path: str, attributes: Dict[str, Any]):
+        config_obj = config.Configuration(django_directory_path)
+        for key, value in attributes.items():
+            config_obj.set(key, value)
+        config_obj.save()
 
     def _generate_section_header(self, step: int, section_name: str,
                                  total_steps: int):
@@ -351,11 +376,11 @@ class WorkflowManager(object):
     def _load_secret_names(required_service_accounts: Optional[
             Dict[str, List[Dict[str, Any]]]] = None) -> (List[str], List[str]):
         """Retrieves list of secret names for containers.
-        
+
         Args:
-             required_service_accounts: Service accounts needed by deployment.
-         Returns:
-             List of secrets for cloud_sql and django container.
+            required_service_accounts: Service accounts needed by deployment.
+        Returns:
+            List of secrets for cloud_sql and django container.
         """
         cloud_sql_secrets = required_service_accounts.get('cloud_sql', [])
         django_secrets = required_service_accounts.get('django', [])
