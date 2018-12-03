@@ -172,14 +172,8 @@ class Docker(Requirement):
             subprocess.check_call(command, stdout=subprocess.DEVNULL,
                                   stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
-            # TODO: Handle for multiple OS's
-            # TODO: Check output for error message given when user has
-            # not ran the command
-            msg = ('Docker is installed but not correctly set up.'
-                   'Use the following command to fix it: \n'
-                   '$ sudo groupadd docker\n'
-                   '$ sudo usermod -a -G docker $USER\n'
-                   'Then log out/log back in')
+            msg = ('Docker is installed but was unable to run the command.'
+                   'Make sure docker is running, if it is open a new terminal')
             raise MissingRequirementError(cls.NAME, msg)
 
 
