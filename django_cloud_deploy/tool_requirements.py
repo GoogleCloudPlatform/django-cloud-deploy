@@ -129,12 +129,27 @@ class Gcloud(Requirement):
         Raises:
             MissingRequirementError: If the requirement is not found.
         """
-        if not shutil.which('gcloud'):
-            download_link = (
-                'https://cloud.google.com/sdk/docs/downloads-interactive')
-            msg = ('Please download Google Cloud SDK '
-                   'from {}'.format(download_link))
+        if shutil.which('gcloud'):
+            return None
+
+        # Default paths
+        gcloud_config_path = os.path.expanduser('~/.config/gcloud')
+        gcloud_sdk_path = os.path.expanduser('~/google-cloud-sdk/gcloud')
+        gcloud_sdk_apt_get_path = '/usr/bin/gcloud'
+
+        path_exists = (os.path.exists(gcloud_config_path) or
+                       os.path.exists(gcloud_sdk_path) or
+                       os.path.exists(gcloud_sdk_apt_get_path))
+        if path_exists:
+            msg = ('It seems you have downloaded gcloud already, please try'
+                   'again on a new terminal')
             raise MissingRequirementError(cls.NAME, msg)
+
+        download_link = (
+            'https://cloud.google.com/sdk/docs/downloads-interactive')
+        msg = ('Please download Google Cloud SDK from {} and open a new '
+               'terminal once downloaded'.format(download_link))
+        raise MissingRequirementError(cls.NAME, msg)
 
 
 class Docker(Requirement):
