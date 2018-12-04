@@ -50,7 +50,7 @@ Password (again):
 [test@example.com]: myname@example.com
 </pre>
 
-# Setting Started
+# Getting Started
 
 For detailed instructions on how to use **Django Deploy**, see the
 [Getting Started Guide](GETTING-STARTED.md).
