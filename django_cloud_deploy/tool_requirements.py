@@ -134,10 +134,12 @@ class Gcloud(Requirement):
 
         # Default paths
         gcloud_config_path = os.path.expanduser('~/.config/gcloud')
-        gcloud_sdk_path = os.path.expanduser('~/.google-cloud-sdk/gcloud')
+        gcloud_sdk_path = os.path.expanduser('~/google-cloud-sdk/gcloud')
+        gcloud_sdk_apt_get_path = '/usr/bin/gcloud'
 
         path_exists = (os.path.exists(gcloud_config_path) or
-                       os.path.exists(gcloud_sdk_path))
+                       os.path.exists(gcloud_sdk_path) or
+                       os.path.exists(gcloud_sdk_apt_get_path))
         if path_exists:
             msg = ('It seems you have downloaded gcloud already, please try'
                    'again on a new terminal')
