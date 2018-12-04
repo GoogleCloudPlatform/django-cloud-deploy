@@ -1,4 +1,4 @@
-# Getting Started
+# Getting Started 
 
 **Django Deploy** is a tool that allows you to deploy 
 [Django](https://www.djangoproject.com/) applications on
