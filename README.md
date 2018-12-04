@@ -44,7 +44,7 @@ source venv/bin/activate
 
 Install Django-GKE in edit mode:
 ```bash
-pipenv  install -e .
+pip  install -e .
 ```
 
 Run it:
