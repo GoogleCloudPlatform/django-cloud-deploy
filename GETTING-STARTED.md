@@ -1,5 +1,15 @@
 # Getting Started
 
+**Django Deploy** is a tool that allows you to deploy 
+[Django](https://www.djangoproject.com/) applications on
+[Google Cloud Platform](https://cloud.google.com/).
+
+This guide will step you through:
+1. Installing the prerequisites for **Django Deploy**
+2. Creating and deploying a new Django application on [Kubernetes Engine](https://cloud.google.com/kubernetes-engine/)
+3. Making a change to the newly created Django application and updating it on
+   [Kubernetes Engine](https://cloud.google.com/kubernetes-engine/)
+
 ## Setup and Installation
 
 ### Prerequisites
@@ -31,8 +41,14 @@ $ pip install django-cloud-deploy
 
 ## Creating a New Project
 
+At the end of this step, you will have a skeleton Django project that is
+deployed on
+[Kubernetes Engine](https://cloud.google.com/kubernetes-engine/). The following
+[step](#updating-your-project) will show you how to start modifying it to meet
+your unique requirements.
+
 You can create a new Django project after completing the
-[Setup and Installation steps](#Setup-and-Installation) and running this
+[Setup and Installation steps](#Setup-and-Installation) by running this
 command:
 ```bash
 $ django-cloud-deploy new
@@ -68,9 +84,11 @@ You can open `<url>` in your browser to see your application running.
 
 ## Updating Your Project
 
-You can make any change that you want to your application and redeploy it.
+In this step, you will make a change to your Django project and redeploy it
+to [Kubernetes Engine](https://cloud.google.com/kubernetes-engine/).
 
-For example, open `<app name>/views.py` and you should see this code:
+You can make any change that you want to your application. For example, open
+`<app name>/views.py` and you should see this code:
 
 ```python
 def index(request):
