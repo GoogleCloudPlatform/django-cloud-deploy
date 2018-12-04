@@ -229,7 +229,10 @@ class WorkflowManager(object):
 
         # Create configuration file to save information needed in "update"
         # command.
-        attributes = {'project_id': project_id, 'project_name': project_name}
+        attributes = {
+            'project_id': project_id,
+            'django_project_name': django_project_name
+        }
         self._save_config(django_directory_path, attributes)
         print('Your app is running at {}.'.format(app_url))
 
@@ -261,7 +264,7 @@ class WorkflowManager(object):
 
         config_obj = config.Configuration(django_directory_path)
         project_id = config_obj.get('project_id')
-        django_project_name = config_obj.get('project_name')
+        django_project_name = config_obj.get('django_project_name')
 
         if not project_id or not django_project_name:
             raise InvalidConfigError(
@@ -290,7 +293,7 @@ class WorkflowManager(object):
         print(
             self._generate_section_header(2, 'Static Content Update',
                                           self._TOTAL_UPDATE_STEPS))
-        self._statitc_content_workflow.update_static_content(
+        self._static_content_workflow.update_static_content(
             cloud_storage_bucket_name, static_content_dir)
 
         print(
