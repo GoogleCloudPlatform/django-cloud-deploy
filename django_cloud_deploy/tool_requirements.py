@@ -21,6 +21,8 @@ import subprocess
 import sys
 import urllib.request
 
+import pexpect
+
 from typing import List
 
 from django_cloud_deploy.cli import io
@@ -28,7 +30,16 @@ from django_cloud_deploy.cli import io
 
 class UnableToAutomaticallyInstallError(Exception):
     """Thrown when the handle function is unable to install the requirement."""
-    pass
+    def __init__(self, name: str, how_to_install_message: str):
+        """Provides information on how to manually install the requirement.
+
+        Args:
+            name: Name of the requirement.
+            how_to_install_message: Information to help user to install
+                the requirement.
+        """
+        self.name = name
+        self.how_to_install_message = how_to_install_message
 
 
 class MissingRequirementError(Exception):
@@ -115,7 +126,9 @@ class Requirement(object):
         except MissingRequirementError as missing_requirement_error:
             try:
                 cls.handle(console)
-            except (NotImplementedError, UnableToAutomaticallyInstallError):
+            except UnableToAutomaticallyInstallError as e:
+                raise MissingRequirementError(e.name, e.how_to_install_message)
+            except NotImplementedError:
                 raise missing_requirement_error
 
 
@@ -147,7 +160,7 @@ class Gcloud(Requirement):
 
         download_link = (
             'https://cloud.google.com/sdk/docs/downloads-interactive')
-        msg = ('Please download Google Cloud SDK from {} and open a new '
+        msg = ('Please install Google Cloud SDK from {} and open a new '
                'terminal once downloaded'.format(download_link))
         raise MissingRequirementError(cls.NAME, msg)
 
@@ -204,54 +217,32 @@ class CloudSqlProxy(Requirement):
 
         Raises:
             UnableToAutomaticallyInstall: If the installation fails.
-            NotImplementedError: If we expect the user to manually install the
-                requirement.
         """
-        can_download = cls._prompt_download_requirement(console)
-        if can_download:
-            cls._download_cloud_sql_proxy(console)
-        else:
-            raise UnableToAutomaticallyInstallError
-
-    @classmethod
-    def _prompt_download_requirement(cls, console: io.IO) -> bool:
         while True:
-            answer = console.ask(
-                'Cloud Sql Proxy is required, download? [Y/n]:')
+            answer = console.ask('Cloud Sql Proxy is required by Django Cloud '
+                                 'Deploy. Would you like us to install '
+                                 'automatically (Y/n)? ').lower().strip()
+            if answer not in ['y', 'n']:
+                continue
+            if answer == 'n':
+                raise NotImplementedError
+            break
 
-            if not answer or answer.strip().lower() == 'y':
-                return True
-            elif answer.strip().lower() == 'n':
-                return False
-
-    @classmethod
-    def _download_cloud_sql_proxy(cls, console: io.IO):
-        import certifi
-
-        # We will install the proxy where gcloud is
-        gcloud_path = shutil.which('gcloud')
-        if gcloud_path is None:
-            raise UnableToAutomaticallyInstallError
-
-        gcloud_dir = os.path.dirname(gcloud_path)
-        if sys.platform.startswith('linux'):
-            url = 'https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64'
-        elif sys.platform.startswith('darwin'):
-            url = 'https://dl.google.com/cloudsql/cloud_sql_proxy.darwin.amd64'
-        else:
-            msg = '{} is not supported, only linux/mac.'.format(sys.platform)
-            raise NotImplementedError(msg)
-
-        console.tell('Downloading Cloud Sql Proxy')
-
-        file_name = 'cloud_sql_proxy'
-        executable_name = os.path.join(gcloud_dir, file_name)
-        with open(executable_name, 'wb') as file:
-            with urllib.request.urlopen(url, cafile=certifi.where()) as data:
-                file.write(data.read())
-
-        st = os.stat(executable_name)
-        os.chmod(executable_name, st.st_mode | stat.S_IRWXU)
+        try:
+            args = ['components', 'install', 'cloud_sql_proxy']
+            process = pexpect.spawn('gcloud', args)
+            process.expect('Do you want to continue (Y/n)?')
+            process.sendline('Y')
+            process.expect('Update done!')
+        except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
+            dl_link = 'https://cloud.google.com/sql/docs/mysql/sql-proxy'
+            msg = ('Unable to download Cloud Sql Proxy directly from Gcloud. '
+                   'This is caused when Gcloud was not downloaded directly from'
+                   ' https://cloud.google.com/sdk/docs/downloads-interactive\n'
+                   'Please install Cloud SQL Proxy from {}').format(dl_link)
+            raise UnableToAutomaticallyInstallError(cls.NAME, msg)
+        finally:
+            process.close()
 
 
 _REQUIREMENTS = [
