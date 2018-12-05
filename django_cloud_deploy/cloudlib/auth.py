@@ -14,6 +14,7 @@
 
 import os
 import subprocess
+from typing import Optional
 
 from google.oauth2 import credentials
 
@@ -21,7 +22,8 @@ from google.oauth2 import credentials
 class AuthClient(object):
     """A class for GCP authentication."""
 
-    def create_default_credentials(self) -> credentials.Credentials:
+    @staticmethod
+    def create_default_credentials() -> credentials.Credentials:
         """Retrieves google application default credentials for authentication.
 
         Uses subprocess to call gcloud auth application-default login. User must
@@ -38,9 +40,35 @@ class AuthClient(object):
         subprocess.check_call(
             command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-        credentials_path = self._get_active_account_adc_path()
-        return credentials.Credentials.from_authorized_user_file(
-            credentials_path)
+        return AuthClient.get_default_credentials()
+
+    @staticmethod
+    def get_default_credentials() -> Optional[credentials.Credentials]:
+        """Get the default credentials object created by "gcloud auth login".
+
+        Returns:
+            The credentials object if it is valid and not expired. Otherwise
+            None.
+        """
+        credentials_path = AuthClient._get_active_account_adc_path()
+        try:
+            creds = credentials.Credentials.from_authorized_user_file(
+                credentials_path)
+            if creds.expired:
+                return None
+            else:
+                return creds
+
+        # If credentials file not found or it is invalid.
+        except (ValueError, FileNotFoundError):
+            return None
+
+    @staticmethod
+    def get_active_account() -> str:
+        """Get the active account logged in on gcloud."""
+        command = ['gcloud', 'info', '--format=value(config.account)']
+        return subprocess.check_output(
+            command, universal_newlines=True).rstrip()
 
     @staticmethod
     def _get_active_account_adc_path() -> str:
@@ -61,9 +89,7 @@ class AuthClient(object):
         ]
         gcloud_config_path = subprocess.check_output(
             command, universal_newlines=True).rstrip()
-        command = ['gcloud', 'info', '--format=value(config.account)']
-        active_account = subprocess.check_output(
-            command, universal_newlines=True).rstrip()
+        active_account = AuthClient.get_active_account()
         # These hardcoded values are also hardcoded by gcloud.
         return os.path.join(gcloud_config_path, 'legacy_credentials',
                             active_account, 'adc.json')

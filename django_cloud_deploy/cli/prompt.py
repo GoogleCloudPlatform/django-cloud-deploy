@@ -702,8 +702,25 @@ class CredentialsPrompt(Prompt):
         console.tell(
             ('{} In order to deploy your application, you must allow Django '
              'Deploy to access your Google account.').format(step_prompt))
-        console.ask('Press [Enter] to open a browser window to allow access')
         auth_client = auth.AuthClient()
+        create_new_credentials = True
+        active_account = auth_client.get_active_account()
+
+        if active_account:  # The user has already logged in before
+            while True:
+                ans = console.ask(
+                    ('You have logged in with account [{}]. Do you want to '
+                     'use it? [y/N]: ').format(active_account))
+                ans = ans.lower()
+                if ans not in ['y', 'n']:
+                    continue
+                elif ans == 'y':
+                    create_new_credentials = False
+                break
+        if not create_new_credentials:
+            cred = auth_client.get_default_credentials()
+            if cred:
+                return cred
         return auth_client.create_default_credentials()
 
 
