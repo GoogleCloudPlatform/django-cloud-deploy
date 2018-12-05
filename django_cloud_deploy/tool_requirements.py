@@ -16,13 +16,9 @@
 
 import os
 import shutil
-import stat
 import subprocess
-import sys
-import urllib.request
 
 import pexpect
-
 from typing import List
 
 from django_cloud_deploy.cli import io
