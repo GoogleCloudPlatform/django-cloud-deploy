@@ -13,6 +13,7 @@
 # limitatconsolens under the License.
 """End to end test for create and deploy new project."""
 
+import os
 import shutil
 import tempfile
 import types
@@ -20,6 +21,7 @@ import urllib.parse
 
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import new
+from django_cloud_deploy.cli import update
 from django_cloud_deploy.tests.lib import test_base
 from django_cloud_deploy.tests.lib import utils
 import requests
@@ -27,7 +29,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome import options
 
 
-class NewProjectE2ETest(test_base.ResourceCleanUpTest):
+class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUpTest):
     """End to end test for create and deploy new project."""
 
     _CLOUDSQL_ROLES = ('roles/cloudsql.client', 'roles/cloudsql.editor',
@@ -47,10 +49,11 @@ class NewProjectE2ETest(test_base.ResourceCleanUpTest):
     def tearDown(self):
         shutil.rmtree(self.project_dir)
 
-    def test_create_and_deploy_new_project(self):
+    def test_deploy_and_update_new_project(self):
         # Generate unique resource names
         fake_superuser_name = 'admin'
         fake_password = 'fake_password'
+
         cloud_storage_bucket_name = utils.get_resource_name('bucket')
         django_project_name = utils.get_resource_name('project', delimiter='')
 
@@ -111,6 +114,7 @@ class NewProjectE2ETest(test_base.ResourceCleanUpTest):
 
             # Assert the web app is available
             driver.get(url)
+            self.assertIn('Hello from the Cloud!', driver.page_source)
 
             # Assert the web app admin page is available
             admin_url = urllib.parse.urljoin(url, '/admin')
@@ -138,3 +142,26 @@ class NewProjectE2ETest(test_base.ResourceCleanUpTest):
             # Assert the deployed app is using static content from the GCS
             # bucket
             self.assertIn(cloud_storage_bucket_name, driver.page_source)
+
+            # Test update command
+            test_io = io.TestIO()
+            test_io.password_answers.append(fake_password)  # database password
+            test_io.answers.append(self.project_dir)  # django_directory_path
+
+            view_file_path = os.path.join(self.project_dir, 'home', 'views.py')
+            with open(view_file_path) as view_file:
+                file_content = view_file.read()
+                file_content = file_content.replace('Hello', 'Hello1')
+
+            with open(view_file_path, 'w') as view_file:
+                view_file.write(file_content)
+            arguments = types.SimpleNamespace(credentials=self.credentials)
+
+            update.main(arguments, test_io)
+
+            # Assert answers are all used.
+            self.assertEqual(len(test_io.answers), 0)
+            self.assertEqual(len(test_io.password_answers), 0)
+
+            driver.get(url)
+            self.assertIn('Hello1 from the Cloud!', driver.page_source)

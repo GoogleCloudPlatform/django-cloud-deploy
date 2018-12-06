@@ -35,11 +35,23 @@ def add_arguments(parser):
         dest='database_password',
         help='The password for the default database user.')
 
+    parser.add_argument(
+        '--credentials',
+        dest='credentials',
+        help=('The file path of the credentials file to use for update. '
+              'Test only, do not use.'))
 
-def main(args: argparse.Namespace):
 
-    console = io.ConsoleIO()
-    tool_requirements.check_and_handle_requirements(console)
+def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
+
+    try:
+        tool_requirements.check_and_handle_requirements(console)
+    except tool_requirements.MissingRequirementsError as e:
+        console.tell('Please install the following requirements:')
+        for req in e.missing_requirements:
+            console.tell('* {}: {}'.format(req.name,
+                                           req.how_to_install_message))
+        return
 
     prompt_order = [
         'credentials',
