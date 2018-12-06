@@ -84,22 +84,3 @@ class ToolRequirementsPositiveTest(absltest.TestCase):
     def test_docker(self):
         docker = tool_requirements.Docker
         self.has_requirement(docker)
-
-
-class ToolRequirementsHandleTest(absltest.TestCase):
-    """This will test the handle functions of Requirements."""
-
-    def setUp(self):
-        self.test_console = io.TestIO()
-
-    def has_requirement(self, req: tool_requirements.Requirement):
-        try:
-            req.check()
-        except tool_requirements.MissingRequirementsError:
-            self.fail('Not suppose to be missing {}'.format(req.Name))
-
-    def test_cloud_sql_proxy_handle(self):
-        cloud_sql_proxy = tool_requirements.CloudSqlProxy
-        self.test_console.answers.append('y')
-        cloud_sql_proxy.handle(self.test_console)
-        self.has_requirement(cloud_sql_proxy)
