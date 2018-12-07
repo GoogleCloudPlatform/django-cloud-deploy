@@ -132,11 +132,14 @@ class WorkflowManager(object):
         # A bunch of variables necessary for deployment we hardcode for user.
         database_username = 'postgres'
         cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
-        cluster_name = django_project_name
-        database_name = django_project_name + '-db'
-        database_instance_name = django_project_name + '-instance'
 
-        image_name = '/'.join(['gcr.io', project_id, django_project_name])
+        sanitized_django_project_name = self._sanitize_name(django_project_name)
+        cluster_name = sanitized_django_project_name
+        database_name = sanitized_django_project_name + '-db'
+        database_instance_name = sanitized_django_project_name + '-instance'
+
+        image_name = '/'.join(
+            ['gcr.io', project_id, sanitized_django_project_name])
         static_content_dir = os.path.join(django_directory_path, 'static')
 
         # TODO: Use progress bar to show status info instead of print statement
@@ -275,9 +278,11 @@ class WorkflowManager(object):
         # A bunch of variables necessary for deployment we hardcode for user.
         database_username = 'postgres'
         cloud_storage_bucket_name = project_id
-        cluster_name = django_project_name
-        database_instance_name = django_project_name + '-instance'
-        image_name = '/'.join(['gcr.io', project_id, django_project_name])
+        sanitized_django_project_name = self._sanitize_name(django_project_name)
+        cluster_name = sanitized_django_project_name
+        database_instance_name = sanitized_django_project_name + '-instance'
+        image_name = '/'.join(
+            ['gcr.io', project_id, sanitized_django_project_name])
         static_content_dir = os.path.join(django_directory_path, 'static')
 
         self._source_generator.setup_django_environment(
@@ -305,6 +310,18 @@ class WorkflowManager(object):
         print('Your app is running at {}.'.format(app_url))
         if open_browser:
             webbrowser.open(app_url)
+
+    @staticmethod
+    def _sanitize_name(name: str) -> str:
+        """Convert a python identifier to a valid GCP resource name.
+
+        Args:
+            name: The input name to convert.
+
+        Returns:
+            The GCP resource name converted from the given python identifier.
+        """
+        return name.replace('_', '-').lower()
 
     @staticmethod
     def _save_config(django_directory_path: str, attributes: Dict[str, Any]):
