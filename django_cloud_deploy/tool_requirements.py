@@ -14,12 +14,15 @@
 
 """Checks the user has the necesarry requirements to run the tool."""
 
+import getpass
 import os
 import shutil
 import subprocess
+import sys
 
 import pexpect
 from typing import List
+import urllib.request
 
 from django_cloud_deploy.cli import io
 
@@ -168,6 +171,10 @@ class Docker(Requirement):
     def check(cls):
         """Checks if Docker is installed.
 
+        We assume docker is usable if:
+        Mac: Docker is installed.
+        Linux: Docker is installed and user is in the docker group.
+
         Raises:
             MissingRequirementError: If the requirement is not found.
         """
@@ -177,19 +184,30 @@ class Docker(Requirement):
             raise MissingRequirementError(cls.NAME, msg)
 
         try:
-            command = ['docker', 'image', 'ls']
-            subprocess.check_call(command, stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL)
-        except subprocess.CalledProcessError:
-            # TODO: Handle for multiple OS's
-            # TODO: Check output for error message given when user has
-            # not ran the command
-            msg = ('Docker is installed but not correctly set up.'
-                   'Use the following command to fix it: \n'
-                   '$ sudo groupadd docker\n'
-                   '$ sudo usermod -a -G docker $USER\n'
-                   'Then log out/log back in')
+            if sys.platform.startswith('linux'):
+                args = ['group', 'docker']
+                p = pexpect.spawn('getent', args)
+                user = getpass.getuser()
+                p.expect(user)
+                command = ['docker', 'image', 'ls']
+                subprocess.check_call(command,
+                                      stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL)
+        except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
+            link = 'https://docs.docker.com/install/linux/linux-postinstall/'  # noqa
+            msg = ('Docker is installed but we are unable to use it.\n'
+                   'Please follow {} for more information.\n'
+                   'We suggest the following command to fix it: \n'
+                   'sudo groupadd docker\n'
+                   'sudo usermod -a -G docker $USER\n'
+                   'IMPORTANT: Log out/Log back in after'.format(link))
             raise MissingRequirementError(cls.NAME, msg)
+        except subprocess.CalledProcessError:
+            msg = ('You have recently added yourself to the docker '
+                   'group. Please log out/log back in.')
+            raise MissingRequirementError(cls.NAME, msg)
+        finally:
+            p.close()
 
 
 class CloudSqlProxy(Requirement):
