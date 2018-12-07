@@ -19,9 +19,10 @@ import shutil
 import stat
 import subprocess
 import sys
-import urllib.request
 
+import pexpect
 from typing import List
+import urllib.request
 
 from django_cloud_deploy.cli import io
 
@@ -168,21 +169,29 @@ class Docker(Requirement):
             raise MissingRequirementError(cls.NAME, msg)
 
         try:
-            command = ['docker', 'image', 'ls']
-            subprocess.check_call(command, stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL)
-        except subprocess.CalledProcessError:
-            if sys.platform.startswith('linux'):
-                msg = ('Docker is installed but not correctly set up.'
-                       'Use the following command to fix it: \n'
-                       '$ sudo groupadd docker\n'
-                       '$ sudo usermod -a -G docker $USER\n'
-                       'Then log out/log back in')
-            else:
-                msg = ('Docker is installed but was unable to run the command.'
-                       'Make sure docker is running, if it is open '
-                       'a new terminal')
+            args = ['image', 'ls']
+            p = pexpect.spawn('docker', args)
+            # 0 means the command worked, 1 is an expected error for linux
+            # Anything else will raise and we do not know how to help
+            index = p.expect(['REPOSITORY', 'permission denied'])
+            if index == 0:
+                return
+            elif index == 1:
+                if sys.platform.startswith('linux'):
+                    link = 'https://docs.docker.com/install/linux/linux-postinstall/'  # noqa
+                    msg = ('Docker is installed but we are unable to use it.\n'
+                           'Please follow {} for more information.\n'
+                           'We suggest the following command to fix it: \n'
+                           'sudo groupadd docker\n'
+                           'sudo usermod -a -G docker $USER\n'
+                           'IMPORTANT: Log out/Log back in after'.format(link))
             raise MissingRequirementError(cls.NAME, msg)
+        except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF) as e:
+            msg = ('Docker is installed but we are unable to use it.\n'
+                   'Please make sure you followed the official documentation '
+                   'for installation.')
+            raise MissingRequirementError(cls.NAME, msg)
+
 
 
 class CloudSqlProxy(Requirement):
