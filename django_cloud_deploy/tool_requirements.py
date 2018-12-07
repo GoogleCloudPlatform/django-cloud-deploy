@@ -18,6 +18,7 @@ import getpass
 import os
 import shutil
 import stat
+import subprocess
 import sys
 
 import pexpect
@@ -177,9 +178,12 @@ class Docker(Requirement):
                 args = ['group', 'docker']
                 p = pexpect.spawn('getent', args)
                 user = getpass.getuser()
-                if p.expect(user):
-                    return
-        except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF) as e:
+                p.expect(user)
+                command = ['docker', 'image', 'ls']
+                subprocess.check_call(command,
+                                      stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL)
+        except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
             link = 'https://docs.docker.com/install/linux/linux-postinstall/'  # noqa
             msg = ('Docker is installed but we are unable to use it.\n'
                    'Please follow {} for more information.\n'
@@ -188,7 +192,12 @@ class Docker(Requirement):
                    'sudo usermod -a -G docker $USER\n'
                    'IMPORTANT: Log out/Log back in after'.format(link))
             raise MissingRequirementError(cls.NAME, msg)
-
+        except subprocess.CalledProcessError:
+            msg = ('You have recently added yourself to the docker '
+                   'group. Please log out/log back in.')
+            raise MissingRequirementError(cls.NAME, msg)
+        finally:
+            p.close()
 
 
 class CloudSqlProxy(Requirement):
