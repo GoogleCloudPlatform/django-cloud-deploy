@@ -214,6 +214,10 @@ class CloudSqlProxy(Requirement):
         Raises:
             UnableToAutomaticallyInstall: If the installation fails.
         """
+        if shutil.which('gcloud') is None:
+            msg = "Gcloud is needed to install Cloud Sql Proxy"
+            raise UnableToAutomaticallyInstallError(cls.NAME, msg)
+
         while True:
             answer = console.ask('Cloud Sql Proxy is required by Django Cloud '
                                  'Deploy. Would you like us to install '
