@@ -12,13 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import setuptools
 
-with open('README.md', 'r') as fh:
+
+here = os.path.abspath(os.path.dirname(__file__))
+
+info = {}
+with open(os.path.join(here, 'django_cloud_deploy', '__version__.py')) as f:
+    exec(f.read(), info)
+
+
+with open(os.path.join(here, 'README.md'), 'r') as fh:
     long_description = fh.read()
 
-install_requires=[
-    'urllib3==1.23', #https://github.com/requests/requests/issues/4830
+
+install_requires = [
+    'urllib3==1.23',  # https://github.com/requests/requests/issues/4830
     'oauth2client>=4.1.2',
     'django>=2.1',
     'backoff>=1.6.0',
@@ -32,13 +42,14 @@ install_requires=[
     'pexpect>=4.6.0',
     'psycopg2-binary>=2.7.5',
     'google-api-python-client>=1.7.4',
-    'google-cloud-logging>=1.8.0',    
+    'google-cloud-logging>=1.8.0',
 ]
+
 
 setuptools.setup(
     name='django-cloud-deploy',
 
-    version='0.0.10',
+    version=info['__version__'],
 
     description='Tool to deploy a Django App onto GCP',
     long_description=long_description,
