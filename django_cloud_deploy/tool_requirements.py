@@ -14,10 +14,10 @@
 
 """Checks the user has the necesarry requirements to run the tool."""
 
+import getpass
 import os
 import shutil
 import stat
-import subprocess
 import sys
 
 import pexpect
@@ -160,6 +160,10 @@ class Docker(Requirement):
     def check(cls):
         """Checks if Docker is installed.
 
+        We assume docker is usable if:
+        Mac: Docker is installed.
+        Linux: Docker is installed and user is in the docker group.
+
         Raises:
             MissingRequirementError: If the requirement is not found.
         """
@@ -169,27 +173,20 @@ class Docker(Requirement):
             raise MissingRequirementError(cls.NAME, msg)
 
         try:
-            args = ['image', 'ls']
-            p = pexpect.spawn('docker', args)
-            # 0 means the command worked, 1 is an expected error for linux
-            # Anything else will raise and we do not know how to help
-            index = p.expect(['REPOSITORY', 'permission denied'])
-            if index == 0:
-                return
-            elif index == 1:
-                if sys.platform.startswith('linux'):
-                    link = 'https://docs.docker.com/install/linux/linux-postinstall/'  # noqa
-                    msg = ('Docker is installed but we are unable to use it.\n'
-                           'Please follow {} for more information.\n'
-                           'We suggest the following command to fix it: \n'
-                           'sudo groupadd docker\n'
-                           'sudo usermod -a -G docker $USER\n'
-                           'IMPORTANT: Log out/Log back in after'.format(link))
-            raise MissingRequirementError(cls.NAME, msg)
+            if sys.platform.startswith('linux'):
+                args = ['group', 'docker']
+                p = pexpect.spawn('getent', args)
+                user = getpass.getuser()
+                if p.expect(user):
+                    return
         except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF) as e:
+            link = 'https://docs.docker.com/install/linux/linux-postinstall/'  # noqa
             msg = ('Docker is installed but we are unable to use it.\n'
-                   'Please make sure you followed the official documentation '
-                   'for installation.')
+                   'Please follow {} for more information.\n'
+                   'We suggest the following command to fix it: \n'
+                   'sudo groupadd docker\n'
+                   'sudo usermod -a -G docker $USER\n'
+                   'IMPORTANT: Log out/Log back in after'.format(link))
             raise MissingRequirementError(cls.NAME, msg)
 
 
