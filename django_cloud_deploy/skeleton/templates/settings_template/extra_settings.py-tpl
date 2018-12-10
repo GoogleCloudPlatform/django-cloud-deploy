@@ -1,0 +1,56 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from .base_settings import *
+
+
+if 'INSTALLED_APPS' not in locals():
+    INSTALLED_APPS = []
+
+INSTALLED_APPS += [
+    'cloud_admin.apps.CloudAdminConfig',
+]
+
+if 'TEMPLATES' not in locals():
+    TEMPLATES = []
+
+TEMPLATES += [
+    {
+        # Add the templates required by CloudAdminSite.
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/{{ docs_version }}/howto/static-files/
+
+STATIC_ROOT = 'static'
+
+if 'STATICFILES_DIRS' not in locals():
+    STATICFILES_DIRS = []
+
+STATICFILES_DIRS += [
+    os.path.join(BASE_DIR, 'staticfiles')
+]

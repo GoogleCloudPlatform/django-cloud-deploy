@@ -415,19 +415,12 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
 
         settings_templates_dir = os.path.join(self._get_template_folder_path(),
                                               self._SETTINGS_TEMPLATE_DIRECTORY)
-        local_settings_tpl_path = os.path.join(settings_templates_dir,
-                                               'local_settings.py-tpl')
-        remote_settings_tpl_path = os.path.join(settings_templates_dir,
-                                                'remote_settings.py-tpl')
         django_dir = os.path.join(project_dir, project_name)
 
         # TODO: Make it smart enough to find settings file instead of hard
         # coding settings file path.
         settings_file_path = os.path.join(django_dir, 'settings.py')
         base_settings_path = os.path.join(django_dir, 'base_settings.py')
-        local_settings_path = os.path.join(django_dir, 'local_settings.py')
-        remote_settings_path = os.path.join(django_dir, 'remote_settings.py')
-        os.rename(settings_file_path, base_settings_path)
         options = {
             'project_id': project_id,
             'project_name': project_name,
@@ -437,9 +430,9 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
             'bucket_name': cloud_storage_bucket_name,
             'cloud_sql_connection': cloud_sql_connection
         }
-        self._render_file(local_settings_tpl_path, local_settings_path, options)
-        self._render_file(remote_settings_tpl_path, remote_settings_path,
-                          options)
+        self._render_directory(settings_templates_dir, django_dir,
+                               options=options)
+        os.rename(settings_file_path, base_settings_path)
 
 
 class _DockerfileGenerator(_Jinja2FileGenerator):

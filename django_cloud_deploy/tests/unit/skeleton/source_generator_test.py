@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
 import os
 import shutil
+import sys
 import tempfile
+from unittest import mock
 
 from absl.testing import absltest
 from django.core import management
@@ -135,16 +138,14 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         self._generator.generate(project_id, project_name, self._project_dir,
                                  cloud_sql_connection_string)
 
-        settings_file_path = os.path.join(self._project_dir, project_name,
-                                          'base_settings.py')
-        with open(settings_file_path) as settings:
-            settings_content = settings.read()
+        sys.path.append(self._project_dir)
+        module = importlib.import_module(project_name + '.base_settings')
 
-            # Test base settings generate secret keys.
-            self.assertIn('SECRET_KEY', settings_content)
+        # Test base settings generate secret keys.
+        self.assertIn('SECRET_KEY', dir(module))
 
-            # Test base settings does not setup database.
-            self.assertNotIn('DATABASES', settings_content)
+        # Test base settings does not setup database.
+        self.assertNotIn('DATABASES', dir(module))
 
     def test_local_settings(self):
         project_id = project_name = 'test_local_settings'
@@ -154,50 +155,66 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         self._generator.generate(project_id, project_name, self._project_dir,
                                  cloud_sql_connection_string)
 
-        settings_file_path = os.path.join(self._project_dir, project_name,
-                                          'local_settings.py')
-        with open(settings_file_path) as settings:
-            settings_content = settings.read()
+        sys.path.append(self._project_dir)
+        module = importlib.import_module(project_name + '.local_settings')
 
-            # Test local settings imports base settings
-            self.assertIn('base_settings', settings_content)
+        # Test local settings imports extra_settings
+        self.assertIn('cloud_admin.apps.CloudAdminConfig',
+                      getattr(module, 'INSTALLED_APPS'))
 
-            # Test local settings use sqlite
-            self.assertIn('sqlite3', settings_content)
+        # Test local settings use sqlite
+        self.assertIn('sqlite3',
+                      getattr(module, 'DATABASES')['default']['ENGINE'])
 
-            # Test local settings use DEBUG mode
-            self.assertIn('DEBUG = True', settings_content)
+        # Test local settings use DEBUG mode
+        self.assertEqual(getattr(module, 'DEBUG'), True)
 
-            # Test local settings use local file systems to serve static files
-            self.assertIn('STATIC_URL = \'/static/\'', settings_content)
+        # Test local settings use local file systems to serve static files
+        self.assertEqual(getattr(module, 'STATIC_URL'), '/static/')
 
-    def test_remote_settings(self):
-        project_name = 'test_remote_settings'
+    def test_remote_settings_gke(self):
+        project_name = 'test_remote_settings_gke'
         project_id = project_name + 'project_id'
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
         self._generator.generate(project_id, project_name, self._project_dir,
                                  cloud_sql_connection_string)
 
+        sys.path.append(self._project_dir)
+        module = importlib.import_module(project_name + '.remote_settings')
+
+        # Test remote settings imports extra_settings
+        self.assertIn('cloud_admin.apps.CloudAdminConfig',
+                      getattr(module, 'INSTALLED_APPS'))
+
+        # Test remote settings use postgresql
+        self.assertIn('postgresql',
+                      getattr(module, 'DATABASES')['default']['ENGINE'])
+
+        # Test remote settings use the default database name
+        self.assertEqual(project_name + '-db',
+                         getattr(module, 'DATABASES')['default']['NAME'])
+
+        # Test remote settings use default GCS buckets to serve static files
+        self.assertIn(project_id + '/static', getattr(module, 'STATIC_URL'))
+
+        # Test remote settings does not use DEBUG mode
+        self.assertEqual(getattr(module, 'DEBUG'), False)
+
+    def test_remote_settings_gae(self):
+        project_name = 'test_remote_settings_gke'
+        project_id = project_name + 'project_id'
+        cloud_sql_connection_string = ('{}:{}:{}'.format(
+            project_id, 'us-west', 'instance'))
+        self._generator.generate(project_id, project_name, self._project_dir,
+                                 cloud_sql_connection_string)
         settings_file_path = os.path.join(self._project_dir, project_name,
                                           'remote_settings.py')
+
+        # Not able to load the remote settings module because it runs
+        # get_database_password() which does not work locally
         with open(settings_file_path) as settings:
             settings_content = settings.read()
-
-            # Test remote settings imports base settings
-            self.assertIn('base_settings', settings_content)
-
-            # Test remote settings use Postgres
-            self.assertIn('postgresql', settings_content)
-
-            # Test remote settings does not use DEBUG mode
-            self.assertNotIn('DEBUG = True', settings_content)
-
-            # Test remote settings use GCS buckets to serve static files
-            self.assertIn(project_id + '/static', settings_content)
-
-            self.assertIn(project_name + '-db', settings_content)
-
             # Test cloud sql connection string is in host for GAE
             value = 'HOST\': \'/cloudsql/{}\''.format(
                 cloud_sql_connection_string)
@@ -213,24 +230,26 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
                                  cloud_sql_connection_string, 'customize-db',
                                  'customize-bucket')
 
-        settings_file_path = os.path.join(self._project_dir, project_name,
-                                          'remote_settings.py')
-        with open(settings_file_path) as settings:
-            settings_content = settings.read()
+        sys.path.append(self._project_dir)
+        module = importlib.import_module(project_name + '.remote_settings')
 
-            # Test remote settings imports base settings
-            self.assertIn('base_settings', settings_content)
+        # Test remote settings imports extra_settings
+        self.assertIn('cloud_admin.apps.CloudAdminConfig',
+                      getattr(module, 'INSTALLED_APPS'))
 
-            # Test remote settings use Postgres
-            self.assertIn('postgresql', settings_content)
+        # Test remote settings use postgresql
+        self.assertIn('postgresql',
+                      getattr(module, 'DATABASES')['default']['ENGINE'])
 
-            # Test remote settings does not use DEBUG mode
-            self.assertNotIn('DEBUG = True', settings_content)
+        # Test remote settings does not use DEBUG mode
+        self.assertEqual(getattr(module, 'DEBUG'), False)
 
-            # Test remote settings use GCS buckets to serve static files
-            self.assertIn('customize-bucket/static', settings_content)
+        # Test remote settings use GCS buckets to serve static files
+        self.assertIn('customize-bucket/static', getattr(module, 'STATIC_URL'))
 
-            self.assertIn('customize-db', settings_content)
+        # Test remote settings use the customized database name
+        self.assertEqual('customize-db',
+                         getattr(module, 'DATABASES')['default']['NAME'])
 
     def test_generate_settings_from_settings_generated_by_django_admin(self):
         project_name = 'test_generate_from_existing_settings'
@@ -245,47 +264,49 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
                                  cloud_sql_connection_string)
 
         expected_settings_files = ('base_settings.py', 'local_settings.py',
-                                   'remote_settings.py')
+                                   'remote_settings.py', 'extra_settings.py')
         files_list = os.listdir(os.path.join(self._project_dir, project_name))
         self.assertContainsSubset(expected_settings_files, files_list)
 
+        sys.path.append(self._project_dir)
+
         # Test local settings
-        local_settings_path = os.path.join(self._project_dir, project_name,
-                                           'local_settings.py')
-        with open(local_settings_path) as settings:
-            settings_content = settings.read()
+        module = importlib.import_module(project_name + '.local_settings')
 
-            # Test local settings imports base settings
-            self.assertIn('base_settings', settings_content)
+        # Test local settings imports extra_settings
+        self.assertIn('cloud_admin.apps.CloudAdminConfig',
+                      getattr(module, 'INSTALLED_APPS'))
 
-            # Test local settings use sqlite
-            self.assertIn('sqlite3', settings_content)
+        # Test local settings use sqlite
+        self.assertIn('sqlite3',
+                      getattr(module, 'DATABASES')['default']['ENGINE'])
 
-            # Test local settings use DEBUG mode
-            self.assertIn('DEBUG = True', settings_content)
+        # Test local settings use DEBUG mode
+        self.assertEqual(getattr(module, 'DEBUG'), True)
 
-            # Test local settings use local file systems to serve static files
-            self.assertIn('STATIC_URL = \'/static/\'', settings_content)
+        # Test local settings use local file systems to serve static files
+        self.assertEqual(getattr(module, 'STATIC_URL'), '/static/')
 
         # Test remote settings
-        remote_settings_path = os.path.join(self._project_dir, project_name,
-                                            'remote_settings.py')
-        with open(remote_settings_path) as settings:
-            settings_content = settings.read()
+        module = importlib.import_module(project_name + '.remote_settings')
 
-            # Test remote settings imports base settings
-            self.assertIn('base_settings', settings_content)
+        # Test remote settings imports extra_settings
+        self.assertIn('cloud_admin.apps.CloudAdminConfig',
+                      getattr(module, 'INSTALLED_APPS'))
 
-            # Test remote settings use Postgres
-            self.assertIn('postgresql', settings_content)
+        # Test remote settings use postgresql
+        self.assertIn('postgresql',
+                      getattr(module, 'DATABASES')['default']['ENGINE'])
 
-            # Test remote settings does not use DEBUG mode
-            self.assertNotIn('DEBUG = True', settings_content)
+        # Test remote settings use the default database name
+        self.assertEqual(project_name + '-db',
+                         getattr(module, 'DATABASES')['default']['NAME'])
 
-            # Test remote settings use GCS buckets to serve static files
-            self.assertIn(project_id + '/static', settings_content)
+        # Test remote settings use default GCS buckets to serve static files
+        self.assertIn(project_id + '/static', getattr(module, 'STATIC_URL'))
 
-            self.assertIn(project_name + '-db', settings_content)
+        # Test remote settings does not use DEBUG mode
+        self.assertEqual(getattr(module, 'DEBUG'), False)
 
 
 class DockerfileGeneratorTest(FileGeneratorTest):

@@ -14,7 +14,7 @@
 import json
 from google.cloud import storage
 
-from .base_settings import *
+from .extra_settings import *
 
 def get_database_password():
     client = storage.Client()
@@ -28,6 +28,10 @@ def get_database_password():
 # an appropriate host here.
 # See https://docs.djangoproject.com/en/{{ docs_version }}/ref/settings/
 ALLOWED_HOSTS = ['*']
+
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = False
 
 
 # Database
