@@ -163,5 +163,5 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUpTest):
             self.assertEqual(len(test_io.answers), 0)
             self.assertEqual(len(test_io.password_answers), 0)
 
-            driver.get(url)
-            self.assertIn('Hello1 from the Cloud!', driver.page_source)
+            response = requests.get(url)
+            self.assertIn('Hello1 from the Cloud!', response.text)
