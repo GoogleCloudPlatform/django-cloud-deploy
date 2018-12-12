@@ -16,6 +16,7 @@
 import json
 import os
 import shutil
+import socket
 from typing import Any, Dict, List, Optional
 import webbrowser
 
@@ -34,6 +35,12 @@ from google.auth import credentials
 
 ProjectCreationMode = _project.CreationMode
 ProjectExistsError = _project.ProjectExistsError
+
+# Based on the source code of googleapiclient, the default timeout is 60
+# seconds. This might not be enough and sometimes causing socket timeout
+# exception.
+# See https://github.com/googleapis/google-api-python-client/issues/563
+socket.setdefaulttimeout(120)
 
 
 class InvalidConfigError(Exception):
