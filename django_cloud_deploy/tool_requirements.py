@@ -22,7 +22,6 @@ import sys
 
 import pexpect
 from typing import List
-import urllib.request
 
 from django_cloud_deploy.cli import io
 
@@ -152,13 +151,14 @@ class Gcloud(Requirement):
         path_exists = (os.path.exists(gcloud_config_path) or
                        os.path.exists(gcloud_sdk_path) or
                        os.path.exists(gcloud_sdk_apt_get_path))
-        if path_exists:
-            msg = ('It seems you have downloaded gcloud already, please try '
-                   'again on a new terminal')
-            raise MissingRequirementError(cls.NAME, msg)
-
         download_link = (
             'https://cloud.google.com/sdk/docs/downloads-interactive')
+        if path_exists:
+            msg = ('It seems you have downloaded gcloud already, please try '
+                   'again on a new terminal. If you have uninstalled, please '
+                   'install from {}'.format(download_link))
+            raise MissingRequirementError(cls.NAME, msg)
+
         msg = ('Please install Google Cloud SDK from {} and open a new '
                'terminal once downloaded'.format(download_link))
         raise MissingRequirementError(cls.NAME, msg)
