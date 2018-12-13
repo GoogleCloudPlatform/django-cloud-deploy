@@ -19,6 +19,7 @@ See https://cloud.google.com/sql/docs/
 import contextlib
 import signal
 import time
+from typing import Optional
 
 from django import db
 from django.core import management
@@ -228,7 +229,8 @@ class DatabaseClient(object):
                          project_id: str,
                          instance_name: str,
                          cloud_sql_proxy_path: str = 'cloud_sql_proxy',
-                         region: str = 'us-west1'):
+                         region: str = 'us-west1',
+                         port: Optional[int] = 5432):
         """Migrate to Cloud SQL database.
 
         This function should be called after we do the following:
@@ -243,9 +245,10 @@ class DatabaseClient(object):
                 want to migrate is in.
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             region: Where the Cloud SQL instance is in.
+            port: The port being forwarded by cloud sql proxy.
         """
         with self.with_cloud_sql_proxy(project_id, instance_name,
-                                       cloud_sql_proxy_path, region):
+                                       cloud_sql_proxy_path, region, port):
             # "makemigrations" will generate migration files based on
             # definitions in models.py.
             management.call_command(
@@ -261,7 +264,8 @@ class DatabaseClient(object):
                           project_id: str,
                           instance_name: str,
                           cloud_sql_proxy_path: str = 'cloud_sql_proxy',
-                          region: str = 'us-west1'):
+                          region: str = 'us-west1',
+                          port: Optional[int] = 5432):
         """Create a super user in the cloud sql database.
 
         This function should be called after we did the following:
@@ -281,10 +285,11 @@ class DatabaseClient(object):
                 create the super user.
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             region: Where the Cloud SQL instance is in.
+            port: The port being forwarded by cloud sql proxy.
         """
 
         with self.with_cloud_sql_proxy(project_id, instance_name,
-                                       cloud_sql_proxy_path, region):
+                                       cloud_sql_proxy_path, region, port):
             # This can only be imported after django.setup() is called
             from django.contrib.auth.models import User
             User.objects.create_superuser(

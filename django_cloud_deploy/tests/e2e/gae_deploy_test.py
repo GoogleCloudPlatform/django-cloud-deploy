@@ -17,6 +17,7 @@ import os
 import shutil
 import tempfile
 import types
+import unittest
 import urllib.parse
 
 from django_cloud_deploy.cli import io
@@ -49,7 +50,8 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUpTest):
     def tearDown(self):
         shutil.rmtree(self.project_dir)
 
-    def test_deploy_and_update_new_project(self):
+    @unittest.mock.patch('portpicker.pick_unused_port', return_value=5432)
+    def test_deploy_and_update_new_project(self, unused_mock):
         # Generate unique resource names
         fake_superuser_name = 'admin'
         fake_password = 'fake_password'

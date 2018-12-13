@@ -13,7 +13,7 @@
 # limitations under the License.
 """Workflow for managing database of the Django app."""
 
-from typing import Callable
+from typing import Callable, Optional
 
 from django_cloud_deploy.cloudlib import database
 
@@ -38,7 +38,8 @@ class DatabaseWorkflow(object):
                                   superuser_password: str,
                                   database_user: str = 'postgres',
                                   cloud_sql_proxy_path: str = 'cloud_sql_proxy',
-                                  region: str = 'us-west1'):
+                                  region: str = 'us-west1',
+                                  port: Optional[int] = 5432):
         """Create a cloud database and set password for default user.
 
         Follows the steps found @
@@ -59,6 +60,7 @@ class DatabaseWorkflow(object):
                     "postgres".
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             region: Where the Cloud SQL instance is in.
+            port: The port being forwarded by cloud sql proxy.
         """
 
         self._database_client.create_instance_sync(project_id, instance_name)
@@ -66,17 +68,18 @@ class DatabaseWorkflow(object):
                                                    database_name)
         self._database_client.set_database_password(
             project_id, instance_name, database_user, database_password)
-        self._database_client.migrate_database(project_id, instance_name,
-                                               cloud_sql_proxy_path, region)
+        self._database_client.migrate_database(
+            project_id, instance_name, cloud_sql_proxy_path, region, port)
         self._database_client.create_super_user(
             superuser_name, superuser_email, superuser_password, project_id,
-            instance_name, cloud_sql_proxy_path, region)
+            instance_name, cloud_sql_proxy_path, region, port)
 
     def migrate_database(self,
                          project_id: str,
                          instance_name: str,
                          cloud_sql_proxy_path: str = 'cloud_sql_proxy',
-                         region: str = 'us-west1'):
+                         region: str = 'us-west1',
+                         port: Optional[int] = 5432):
         """Migrate to Cloud SQL database.
 
         This function is useful for updating a deployed Django app. It should be
@@ -92,9 +95,10 @@ class DatabaseWorkflow(object):
                     create the super user.
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             region: Where the Cloud SQL instance is in.
+            port: The port being forwarded by cloud sql proxy.
         """
-        self._database_client.migrate_database(project_id, instance_name,
-                                               cloud_sql_proxy_path, region)
+        self._database_client.migrate_database(
+            project_id, instance_name, cloud_sql_proxy_path, region, port)
 
     def with_cloud_sql_proxy(self,
                              project_id: str,

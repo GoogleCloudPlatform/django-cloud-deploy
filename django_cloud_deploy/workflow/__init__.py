@@ -30,6 +30,7 @@ from django_cloud_deploy.workflow import _enable_service
 from django_cloud_deploy.workflow import _project
 from django_cloud_deploy.workflow import _service_account
 from django_cloud_deploy.workflow import _static_content_serve
+import portpicker
 
 from google.auth import credentials
 
@@ -151,6 +152,8 @@ class WorkflowManager(object):
             ['gcr.io', project_id, sanitized_django_project_name])
         static_content_dir = os.path.join(django_directory_path, 'static')
 
+        cloud_sql_proxy_port = portpicker.pick_unused_port()
+
         # TODO: Use progress bar to show status info instead of print statement
         print(
             self._generate_section_header(1, 'Create GCP Project',
@@ -184,6 +187,7 @@ class WorkflowManager(object):
             database_password=database_password,
             instance_name=database_instance_name,
             database_name=database_name,
+            cloud_sql_proxy_port=cloud_sql_proxy_port,
             cloud_storage_bucket_name=cloud_storage_bucket_name,
             cloudsql_secrets=cloud_sql_secrets,
             django_secrets=django_secrets,
@@ -194,10 +198,17 @@ class WorkflowManager(object):
                 4, 'Database Set Up (Take Up To 5 Minutes)',
                 self._TOTAL_NEW_STEPS))
         self._database_workflow.create_and_setup_database(
-            project_id, database_instance_name, database_name,
-            database_password, django_superuser_name, django_superuser_email,
-            django_superuser_password, database_username, cloud_sql_proxy_path,
-            region)
+            project_id=project_id,
+            instance_name=database_instance_name,
+            database_name=database_name,
+            database_password=database_password,
+            superuser_name=django_superuser_name,
+            superuser_email=django_superuser_email,
+            superuser_password=django_superuser_password,
+            database_user=database_username,
+            cloud_sql_proxy_path=cloud_sql_proxy_path,
+            region=region,
+            port=cloud_sql_proxy_port)
 
         print(
             self._generate_section_header(5, 'Enable Services',
@@ -277,7 +288,7 @@ class WorkflowManager(object):
         config_obj = config.Configuration(django_directory_path)
         project_id = config_obj.get('project_id')
         django_project_name = config_obj.get('django_project_name')
-
+        cloud_sql_proxy_port = portpicker.pick_unused_port()
         if not project_id or not django_project_name:
             raise InvalidConfigError(
                 'Configuration file in [{}] does not contain enough '
@@ -296,13 +307,16 @@ class WorkflowManager(object):
 
         self._source_generator.setup_django_environment(
             django_directory_path, django_project_name, database_username,
-            database_password)
-
+            database_password, cloud_sql_proxy_port)
         print(
             self._generate_section_header(1, 'Database Migration',
                                           self._TOTAL_UPDATE_STEPS))
         self._database_workflow.migrate_database(
-            project_id, database_instance_name, cloud_sql_proxy_path, region)
+            project_id=project_id,
+            instance_name=database_instance_name,
+            cloud_sql_proxy_path=cloud_sql_proxy_path,
+            region=region,
+            port=cloud_sql_proxy_port)
 
         print(
             self._generate_section_header(2, 'Static Content Update',

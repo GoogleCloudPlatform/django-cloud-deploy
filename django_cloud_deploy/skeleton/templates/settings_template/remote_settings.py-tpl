@@ -56,7 +56,7 @@ else:
 	        'USER': os.getenv('DATABASE_USER'),
 	        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
 	        'HOST': '127.0.0.1',
-	        'PORT': '5432',
+	        'PORT': os.environ.get('CLOUD_SQL_PROXY_PORT') or '5432',
 	    }
 	}
 
