@@ -153,7 +153,7 @@ class Gcloud(Requirement):
                        os.path.exists(gcloud_sdk_path) or
                        os.path.exists(gcloud_sdk_apt_get_path))
         if path_exists:
-            msg = ('It seems you have downloaded gcloud already, please try'
+            msg = ('It seems you have downloaded gcloud already, please try '
                    'again on a new terminal')
             raise MissingRequirementError(cls.NAME, msg)
 
@@ -183,8 +183,8 @@ class Docker(Requirement):
             msg = 'Please download Docker from {}'.format(download_link)
             raise MissingRequirementError(cls.NAME, msg)
 
-        try:
-            if sys.platform.startswith('linux'):
+        if sys.platform.startswith('linux'):
+            try:
                 args = ['group', 'docker']
                 p = pexpect.spawn('getent', args)
                 user = getpass.getuser()
@@ -193,21 +193,21 @@ class Docker(Requirement):
                 subprocess.check_call(command,
                                       stdout=subprocess.DEVNULL,
                                       stderr=subprocess.DEVNULL)
-        except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
-            link = 'https://docs.docker.com/install/linux/linux-postinstall/'  # noqa
-            msg = ('Docker is installed but we are unable to use it.\n'
-                   'Please follow {} for more information.\n'
-                   'We suggest the following command to fix it: \n'
-                   'sudo groupadd docker\n'
-                   'sudo usermod -a -G docker $USER\n'
-                   'IMPORTANT: Log out/Log back in after'.format(link))
-            raise MissingRequirementError(cls.NAME, msg)
-        except subprocess.CalledProcessError:
-            msg = ('You have recently added yourself to the docker '
-                   'group. Please log out/log back in.')
-            raise MissingRequirementError(cls.NAME, msg)
-        finally:
-            p.close()
+            except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
+                link = 'https://docs.docker.com/install/linux/linux-postinstall/'  # noqa
+                msg = ('Docker is installed but we are unable to use it.\n'
+                       'Please follow {} for more information.\n'
+                       'We suggest the following command to fix it: \n'
+                       'sudo groupadd docker\n'
+                       'sudo usermod -a -G docker $USER\n'
+                       'IMPORTANT: Log out/Log back in after'.format(link))
+                raise MissingRequirementError(cls.NAME, msg)
+            except subprocess.CalledProcessError:
+                msg = ('You have recently added yourself to the docker '
+                       'group. Please log out/log back in.')
+                raise MissingRequirementError(cls.NAME, msg)
+            finally:
+                p.close()
 
 
 class CloudSqlProxy(Requirement):
