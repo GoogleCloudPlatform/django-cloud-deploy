@@ -1,0 +1,26 @@
+## Issue running command
+{{ command }}
+
+## Please describe what is wrong
+
+
+
+
+## Environment information
+
+Django Cloud Deploy: [{{ django_cloud_deploy_version }}]
+
+Platform: [{{ platform }}]
+
+Gcloud Version: [{{ gcloud_version }}]
+
+Cloud SQL Proxy Version: [{{ cloud_sql_proxy_version }}]
+
+Python Version: [{{ python_version }}]
+
+Docker Version: [{{ docker_version }}]
+
+## Traceback
+```.pytb
+{{ traceback }}
+```

@@ -16,18 +16,27 @@ import argparse
 import sys
 import warnings
 
+import django_cloud_deploy.crash_handling
 from django_cloud_deploy.cli import new
 from django_cloud_deploy.cli import update
 
 
 def _update(args):
     """Update the Django project on GKE."""
-    update.main(args)
+    try:
+        update.main(args)
+    except Exception as e:
+        django_cloud_deploy.crash_handling.handle_crash(
+            e, 'django-cloud-deploy update')
 
 
 def _new(args):
     """Create a new Django GKE project."""
-    new.main(args)
+    try:
+        new.main(args)
+    except Exception as e:
+        django_cloud_deploy.crash_handling.handle_crash(
+            e, 'django-cloud-deploy new')
 
 
 def main():
