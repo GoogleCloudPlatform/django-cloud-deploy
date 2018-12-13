@@ -113,13 +113,8 @@ def add_arguments(parser):
 
 def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
 
-    try:
-        tool_requirements.check_and_handle_requirements(console, args.backend)
-    except tool_requirements.MissingRequirementsError as e:
-        console.tell('Please install the following requirements:')
-        for req in e.missing_requirements:
-            console.tell('* {}: {}'.format(req.name,
-                                           req.how_to_install_message))
+    if not tool_requirements.check_and_handle_requirements(
+            console, args.backend):
         return
 
     prompt_order = [

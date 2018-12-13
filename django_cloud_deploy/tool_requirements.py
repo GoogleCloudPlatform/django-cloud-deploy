@@ -276,16 +276,20 @@ _REQUIREMENTS = {
 }
 
 
-def check_and_handle_requirements(console: io.IO, backend: str):
+def check_and_handle_requirements(console: io.IO, backend: str) -> bool:
     """Checks that requirements are installed. Attempts to install missing ones.
 
     Args:
         console: Handles the input/output with the user.
         backend: Defines which platform on determines what requirements are
             needed.
+
     Raises:
         MissingRequirementsError: Error that contains list of missing
             requirements.
+
+    Returns:
+        Whether we can handle all missing requirements.
     """
 
     missing_requirement_errors = []
@@ -296,5 +300,9 @@ def check_and_handle_requirements(console: io.IO, backend: str):
             missing_requirement_errors.append(e)
 
     if missing_requirement_errors:
-        raise MissingRequirementsError(
-            missing_requirements=missing_requirement_errors)
+        console.tell('Please install the following requirements:')
+        for req in missing_requirement_errors:
+            console.tell('* {}: {}'.format(req.name,
+                                           req.how_to_install_message))
+        return False
+    return True
