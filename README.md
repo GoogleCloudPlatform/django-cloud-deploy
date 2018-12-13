@@ -1,8 +1,3 @@
-<head>
-  <base href="https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/"
-  target="_blank">
-</head>
-
 # Django Deploy
 
 **Django Deploy** is an experimental tool designed to make it easier to
@@ -14,7 +9,7 @@ Currently, **Django Deploy** can only
 - Deploy to [Kubernetes Engine](https://cloud.google.com/kubernetes-engine/).
 - Deploy applications created using its own template code.
 
-**Django Deploy** is an experimental project not official supported by Google.
+**Django Deploy** is an experimental project not officially supported by Google.
 
 Here is an example usage:
 
@@ -53,7 +48,7 @@ Password (again):
 # Getting Started
 
 For detailed instructions on how to use **Django Deploy**, see the
-[Getting Started Guide](GETTING-STARTED.md).
+[Getting Started Guide](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/GETTING-STARTED.md).
 
 # Development Workflow (Linux)
 
@@ -76,9 +71,9 @@ virtualenv -p python3 venv
 source venv/bin/activate
 ```
 
-Install Django-GKE in edit mode:
+Install **Django Deploy** in edit mode:
 ```bash
-pip  install -e .
+pip install -e .
 ```
 
 Run it:
@@ -90,14 +85,14 @@ Code modifications will be reflected in the next run of `django-cloud-deploy`.
 
 ## Contribute
 
-Check out our [CONTRIBUTING](CONTRIBUTING.md) to find out how you can help.
+Check out our [CONTRIBUTING](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/CONTRIBUTING.md) to find out how you can help.
 
 ## License
 
-This project is licensed under the Apache License - see the [LICENSE](LICENSE) file for details
+This project is licensed under the Apache License - see the [LICENSE](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/LICENSE) file for details
 
 This is not an officially supported Google product.
 
 ## Status
 
-**Django Deploy** is an experimental project not official supported by Google.
+**Django Deploy** is an experimental project not officially supported by Google.
