@@ -1,2 +1,3 @@
 recursive-include django_cloud_deploy *.py *.json *.yaml *.txt
 recursive-include django_cloud_deploy  *.py-tpl *.html-tpl Dockerfile .dockerignore
+recursive-include django_cloud_deploy  .gcloudignore
