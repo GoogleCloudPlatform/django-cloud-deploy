@@ -38,8 +38,9 @@ class ToolRequirementsNegativeTest(absltest.TestCase):
     def requirement_missing(self, req: tool_requirements.Requirement):
         with self.assertRaises(
                 tool_requirements.MissingRequirementsError) as cm:
-            tool_requirements._REQUIREMENTS = [req]
-            tool_requirements.check_and_handle_requirements(self.test_console)
+            tool_requirements._REQUIREMENTS = {'test': [req]}
+            tool_requirements.check_and_handle_requirements(
+                self.test_console, 'test')
 
         exception = cm.exception
         self.assertEqual(req.NAME, exception.missing_requirements[0].name)
@@ -66,10 +67,11 @@ class ToolRequirementsPositiveTest(absltest.TestCase):
 
     def has_requirement(self, req: tool_requirements.Requirement):
         try:
-            tool_requirements._REQUIREMENTS = [req]
-            tool_requirements.check_and_handle_requirements(self.test_console)
+            tool_requirements._REQUIREMENTS = {'test': [req]}
+            tool_requirements.check_and_handle_requirements(
+                self.test_console, 'test')
         except tool_requirements.MissingRequirementsError:
-            self.fail('Not suppose to be missing {}'.format(req.Name))
+            self.fail('Not suppose to be missing {}'.format(req.NAME))
 
     def test_gcloud(self):
         Gcloud = tool_requirements.Gcloud

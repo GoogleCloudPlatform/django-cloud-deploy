@@ -53,14 +53,16 @@ class WorkflowManager(object):
     _TOTAL_NEW_STEPS = 8
     _TOTAL_UPDATE_STEPS = 3
 
-    def __init__(self, credentials: credentials.Credentials):
+    def __init__(self, credentials: credentials.Credentials, backend: str):
         self._source_generator = source_generator.DjangoSourceFileGenerator()
         self._billing_client = billing.BillingClient.from_credentials(
             credentials)
         self._project_workflow = _project.ProjectWorkflow(credentials)
         self._database_workflow = _database.DatabaseWorkflow(credentials)
-        self._deploygke_workflow = _deploygke.DeploygkeWorkflow(credentials)
-        self._deploygae_workflow = _deploygae.DeploygaeWorkflow()
+        if backend == 'gke':
+            self._deploygke_workflow = _deploygke.DeploygkeWorkflow(credentials)
+        else:
+            self._deploygae_workflow = _deploygae.DeploygaeWorkflow()
         self._enable_service_workflow = _enable_service.EnableServiceWorkflow(
             credentials)
         self._service_account_workflow = (
