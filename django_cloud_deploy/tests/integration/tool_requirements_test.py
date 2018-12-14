@@ -24,7 +24,7 @@ class ToolRequirementsNegativeTest(absltest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Modify the path to exclude the necesary requirments."""
+        """Modify the path to exclude the necessary requirements."""
         cls.temp_path = os.environ['PATH']
         os.environ['PATH'] = ''
 
@@ -62,13 +62,10 @@ class ToolRequirementsPositiveTest(absltest.TestCase):
         self.test_console = io.TestIO()
 
     def has_requirement(self, req: tool_requirements.Requirement):
-        try:
-            tool_requirements._REQUIREMENTS = {'test': [req]}
-            self.assertTrue(
-                tool_requirements.check_and_handle_requirements(
-                    self.test_console, 'test'))
-        except tool_requirements.MissingRequirementsError:
-            self.fail('Not suppose to be missing {}'.format(req.NAME))
+        tool_requirements._REQUIREMENTS = {'test': [req]}
+        self.assertTrue(
+            tool_requirements.check_and_handle_requirements(
+                self.test_console, 'test'))
 
     def test_gcloud(self):
         Gcloud = tool_requirements.Gcloud

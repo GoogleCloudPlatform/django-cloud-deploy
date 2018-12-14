@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Checks the user has the necesarry requirements to run the tool."""
+"""Checks the user has the necessary requirements to run the tool."""
 
 import getpass
+import grp
 import os
 import shutil
 import subprocess
@@ -60,28 +61,6 @@ class MissingRequirementError(Exception):
         """
         self.name = name
         self.how_to_install_message = how_to_install_message
-
-
-class MissingRequirementsError(Exception):
-    """Thrown when one or more requirements are missing.
-
-    This is used by the caller to provide information to the user on how to
-    manually install missing requirements.
-
-    Attributes:
-        missing_requirements: List of missing requirements.
-    """
-
-    def __init__(self, missing_requirements: List[MissingRequirementError]):
-        """Initializes the MissingRequirementsError.
-
-        Contains a list of the missing requirements with information on
-        how to install all of them manually.
-
-        Args:
-            missing_requirements: List of missing requirements.
-        """
-        self.missing_requirements = missing_requirements
 
 
 class Requirement(object):
@@ -167,13 +146,55 @@ class Gcloud(Requirement):
 class Docker(Requirement):
     NAME = 'Docker'
 
+    _LINUX_NOT_IN_GROUP_MESSAGE = (
+        'Docker is installed but not useable.\n\n'
+        'It may be that you need to add yourself to the "docker" group.\n'
+        'You can do so by running the following commands: \n'
+        'sudo groupadd docker\n'
+        'sudo usermod -a -G docker $USER\n'
+        'IMPORTANT: Log out and log back in so that your group membership is '
+        're-evaluated.\n\n'
+        'For Docker post-installation information, see: '
+        'https://docs.docker.com/install/linux/linux-postinstall/')
+
+    _LINUX_GENERIC_NOT_USABLE_MESSAGE = (
+        'Docker is installed but not useable (is it running?).\n\n'
+        'For Docker post-installation information, see: '
+        'https://docs.docker.com/install/linux/linux-postinstall/')
+
+    _MAC_GENERIC_NOT_USABLE_MESSAGE = (
+        'Docker is installed but not useable (is it running?).\n\n'
+        'For Docker troubleshooting information, see: '
+        'https://docs.docker.com/docker-for-mac/troubleshoot/')
+
+    _WINDOWS_GENERIC_NOT_USABLE_MESSAGE = (
+        'Docker is installed but not useable (is it running?).\n\n'
+        'For Docker troubleshooting information, see: '
+        'https://docs.docker.com/docker-for-windows/troubleshoot/')
+
+    @staticmethod
+    def _is_usable():
+        """Return True if Docker is useable, False otherwise."""
+
+        command = ['docker', 'image', 'ls']
+        return subprocess.call(command,
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL) == 0
+
+    @staticmethod
+    def _is_missing_group_membership():
+        """Returns True if a 'docker' group exists and the user isn't in it."""
+        try:
+            docker_group = grp.getgrnam('docker')
+        except KeyError:
+            return False
+
+        user = getpass.getuser()
+        return user not in docker_group.gr_mem
+
     @classmethod
     def check(cls):
-        """Checks if Docker is installed.
-
-        We assume docker is usable if:
-        Mac: Docker is installed.
-        Linux: Docker is installed and user is in the docker group.
+        """Checks if Docker is installed and useable.
 
         Raises:
             MissingRequirementError: If the requirement is not found.
@@ -183,31 +204,33 @@ class Docker(Requirement):
             msg = 'Please download Docker from {}'.format(download_link)
             raise MissingRequirementError(cls.NAME, msg)
 
-        if sys.platform.startswith('linux'):
-            try:
-                args = ['group', 'docker']
-                p = pexpect.spawn('getent', args)
-                user = getpass.getuser()
-                p.expect(user)
-                command = ['docker', 'image', 'ls']
-                subprocess.check_call(command,
-                                      stdout=subprocess.DEVNULL,
-                                      stderr=subprocess.DEVNULL)
-            except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
-                link = 'https://docs.docker.com/install/linux/linux-postinstall/'  # noqa
-                msg = ('Docker is installed but we are unable to use it.\n'
-                       'Please follow {} for more information.\n'
-                       'We suggest the following command to fix it: \n'
-                       'sudo groupadd docker\n'
-                       'sudo usermod -a -G docker $USER\n'
-                       'IMPORTANT: Log out/Log back in after'.format(link))
-                raise MissingRequirementError(cls.NAME, msg)
-            except subprocess.CalledProcessError:
-                msg = ('You have recently added yourself to the docker '
-                       'group. Please log out/log back in.')
-                raise MissingRequirementError(cls.NAME, msg)
-            finally:
-                p.close()
+        if not cls._is_usable():
+            # Docker is installed but not useable. There are many possible
+            # causes e.g. the docker server is not running, the user does not
+            # have permissions to access the docker server. Try to narrow down
+            # the cause as much as possible and display a helpful error message.
+            if sys.platform.startswith('linux'):
+                if cls._is_missing_group_membership():
+                    # Docker is installed and there is a 'docker' group in the
+                    # UNIX group database but the user isn't part of that group.
+                    # By default, the user has to either run docker as root
+                    # or be a member of that group.
+                    raise MissingRequirementError(
+                        cls.NAME,
+                        cls._LINUX_NOT_IN_GROUP_MESSAGE)
+                else:
+                    raise MissingRequirementError(
+                        cls.NAME,
+                        cls._LINUX_GENERIC_NOT_USABLE_MESSAGE)
+            elif sys.platform.startswith('darwin'):
+                raise MissingRequirementError(
+                    cls.NAME,
+                    cls._MAC_GENERIC_NOT_USABLE_MESSAGE)
+            elif sys.platform.startswith('win32'):
+                raise MissingRequirementError(
+                    cls.NAME,
+                    cls._WINDOWS_GENERIC_NOT_USABLE_MESSAGE)
+
 
 
 class CloudSqlProxy(Requirement):
@@ -282,27 +305,21 @@ def check_and_handle_requirements(console: io.IO, backend: str) -> bool:
     Args:
         console: Handles the input/output with the user.
         backend: Defines which platform on determines what requirements are
-            needed.
-
-    Raises:
-        MissingRequirementsError: Error that contains list of missing
-            requirements.
+            needed. Options are 'gke' and 'gae'.
 
     Returns:
-        Whether we can handle all missing requirements.
+        True if all requirements have been satisfied, False otherwise.
     """
-
-    missing_requirement_errors = []
     for req in _REQUIREMENTS[backend]:
         try:
             req.check_and_handle(console)
         except MissingRequirementError as e:
-            missing_requirement_errors.append(e)
-
-    if missing_requirement_errors:
-        console.tell('Please install the following requirements:')
-        for req in missing_requirement_errors:
-            console.tell('* {}: {}'.format(req.name,
-                                           req.how_to_install_message))
-        return False
+            # TODO: Update test to match prompt. For example, this does not read
+            # well:
+            # Docker must be installed.
+            #
+            # Docker is installed but...
+            console.tell('{} must be installed.\n\n{}'.format(
+                e.name, e.how_to_install_message))
+            return False
     return True
