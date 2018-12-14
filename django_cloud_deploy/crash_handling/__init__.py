@@ -17,6 +17,7 @@ import os
 import platform
 import subprocess
 import sys
+import tempfile
 import traceback
 import urllib.parse
 import webbrowser
@@ -49,12 +50,23 @@ def handle_crash(err: Exception, command: str,
     # path of their Django project. We will put traceback in a public issue,
     # but user's might not want to put these kind of information to public,
     # so we plan to only handle crashes caused by our code.
+
+    log_fd, log_file_path = tempfile.mkstemp(
+        prefix='django-deploy-bug-report-')
+    issue_content = _create_issue_body(command)
+    issue_title = _create_issue_title(err, command)
+    log_file = os.fdopen(log_fd, 'wt')
+    log_file.write(issue_content)
+    log_file.close()
+
     console.tell(
-        ('Your "{}" failed due to an internal error - please try again.'
+        ('Your "{}" failed due to an internal error.'
          '\n\n'
          'You can report this error by filing a bug on Github. If you agree,\n'
          'a browser window will open and an Github issue will be\n'
-         'pre-populated with the details of this crash.\n').format(command))
+         'pre-populated with the details of this crash.\n'
+         'For more details, see: {}').format(command, log_file_path))
+
     while True:
         ans = console.ask('Would you like to file a bug? [y/N]: ')
         ans = ans.strip().lower()
@@ -65,16 +77,41 @@ def handle_crash(err: Exception, command: str,
             break
 
     if ans.lower() == 'y':
-        _create_issue(err, command)
+        _create_issue(issue_title, issue_content)
 
 
-def _create_issue(err: Exception, command: str):
+def _create_issue(issue_title: str, issue_content: str):
     """Open browser to create a issue on the package's Github repo.
 
     Args:
-        err: The exception that was raised.
+        issue_title: Title of the Github issue.
+        issue_content: Body of the Github issue.
+    """
+
+    # TODO: Add an issue label for issues reported by users
+    request_url = ('https://github.com/GoogleCloudPlatform/django-cloud-deploy/'
+                   'issues/new?{}')
+
+    params = urllib.parse.urlencode(
+        {'title': issue_title, 'body': issue_content})
+    url = request_url.format(params)
+    webbrowser.open(url)
+
+
+def _create_issue_title(err: Exception, command: str) -> str:
+    """Generate a Github issue title based on given exception and command."""
+    return '{}:{} during "{}"'.format(type(err).__name__, str(err), command)
+
+
+def _create_issue_body(command: str) -> str:
+    """Generate a Github issue body based on given exception and command.
+
+    Args:
         command: The command causing the exception to get thrown,
             e.g. 'django-cloud-deploy new'.
+
+    Returns:
+        Github issue body in string.
     """
     template_env = jinja2.Environment()
     try:
@@ -108,12 +145,4 @@ def _create_issue(err: Exception, command: str):
         'platform': platform.platform(),
     }
     content = template.render(options)
-    title = '{}:{} during "{}"'.format(type(err).__name__, str(err), command)
-
-    # TODO: Add an issue label for issues reported by users
-    request_url = ('https://github.com/GoogleCloudPlatform/django-cloud-deploy/'
-                   'issues/new?{}')
-
-    params = urllib.parse.urlencode({'title': title, 'body': content})
-    url = request_url.format(params)
-    webbrowser.open(url)
+    return content
