@@ -132,5 +132,6 @@ class ProjectClient(object):
     def _set_gcloud_project(self, project_id):
         # TODO: Remove this. This module (and the rest of the package)
         # should not be dependant on global state.
-        command = ['gcloud', 'config', 'set', 'project', project_id]
-        subprocess.check_call(command)
+        command = ['gcloud', '-q', 'config', 'set', 'project', project_id]
+        subprocess.check_call(
+            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
