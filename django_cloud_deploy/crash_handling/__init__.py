@@ -24,8 +24,18 @@ import webbrowser
 
 import jinja2
 
+import django_cloud_deploy
 from django_cloud_deploy.cli import io
 from django_cloud_deploy import __version__
+
+
+class UserError(Exception):
+    """Error caused by user's code."""
+
+
+# A list of exceptions that should be displayed to the user rather than opening
+# a Github issue.
+_DISPLAYABLE_EXCEPTIONS = [UserError]
 
 
 with open(os.path.join(os.path.dirname(__file__), 'template',
@@ -33,8 +43,7 @@ with open(os.path.join(os.path.dirname(__file__), 'template',
     _ISSUE_TEMPLATE = f.read()
 
 
-def handle_crash(err: Exception, command: str,
-                 console: io.IO = io.ConsoleIO()):
+def handle_crash(err: Exception, command: str, console: io.IO = io.ConsoleIO()):
     """The tool's crashing handler.
 
     Args:
@@ -44,12 +53,14 @@ def handle_crash(err: Exception, command: str,
         console: Object to use for user I/O.
     """
 
-    # TODO: Only handle crashes caused by our code, not user's code.
+    # Only handle crashes caused by our code, not user's code.
     # When deploying, our tool will run the code of user's Django project.
-    # If user's code has a bug, then the traceback will contain the directory
-    # path of their Django project. We will put traceback in a public issue,
-    # but user's might not want to put these kind of information to public,
-    # so we plan to only handle crashes caused by our code.
+    # If user's code has a bug, then an UserError will be raised. In this case,
+    # we do not want users to create a Github issue.
+    if any(
+            isinstance(err, exception_class)
+            for exception_class in _DISPLAYABLE_EXCEPTIONS):
+        raise err.__cause__
 
     log_fd, log_file_path = tempfile.mkstemp(
         prefix='django-deploy-bug-report-')

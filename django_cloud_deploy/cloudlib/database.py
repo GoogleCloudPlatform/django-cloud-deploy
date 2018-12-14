@@ -23,6 +23,7 @@ from typing import Optional
 
 from django import db
 from django.core import management
+from django_cloud_deploy import crash_handling
 import pexpect
 
 from googleapiclient import discovery
@@ -249,13 +250,18 @@ class DatabaseClient(object):
         """
         with self.with_cloud_sql_proxy(project_id, instance_name,
                                        cloud_sql_proxy_path, region, port):
-            # "makemigrations" will generate migration files based on
-            # definitions in models.py.
-            management.call_command(
-                'makemigrations', verbosity=0, interactive=False)
+            try:
+                # "makemigrations" will generate migration files based on
+                # definitions in models.py.
+                management.call_command(
+                    'makemigrations', verbosity=0, interactive=False)
 
-            # "migrate" will modify cloud sql database.
-            management.call_command('migrate', verbosity=0, interactive=False)
+                # "migrate" will modify cloud sql database.
+                management.call_command(
+                    'migrate', verbosity=0, interactive=False)
+            except Exception as e:
+                raise crash_handling.UserError(
+                    'Not able to migrate database.') from e
 
     def create_super_user(self,
                           superuser_name: str,
@@ -291,8 +297,12 @@ class DatabaseClient(object):
         with self.with_cloud_sql_proxy(project_id, instance_name,
                                        cloud_sql_proxy_path, region, port):
             # This can only be imported after django.setup() is called
-            from django.contrib.auth.models import User
-            User.objects.create_superuser(
-                username=superuser_name,
-                email=superuser_email,
-                password=superuser_password)
+            try:
+                from django.contrib.auth.models import User
+                User.objects.create_superuser(
+                    username=superuser_name,
+                    email=superuser_email,
+                    password=superuser_password)
+            except Exception as e:
+                raise crash_handling.UserError(
+                    'Not able to create super user.') from e

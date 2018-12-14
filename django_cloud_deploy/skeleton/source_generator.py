@@ -23,6 +23,7 @@ from typing import Any, Dict, List, Optional
 import django
 from django.core.management import utils
 from django.utils import version
+from django_cloud_deploy import crash_handling
 import jinja2
 
 
@@ -699,7 +700,11 @@ class DjangoSourceFileGenerator(_FileGenerator):
         sys.path.append(project_dir)
         os.environ['DJANGO_SETTINGS_MODULE'] = '{}.remote_settings'.format(
             project_name)
-        django.setup()
+        try:
+            django.setup()
+        except Exception as e:
+            raise crash_handling.UserError(
+                'Not able to import Django settings file.') from e
 
     def generate_all_source_files(self,
                                   project_id: str,

@@ -17,6 +17,7 @@ import os
 
 from django.conf import settings
 from django.core import management
+from django_cloud_deploy import crash_handling
 
 from googleapiclient import discovery
 from googleapiclient import errors
@@ -223,5 +224,11 @@ class StaticContentServeClient(object):
         # this, static content will be collected in your current directory.
         # This is not expected.
         os.chdir(settings.BASE_DIR)
-        management.call_command('collectstatic', verbosity=0, interactive=False)
-        os.chdir(cwd)
+        try:
+            management.call_command(
+                'collectstatic', verbosity=0, interactive=False)
+        except Exception as e:
+            raise crash_handling.UserError(
+                'Not able to collect static files.') from e
+        finally:
+            os.chdir(cwd)
