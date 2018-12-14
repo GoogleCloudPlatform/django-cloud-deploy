@@ -375,7 +375,7 @@ class ExistingProjectIdPrompt(ProjectIdPrompt):
                  'to use.').format(step_prompt))
             project_id = console.ask('Project ID: ')
             try:
-                cls.validate(project_id)
+                cls.validate(project_id, credentials)
             except ValueError as e:
                 console.error(e)
                 continue
