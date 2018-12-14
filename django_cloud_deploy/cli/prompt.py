@@ -29,6 +29,7 @@ from django_cloud_deploy.cli import io
 from django_cloud_deploy.cloudlib import auth
 from django_cloud_deploy.cloudlib import billing
 from django_cloud_deploy.cloudlib import project
+from django_cloud_deploy.skeleton import utils
 
 
 class Prompt(object):
@@ -346,41 +347,6 @@ class ProjectIdPrompt(Prompt):
                               'lowercase letters, digits or hyphens').format(s))
 
 
-class ProjectIdUpdatePrompt(ProjectIdPrompt):
-    """Allow the user to enter a GCP project id."""
-
-    @classmethod
-    def prompt(cls,
-               console: io.IO,
-               step_prompt: str,
-               arguments: Dict[str, Any],
-               credentials: Optional[credentials.Credentials] = None) -> str:
-        """Prompt the user to a Google Cloud Platform project id.
-
-        Args:
-            console: Object to use for user I/O.
-            step_prompt: A prefix showing the current step number e.g. "[1/3]".
-            arguments: The arguments that have already been collected from the
-                user e.g. {"project_id", "project-123"}
-            credentials: The OAuth2 Credentials object to use for api calls
-                during prompt.
-
-        Returns:
-            The value entered by the user.
-        """
-        while True:
-            console.tell(
-                ('{} Enter the Google Cloud Platform Project ID for your '
-                 'Django project to update:').format(step_prompt))
-            project_id = console.ask('[{}]: '.format('django-<random_digits>'))
-            try:
-                cls.validate(project_id)
-            except ValueError as e:
-                console.error(e)
-                continue
-            return project_id
-
-
 class ExistingProjectIdPrompt(ProjectIdPrompt):
     """Allow the user to enter a GCP project id."""
 
@@ -556,6 +522,11 @@ class DjangoFilesystemPathUpdate(Prompt):
         if not os.path.exists(s):
             raise ValueError(('Path ["{}"] does not exist.').format(s))
 
+        if not utils.is_valid_django_project(s):
+            raise ValueError(
+                ('Path ["{}"] does not contain a valid Django project.'
+                ).format(s))
+
 
 class PasswordPrompt(Prompt):
     """Base class for classes that prompt for a password.
@@ -662,7 +633,14 @@ class PostgresPasswordUpdatePrompt(PasswordPrompt):
         """
         console_prompt = cls._get_prompt(arguments)
         console.tell(('{} {}').format(step_prompt, console_prompt))
-        return console.getpass('Password: ')
+        while True:
+            password = console.getpass('Postgres password: ')
+            try:
+                cls.validate(password)
+            except ValueError as e:
+                console.error(e)
+                continue
+            return password
 
 
 class DjangoSuperuserPasswordPrompt(PasswordPrompt):

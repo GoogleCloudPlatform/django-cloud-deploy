@@ -57,3 +57,18 @@ def get_django_project_name(django_directory_path: str):
             if '.' in string:
                 return string[:string.find('.')]
     raise ProjectContentError('Django project name cannot be determined.')
+
+
+def is_valid_django_project(django_directory_path: str) -> bool:
+    """Returns whether the given path contains a valid Django project.
+
+    Args:
+        django_directory_path: Absolute path of django project directory.
+
+    Returns:
+        Whether the given path contains a valid Django project.
+    """
+
+    # TODO: handle more complex cases.
+    manage_py_path = os.path.join(django_directory_path, 'manage.py')
+    return os.path.exists(manage_py_path)
