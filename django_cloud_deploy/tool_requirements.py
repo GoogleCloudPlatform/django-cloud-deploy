@@ -21,7 +21,6 @@ import shutil
 import subprocess
 import sys
 
-import pexpect
 from typing import List
 
 from django_cloud_deploy.cli import io
@@ -234,11 +233,18 @@ class Docker(Requirement):
 
 
 class CloudSqlProxy(Requirement):
-    NAME = 'Cloud Sql Proxy'
+    NAME = 'Cloud SQL Proxy'
+
+    _AUTOMATIC_INSTALLATION_ERROR = (
+        'Unable to install Cloud SQL Proxy automatically using the command:\n'
+        '    gcloud components install cloud_sql_proxy\n\n'
+        'For manual installation instructions, see:\n'
+        'https://cloud.google.com/sql/docs/mysql/sql-proxy#install\n\n'
+        'NOTE: cloud_sql_proxy must be added to the PATH for it to be useable.')
 
     @classmethod
     def check(cls):
-        """Checks if Cloud Sql Proxy is installed.
+        """Checks if Cloud SQL Proxy is installed.
 
         Raises:
             MissingRequirementError: If the requirement is not found.
@@ -256,34 +262,24 @@ class CloudSqlProxy(Requirement):
             UnableToAutomaticallyInstall: If the installation fails.
         """
         if shutil.which('gcloud') is None:
-            msg = "Gcloud is needed to install Cloud Sql Proxy"
+            msg = "gcloud is needed to install Cloud SQL Proxy"
             raise UnableToAutomaticallyInstallError(cls.NAME, msg)
 
         while True:
-            answer = console.ask('Cloud Sql Proxy is required by Django Cloud '
-                                 'Deploy. Would you like us to install '
+            answer = console.ask('Cloud SQL Proxy is required by Django '
+                                 'Deploy. Would you like us to install it '
                                  'automatically (Y/n)? ').lower().strip()
-            if answer not in ['y', 'n']:
-                continue
             if answer == 'n':
                 raise NotImplementedError
-            break
+            elif answer in ['y', '']:
+                break
 
-        try:
-            args = ['components', 'install', 'cloud_sql_proxy']
-            process = pexpect.spawn('gcloud', args)
-            process.expect('Do you want to continue (Y/n)?')
-            process.sendline('Y')
-            process.expect('Update done!')
-        except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
-            dl_link = 'https://cloud.google.com/sql/docs/mysql/sql-proxy'
-            msg = ('Unable to download Cloud Sql Proxy directly from Gcloud. '
-                   'This is caused when Gcloud was not downloaded directly from'
-                   ' https://cloud.google.com/sdk/docs/downloads-interactive\n'
-                   'Please install Cloud SQL Proxy from {}').format(dl_link)
-            raise UnableToAutomaticallyInstallError(cls.NAME, msg)
-        finally:
-            process.close()
+        command = ['gcloud', '-q', 'components', 'install', 'cloud_sql_proxy']
+        if subprocess.call(command,
+                           stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL) != 0:
+            raise UnableToAutomaticallyInstallError(
+                cls.NAME, cls._AUTOMATIC_INSTALLATION_ERROR)
 
 
 _REQUIREMENTS = {
