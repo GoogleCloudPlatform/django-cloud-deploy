@@ -91,7 +91,7 @@ class Requirement(object):
 
         Checks if the requirement is installed.
         If not, attempts to install the requirement.
-        If unsuccesful, provides information on how to manully install.
+        If unsuccessful, provides information on how to manually install.
 
         Raises:
             MissingRequirementError: If the requirement needs to be
@@ -111,6 +111,18 @@ class Requirement(object):
 class Gcloud(Requirement):
     NAME = 'Gcloud SDK'
 
+    _NOT_INSTALLED = (
+        'The Google Cloud SDK is not installed.\n\n'
+        'You can install it using the instructions at:\n'
+        'https://cloud.google.com/sdk/docs/downloads-interactive')
+
+    _INSTALLED_BUT_NOT_ON_PATH = (
+        'The Google Cloud SDK is installed at "{0}"\n'
+        'but is not on the PATH.\n\n'
+        'You can either add it to the PATH or reinstall it using the '
+        'instructions at:\n'
+        'https://cloud.google.com/sdk/docs/downloads-interactive')
+
     @classmethod
     def check(cls):
         """Checks if Gcloud SDK is installed.
@@ -122,53 +134,53 @@ class Gcloud(Requirement):
             return None
 
         # Default paths
-        gcloud_config_path = os.path.expanduser('~/.config/gcloud')
-        gcloud_sdk_path = os.path.expanduser('~/google-cloud-sdk/gcloud')
-        gcloud_sdk_apt_get_path = '/usr/bin/gcloud'
+        common_gcloud_paths = [os.path.expanduser('~/.config/gcloud'),
+                               os.path.expanduser('~/google-cloud-sdk/gcloud'),
+                               '/usr/bin/gcloud']
+        gcloud_path = None
+        for path in common_gcloud_paths:
+            if os.path.exists(path):
+                gcloud_path = path
 
-        path_exists = (os.path.exists(gcloud_config_path) or
-                       os.path.exists(gcloud_sdk_path) or
-                       os.path.exists(gcloud_sdk_apt_get_path))
-        download_link = (
-            'https://cloud.google.com/sdk/docs/downloads-interactive')
-        if path_exists:
-            msg = ('It seems you have downloaded gcloud already, please try '
-                   'again on a new terminal. If you have uninstalled, please '
-                   'install from {}'.format(download_link))
-            raise MissingRequirementError(cls.NAME, msg)
+        if gcloud_path:
+            raise MissingRequirementError(
+                cls.NAME, cls._INSTALLED_BUT_NOT_ON_PATH.format(gcloud_path))
 
-        msg = ('Please install Google Cloud SDK from {} and open a new '
-               'terminal once downloaded'.format(download_link))
-        raise MissingRequirementError(cls.NAME, msg)
+        raise MissingRequirementError(cls.NAME, cls._NOT_INSTALLED)
 
 
 class Docker(Requirement):
     NAME = 'Docker'
 
+    _NOT_INSTALLED = (
+        'Docker is not installed.\n\n'
+        'You can install it using the instructions at:\n'
+        'https://store.docker.com/')
+
     _LINUX_NOT_IN_GROUP_MESSAGE = (
         'Docker is installed but not useable.\n\n'
         'It may be that you need to add yourself to the "docker" group.\n'
-        'You can do so by running the following commands: \n'
+        'You can do so by running the following commands:\n'
         'sudo groupadd docker\n'
         'sudo usermod -a -G docker $USER\n'
         'IMPORTANT: Log out and log back in so that your group membership is '
         're-evaluated.\n\n'
-        'For Docker post-installation information, see: '
+        'For Docker post-installation information, see:\n'
         'https://docs.docker.com/install/linux/linux-postinstall/')
 
     _LINUX_GENERIC_NOT_USABLE_MESSAGE = (
         'Docker is installed but not useable (is it running?).\n\n'
-        'For Docker post-installation information, see: '
+        'For Docker post-installation information, see:\n'
         'https://docs.docker.com/install/linux/linux-postinstall/')
 
     _MAC_GENERIC_NOT_USABLE_MESSAGE = (
         'Docker is installed but not useable (is it running?).\n\n'
-        'For Docker troubleshooting information, see: '
+        'For Docker troubleshooting information, see:\n'
         'https://docs.docker.com/docker-for-mac/troubleshoot/')
 
     _WINDOWS_GENERIC_NOT_USABLE_MESSAGE = (
         'Docker is installed but not useable (is it running?).\n\n'
-        'For Docker troubleshooting information, see: '
+        'For Docker troubleshooting information, see:\n'
         'https://docs.docker.com/docker-for-windows/troubleshoot/')
 
     @staticmethod
@@ -199,9 +211,7 @@ class Docker(Requirement):
             MissingRequirementError: If the requirement is not found.
         """
         if not shutil.which('docker'):
-            download_link = 'https://store.docker.com/'
-            msg = 'Please download Docker from {}'.format(download_link)
-            raise MissingRequirementError(cls.NAME, msg)
+            raise MissingRequirementError(cls.NAME, cls._NOT_INSTALLED)
 
         if not cls._is_usable():
             # Docker is installed but not useable. There are many possible
@@ -235,6 +245,11 @@ class Docker(Requirement):
 class CloudSqlProxy(Requirement):
     NAME = 'Cloud SQL Proxy'
 
+    _NOT_INSTALLED = (
+        'Cloud SQL Proxy is not installed.\n\n'
+        'You can install it using the instructions at:\n'
+        'https://cloud.google.com/sql/docs/mysql/sql-proxy#install')
+
     _AUTOMATIC_INSTALLATION_ERROR = (
         'Unable to install Cloud SQL Proxy automatically using the command:\n'
         '    gcloud components install cloud_sql_proxy\n\n'
@@ -250,9 +265,7 @@ class CloudSqlProxy(Requirement):
             MissingRequirementError: If the requirement is not found.
         """
         if not shutil.which('cloud_sql_proxy'):
-            dl_link = 'https://cloud.google.com/sql/docs/mysql/sql-proxy'
-            msg = 'Please download Cloud SQL Proxy from {}'.format(dl_link)
-            raise MissingRequirementError(cls.NAME, msg)
+            raise MissingRequirementError(cls.NAME, cls._NOT_INSTALLED)
 
     @classmethod
     def handle(cls, console: io.IO):
@@ -310,12 +323,6 @@ def check_and_handle_requirements(console: io.IO, backend: str) -> bool:
         try:
             req.check_and_handle(console)
         except MissingRequirementError as e:
-            # TODO: Update test to match prompt. For example, this does not read
-            # well:
-            # Docker must be installed.
-            #
-            # Docker is installed but...
-            console.tell('{} must be installed.\n\n{}'.format(
-                e.name, e.how_to_install_message))
+            console.error(e.how_to_install_message)
             return False
     return True
