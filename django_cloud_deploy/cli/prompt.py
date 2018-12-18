@@ -688,11 +688,11 @@ class CredentialsPrompt(Prompt):
             while True:
                 ans = console.ask(
                     ('You have logged in with account [{}]. Do you want to '
-                     'use it? [y/N]: ').format(active_account))
+                     'use it? [Y/n]: ').format(active_account))
                 ans = ans.lower()
-                if ans not in ['y', 'n']:
+                if ans not in ['y', 'n', '']:
                     continue
-                elif ans == 'y':
+                elif ans in  ['y', '']:
                     create_new_credentials = False
                 break
         if not create_new_credentials:
