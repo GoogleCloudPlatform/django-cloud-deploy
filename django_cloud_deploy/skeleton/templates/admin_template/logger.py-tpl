@@ -1,3 +1,4 @@
+import itertools
 import os
 import urllib.parse
 from google.cloud import logging
@@ -19,7 +20,7 @@ def generate_logging_client():
         return None
 
 
-def get_logs(logging_client, page_size=10):
+def get_logs(logging_client, num_logs=10):
     if logging_client is None:
         return ['Check console for logs.']
 
@@ -28,11 +29,11 @@ def get_logs(logging_client, page_size=10):
     # Show ten entries
     iterator = logging_client.list_entries(order_by=DESCENDING,
                                            filter_=query_filter,
-                                           page_size=page_size)
-    pages = iterator.pages
+                                           page_size=num_logs)
 
-    logs = [entry.payload for entry in next(pages)]
-    return logs
+    # Multiple API calls may be made
+    return [log_entry.payload
+            for log_entry in itertools.islice(iterator, num_logs)]
 
 def generate_url_link():
     base_link = 'https://console.cloud.google.com/logs/viewer?{}'
