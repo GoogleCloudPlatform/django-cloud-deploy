@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 from google.cloud import logging
 from google.cloud.logging import DESCENDING
 from google.oauth2 import service_account
@@ -33,6 +34,16 @@ def get_logs(logging_client, page_size=10):
     logs = [entry.payload for entry in next(pages)]
     return logs
 
+def generate_url_link():
+    base_link = 'https://console.cloud.google.com/logs/viewer?{}'
+    params = urllib.parse.urlencode(_get_params())
+    return base_link.format(params)
+
+def _get_params():
+    return [
+        ('project', '{{ project_id }}'),
+        ('advancedFilter', _get_query_filter().replace(' AND ', '\n'))
+    ]
 
 def _get_query_filter():
     if os.getenv('GAE_APPLICATION', None):

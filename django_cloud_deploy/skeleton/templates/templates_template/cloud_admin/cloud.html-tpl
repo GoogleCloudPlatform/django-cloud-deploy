@@ -10,5 +10,6 @@
   {% else %}
     <p>No logs are available.</p>
   {% endif %}
+ <a href={{ link }}>Cloud Console Logs</a>
 {% endblock %}
 {% endraw %}

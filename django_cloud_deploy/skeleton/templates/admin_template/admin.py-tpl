@@ -14,11 +14,13 @@ class CloudAdminSite(admin.AdminSite):
 
     def cloud_view(self, request):
         logs = logger.get_logs(logging_client)
+        link = logger.generate_url_link()
         context = dict(
             # Include common variables for rendering the admin template.
             self.each_context(request),
             # Anything else you want in the context...
-            logs=logs
+            logs=logs,
+            link=link
         )
         return TemplateResponse(request,
                                 'cloud_admin/cloud.html',
