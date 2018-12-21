@@ -20,6 +20,7 @@ import types
 import unittest
 import urllib.parse
 
+import backoff
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import new
 from django_cloud_deploy.cli import update
@@ -49,6 +50,12 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUpTest):
 
     def tearDown(self):
         shutil.rmtree(self.project_dir)
+
+    @staticmethod
+    @backoff.on_exception(
+        backoff.expo, requests.exceptions.ConnectionError, max_tries=3)
+    def _get_with_retry(url: str) -> requests.models.Response:
+        return requests.get(url)
 
     @unittest.mock.patch('portpicker.pick_unused_port', return_value=5432)
     def test_deploy_and_update_new_project(self, unused_mock):
@@ -166,5 +173,7 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUpTest):
             self.assertEqual(len(test_io.answers), 0)
             self.assertEqual(len(test_io.password_answers), 0)
 
-            response = requests.get(url)
+            # This call is flaky without retry. Sometimes this call is made
+            # after the pod is ready but before the http server is ready.
+            response = self._get_with_retry(url)
             self.assertIn('Hello1 from the Cloud!', response.text)

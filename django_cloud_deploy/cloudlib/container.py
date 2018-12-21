@@ -308,6 +308,7 @@ class ContainerClient(object):
                 kubernetes configuration.
             namespace: Namespace of the deployment.
         """
+
         api_client = kubernetes.client.ApiClient(configuration)
         api_instance = kubernetes.client.ExtensionsV1beta1Api(api_client)
 
