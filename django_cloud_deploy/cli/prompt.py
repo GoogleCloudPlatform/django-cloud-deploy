@@ -358,6 +358,9 @@ class ExistingProjectIdPrompt(ProjectIdPrompt):
                credentials: Optional[credentials.Credentials] = None) -> str:
         """Prompt the user to a Google Cloud Platform project id.
 
+        If the user supplies the project_id as a flag we want to validate that
+        it exists. We tell the user to supply a new one if it does not.
+
         Args:
             console: Object to use for user I/O.
             step_prompt: A prefix showing the current step number e.g. "[1/3]".
@@ -369,17 +372,27 @@ class ExistingProjectIdPrompt(ProjectIdPrompt):
         Returns:
             The value entered by the user.
         """
-        while True:
-            console.tell(
-                ('{} Enter the existing Google Cloud Platform Project ID '
-                 'to use.').format(step_prompt))
-            project_id = console.ask('Project ID: ')
+        project_id = arguments.get('project_id', None)
+        valid_project_id = False
+        while not valid_project_id:
+            if not project_id:
+                console.tell(
+                    ('{} Enter the existing Google Cloud Platform Project ID '
+                     'to use.').format(step_prompt))
+                project_id = console.ask('Project ID: ')
             try:
                 cls.validate(project_id, credentials)
+                if (arguments.get(
+                        'project_creation_mode',
+                        False) == workflow.ProjectCreationMode.MUST_EXIST):
+                    console.tell(('{} Google Cloud Platform Project ID {}'
+                                  ' is valid').format(step_prompt, project_id))
+                valid_project_id = True
             except ValueError as e:
                 console.error(e)
+                project_id = None
                 continue
-            return project_id
+        return project_id
 
     @staticmethod
     def validate(s, credentials: Optional[credentials.Credentials] = None):
