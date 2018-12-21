@@ -18,5 +18,9 @@
     {
         "title": "Stackdriver Logging API",
         "name": "logging.googleapis.com"
+    },
+    {
+        "title": "Stackdriver Monitoring API",
+        "name": "monitoring.googleapis.com"
     }
 ]

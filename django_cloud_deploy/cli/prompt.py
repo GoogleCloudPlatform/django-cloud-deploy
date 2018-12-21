@@ -692,7 +692,7 @@ class CredentialsPrompt(Prompt):
                 ans = ans.lower()
                 if ans not in ['y', 'n', '']:
                     continue
-                elif ans in  ['y', '']:
+                elif ans in ['y', '']:
                     create_new_credentials = False
                 break
         if not create_new_credentials:
