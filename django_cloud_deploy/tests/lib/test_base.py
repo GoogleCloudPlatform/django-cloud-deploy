@@ -182,8 +182,18 @@ class ResourceCleanUpTest(BaseTest):
             yield
         finally:
             # TODO: Rewrite this subprocess call with library call.
-            subprocess.check_call(
-                ['gcloud', 'container', 'images', 'delete', image_name, '-q'])
+            digests = subprocess.check_output(
+                [
+                    'gcloud', 'container', 'images', 'list-tags',
+                    '--format=value(digest)', image_name
+                ],
+                universal_newlines=True).rstrip().split('\n')
+            for digest in digests:
+                full_image_name = '{}@sha256:{}'.format(image_name, digest)
+                subprocess.check_call([
+                    'gcloud', '-q', 'container', 'images', 'delete',
+                    '--force-delete-tags', full_image_name
+                ])
 
     @contextlib.contextmanager
     def disable_services(self, services: List[Dict[str, Any]]):
