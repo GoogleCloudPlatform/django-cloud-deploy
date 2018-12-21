@@ -14,10 +14,92 @@
 """Class for managing console I/O."""
 
 import abc
+import contextlib
 import getpass
 import os
 import re
 import sys
+import threading
+import time
+
+import progressbar
+
+
+class _ProgressBar(object):
+    """A progress bar showing status of a task.
+
+    Output of the progress bar will be like the following:
+        <message>|██████████∙∙∙∙∙∙∙∙| (ETA:  0:00:05)
+    """
+
+    def __init__(self,
+                 expect_time: int,
+                 message: str,
+                 tty: bool = True,
+                 width: int = 80):
+        """Constructor of the class.
+
+        It will take "expect_time" seconds for the progress bar to go from 0%
+        to 100%. If the task takes shorter than "expect time", the progress bar
+        will directly go to 100%.
+
+        Args:
+            expect_time: How long the progress bar is going to run.
+                (In seconds).
+            message: A prefix of the progress bar showing what it is about.
+            tty: Whether the progress bar is being used in a terminal.
+            width: Width of the whole progress bar, including the prefix and
+                suffix.
+        """
+        self._expect_time = expect_time
+
+        if tty:
+            widgets = [
+                message,
+                progressbar.Bar(marker='█', fill='∙'), ' (',
+                progressbar.ETA(), ') '
+            ]
+        else:
+            # Not showing progress bar when not writing to an interactive
+            # console. This is because the progress bar might not show properly.
+            widgets = [message, ' (', progressbar.ETA(), ') ']
+        # The bar will tick every 0.5 seconds.
+        # term_width define width of the whole progress bar, including the
+        # prefix and suffix.
+        self._bar = progressbar.ProgressBar(
+            widgets=widgets, max_value=expect_time * 2, term_width=width)
+
+        self._thread = threading.Thread(target=self._run)
+        self._bar_lock = threading.Lock()
+
+    def start(self):
+        self._thread.start()
+
+    def finish(self):
+        """Make progress bar go to the end.
+
+        This is useful when the task takes shorter than the expect time to
+        finish.
+        """
+        with self._bar_lock:
+            # Go to the end of progress bar.
+            self._bar.update(self._expect_time * 2)
+            self._bar.finish()
+
+    def _run(self):
+        """The function to update progress bar."""
+        # TODO: Find a way to handle tasks take longer than expectation.
+        # Right now the progress bar will stuck.
+        with self._bar_lock:
+            self._bar.start()
+        for i in range(self._expect_time * 2):
+            with self._bar_lock:
+                # The progress of the bar can be modified by _finish method.
+                # This part is to handle that case.
+                if self._bar.value == self._expect_time * 2:
+                    return
+                self._bar.update(i)
+            time.sleep(0.5)
 
 
 class IO(abc.ABC):
@@ -51,7 +133,7 @@ class IO(abc.ABC):
 
     @abc.abstractmethod
     def getpass(self, prompt=None):
-        "Prompt the user for a password and return the result."
+        """Prompt the user for a password and return the result."""
 
 
 class ConsoleIO(IO):
@@ -80,8 +162,35 @@ class ConsoleIO(IO):
         return input(self._replace_html_tags(prompt, sys.stdout.fileno()))
 
     def getpass(self, prompt=None):
-        "Prompt the user for a password and return the result."
+        """Prompt the user for a password and return the result."""
         return getpass.getpass(prompt)
+
+    @contextlib.contextmanager
+    def progressbar(self, expect_time: int, message: str):
+        """A context manager that shows a progress bar.
+
+        Output of the progress bar will be like the following:
+            <message>|██████████∙∙∙∙∙∙∙∙| (ETA:  0:00:05)
+
+        If the task ends earlier than expected, the progress bar will directly
+        go to the end.
+
+        Args:
+            expect_time: How long the progress bar is going to run.
+                (In seconds).
+            message: A prefix of the progress bar showing what it is about.
+
+        Yields:
+            None
+        """
+
+        is_tty = os.isatty(sys.stdout.fileno())
+        progress_bar = _ProgressBar(expect_time, message, tty=is_tty)
+        try:
+            progress_bar.start()
+            yield
+        finally:
+            progress_bar.finish()
 
 
 class TestIO(IO):
@@ -105,6 +214,6 @@ class TestIO(IO):
         return self.answers.pop(0)
 
     def getpass(self, prompt=None):
-        "Prompt the user for a password and return the result."
+        """Prompt the user for a password and return the result."""
         self.passwords.append(prompt)
         return self.password_answers.pop(0)

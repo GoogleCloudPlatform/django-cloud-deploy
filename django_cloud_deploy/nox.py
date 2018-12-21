@@ -35,6 +35,7 @@ PACKAGES = [
     'google-api-python-client==1.7.4',
     'selenium==3.141.0',
     'google-cloud-logging==1.8.0',
+    'progressbar2>=3.38.0',
     'portpicker==1.2.0',
 ]
 
