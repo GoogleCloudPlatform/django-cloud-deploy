@@ -17,7 +17,7 @@ import json
 import os
 import shutil
 import socket
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import webbrowser
 
 from django_cloud_deploy import config
@@ -416,8 +416,9 @@ class WorkflowManager(object):
         return {'username': database_username, 'password': database_password}
 
     @staticmethod
-    def _load_secret_names(required_service_accounts: Optional[
-            Dict[str, List[Dict[str, Any]]]] = None) -> (List[str], List[str]):
+    def _load_secret_names(
+            required_service_accounts: Dict[str, List[Dict[str, Any]]]
+    ) -> Tuple[List[str], List[str]]:
         """Retrieves list of secret names for containers.
 
         Args:

@@ -60,7 +60,8 @@ def handle_crash(err: Exception, command: str, console: io.IO = io.ConsoleIO()):
     if any(
             isinstance(err, exception_class)
             for exception_class in _DISPLAYABLE_EXCEPTIONS):
-        raise err.__cause__
+        # https://github.com/google/pytype/issues/225
+        raise err.__cause__  # pytype: disable=attribute-error
 
     log_fd, log_file_path = tempfile.mkstemp(
         prefix='django-deploy-bug-report-')

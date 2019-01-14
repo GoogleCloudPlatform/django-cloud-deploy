@@ -34,3 +34,6 @@ MANIFEST
 
 #py_test
 .pytest_cache
+
+# type-checking
+.pytype

@@ -27,7 +27,7 @@ from django_cloud_deploy import crash_handling
 import jinja2
 
 
-class _FileGenerator(object):
+class _FileGenerator(object):  # pytype: disable=ignored-abstractmethod
     """An abstract class to generate files using templates."""
 
     def _get_template_folder_path(self) -> str:
