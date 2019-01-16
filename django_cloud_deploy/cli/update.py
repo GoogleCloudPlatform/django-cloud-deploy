@@ -101,8 +101,10 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
 
     workflow_manager = workflow.WorkflowManager(
         actual_parameters['credentials'], args.backend)
-    workflow_manager.update_project(actual_parameters['django_directory_path'],
-                                    actual_parameters['database_password'])
+    workflow_manager.update_project(
+        actual_parameters['django_directory_path'],
+        actual_parameters['database_password'],
+        backend=args.backend)
 
 
 if __name__ == '__main__':

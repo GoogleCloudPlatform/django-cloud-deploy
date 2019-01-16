@@ -268,6 +268,7 @@ class WorkflowManager(object):
                        database_password: str,
                        cloud_sql_proxy_path: str = 'cloud_sql_proxy',
                        region: str = 'us-west1',
+                       backend: str = 'gke',
                        open_browser: bool = True):
         """Workflow of updating a deployed Django app on GKE.
 
@@ -277,6 +278,7 @@ class WorkflowManager(object):
             database_password: The password for the default database user.
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             region: Where the service is hosted.
+            backend: The desired backend to deploy the Django App on.
             open_browser: Whether we open the browser to show the deployed app
                 at the end.
 
@@ -327,9 +329,13 @@ class WorkflowManager(object):
         print(
             self._generate_section_header(3, 'Update Deployment',
                                           self._TOTAL_UPDATE_STEPS))
-        app_url = self._deploygke_workflow.update_app_sync(
-            project_id, cluster_name, django_directory_path,
-            django_project_name, image_name)
+        if backend == 'gke':
+            app_url = self._deploygke_workflow.update_app_sync(
+                project_id, cluster_name, django_directory_path,
+                django_project_name, image_name)
+        else:
+            app_url = self._deploygae_workflow.deploy_gae_app(
+                project_id, django_directory_path, is_new=False)
         print('Your app is running at {}.'.format(app_url))
         if open_browser:
             webbrowser.open(app_url)
