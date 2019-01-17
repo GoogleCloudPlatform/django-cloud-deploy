@@ -33,6 +33,7 @@ PACKAGES = [
     'pexpect==4.6.0',
     'psycopg2-binary==2.7.5',
     'google-api-python-client==1.7.4',
+    'google-auth-httplib2==0.0.3',
     'selenium==3.141.0',
     'google-cloud-logging==1.8.0',
     'progressbar2>=3.38.0',
