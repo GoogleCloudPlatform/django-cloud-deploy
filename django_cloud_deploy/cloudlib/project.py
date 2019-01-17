@@ -22,6 +22,7 @@ from typing import Any, Dict
 import backoff
 
 from googleapiclient import discovery
+from googleapiclient import http
 from google.auth import credentials
 from googleapiclient import errors
 
@@ -51,7 +52,10 @@ class ProjectClient(object):
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(
             discovery.build(
-                'cloudresourcemanager', 'v1', credentials=credentials))
+                'cloudresourcemanager', 'v1',
+                credentials=credentials,
+                http=http.set_user_agent(http.build_http(), 'cloud-deploy')
+            ))
 
     def project_exists(self, project_id: str) -> bool:
         """Returns True if the given project id exists."""
