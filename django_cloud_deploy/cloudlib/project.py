@@ -20,6 +20,7 @@ import subprocess
 from typing import Any, Dict
 
 import backoff
+import google_auth_httplib2
 
 from googleapiclient import discovery
 from googleapiclient import http
@@ -50,12 +51,11 @@ class ProjectClient(object):
 
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
-        return cls(
-            discovery.build(
-                'cloudresourcemanager', 'v1',
-                credentials=credentials,
-                http=http.set_user_agent(http.build_http(), 'cloud-deploy')
-            ))
+        http_client = http.set_user_agent(http.build_http(), 'cloud-deploy')
+        auth_http = google_auth_httplib2.AuthorizedHttp(credentials,
+                                                        http=http_client)
+        return cls(discovery.build('cloudresourcemanager',
+                                   'v1', http=auth_http))
 
     def project_exists(self, project_id: str) -> bool:
         """Returns True if the given project id exists."""
