@@ -52,10 +52,10 @@ class ProjectClient(object):
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
         http_client = http.set_user_agent(http.build_http(), 'cloud-deploy')
-        auth_http = google_auth_httplib2.AuthorizedHttp(credentials,
-                                                        http=http_client)
-        return cls(discovery.build('cloudresourcemanager',
-                                   'v1', http=auth_http))
+        auth_http = google_auth_httplib2.AuthorizedHttp(
+            credentials, http=http_client)
+        return cls(
+            discovery.build('cloudresourcemanager', 'v1', http=auth_http))
 
     def project_exists(self, project_id: str) -> bool:
         """Returns True if the given project id exists."""
