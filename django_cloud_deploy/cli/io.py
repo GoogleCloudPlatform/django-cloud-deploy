@@ -52,6 +52,7 @@ class _ProgressBar(object):
                 suffix.
         """
         self._expect_time = expect_time
+        self._tty = tty
 
         if tty:
             widgets = [
@@ -83,7 +84,8 @@ class _ProgressBar(object):
         """
         with self._bar_lock:
             # Go to the end of progress bar.
-            self._bar.update(self._expect_time * 2)
+            if self._tty:
+                self._bar.update(self._expect_time * 2)
             self._bar.finish()
 
     def _run(self):
@@ -98,7 +100,8 @@ class _ProgressBar(object):
                 # This part is to handle that case.
                 if self._bar.value == self._expect_time * 2:
                     return
-                self._bar.update(i)
+                if self._tty:
+                    self._bar.update(i)
             time.sleep(0.5)
 
 

@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import webbrowser
 
 from django_cloud_deploy import config
+from django_cloud_deploy.cli import io
 from django_cloud_deploy.cloudlib import billing
 from django_cloud_deploy.skeleton import source_generator
 from django_cloud_deploy.workflow import _database
@@ -70,6 +71,7 @@ class WorkflowManager(object):
             _service_account.ServiceAccountKeyGenerationWorkflow(credentials))
         self._static_content_workflow = (
             _static_content_serve.StaticContentServeWorkflow(credentials))
+        self._console_io = io.ConsoleIO()
 
     def create_and_deploy_new_project(
             self,
@@ -154,23 +156,19 @@ class WorkflowManager(object):
 
         cloud_sql_proxy_port = portpicker.pick_unused_port()
 
-        # TODO: Use progress bar to show status info instead of print statement
-        print(
-            self._generate_section_header(1, 'Create GCP Project',
-                                          self._TOTAL_NEW_STEPS))
+        self._console_io.tell('[1/{}]: Create GCP Project'.format(
+            self._TOTAL_NEW_STEPS))
         self._project_workflow.create_project(project_name, project_id,
                                               project_creation_mode)
 
-        print(
-            self._generate_section_header(2, 'Billing Set Up',
-                                          self._TOTAL_NEW_STEPS))
+        self._console_io.tell('[2/{}]: Billing Set Up'.format(
+            self._TOTAL_NEW_STEPS))
         if not self._billing_client.check_billing_enabled(project_id):
             self._billing_client.enable_project_billing(project_id,
                                                         billing_account_name)
 
-        print(
-            self._generate_section_header(3, 'Django Source Generation',
-                                          self._TOTAL_NEW_STEPS))
+        self._console_io.tell('[3/{}]: Django Source Generation'.format(
+            self._TOTAL_NEW_STEPS))
 
         # Source generation requires service account ids.
         required_service_accounts = (
@@ -193,62 +191,54 @@ class WorkflowManager(object):
             django_secrets=django_secrets,
             image_tag=image_name)
 
-        print(
-            self._generate_section_header(
-                4, 'Database Set Up (Take Up To 5 Minutes)',
-                self._TOTAL_NEW_STEPS))
-        self._database_workflow.create_and_setup_database(
-            project_id=project_id,
-            instance_name=database_instance_name,
-            database_name=database_name,
-            database_password=database_password,
-            superuser_name=django_superuser_name,
-            superuser_email=django_superuser_email,
-            superuser_password=django_superuser_password,
-            database_user=database_username,
-            cloud_sql_proxy_path=cloud_sql_proxy_path,
-            region=region,
-            port=cloud_sql_proxy_port)
+        with self._console_io.progressbar(
+                300, '[4/{}]: Database Set Up'.format(self._TOTAL_NEW_STEPS)):
+            self._database_workflow.create_and_setup_database(
+                project_id=project_id,
+                instance_name=database_instance_name,
+                database_name=database_name,
+                database_password=database_password,
+                superuser_name=django_superuser_name,
+                superuser_email=django_superuser_email,
+                superuser_password=django_superuser_password,
+                database_user=database_username,
+                cloud_sql_proxy_path=cloud_sql_proxy_path,
+                region=region,
+                port=cloud_sql_proxy_port)
 
-        print(
-            self._generate_section_header(5, 'Enable Services',
-                                          self._TOTAL_NEW_STEPS))
-        if required_services is None:
-            required_services = self._enable_service_workflow.load_services()
-        self._enable_service_workflow.enable_required_services(
-            project_id, required_services)
+        with self._console_io.progressbar(
+                180, '[5/{}]: Enable Services'.format(self._TOTAL_NEW_STEPS)):
+            if required_services is None:
+                required_services = (
+                    self._enable_service_workflow.load_services())
+            self._enable_service_workflow.enable_required_services(
+                project_id, required_services)
 
-        print(
-            self._generate_section_header(
-                6, 'Static Content Serve Set Up (Take Up To 5 Minutes)',
-                self._TOTAL_NEW_STEPS))
-        self._static_content_workflow.serve_static_content(
-            project_id, cloud_storage_bucket_name, static_content_dir)
+        with self._console_io.progressbar(
+                300, '[6/{}]: Static Content Serve Set Up'.format(
+                    self._TOTAL_NEW_STEPS)):
+            self._static_content_workflow.serve_static_content(
+                project_id, cloud_storage_bucket_name, static_content_dir)
 
-        print(
-            self._generate_section_header(
-                7, 'Create Service Account Necessary For Deployment',
+        self._console_io.tell(
+            '[7/{}]: Create Service Account Necessary For Deployment'.format(
                 self._TOTAL_NEW_STEPS))
         secrets = self._generate_secrets(project_id, database_username,
                                          database_password,
                                          required_service_accounts)
 
         if backend == 'gke':
-            print(
-                self._generate_section_header(
-                    8, 'Deployment (Take Up To 20 Minutes)',
-                    self._TOTAL_NEW_STEPS))
-            app_url = self._deploygke_workflow.deploy_new_app_sync(
-                project_id, cluster_name, django_directory_path,
-                django_project_name, image_name, secrets)
+            with self._console_io.progressbar(
+                    1200, '[8/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
+                app_url = self._deploygke_workflow.deploy_new_app_sync(
+                    project_id, cluster_name, django_directory_path,
+                    django_project_name, image_name, secrets)
         else:
             self._upload_secrets_to_bucket(project_id, secrets)
-            print(
-                self._generate_section_header(
-                    8, 'Deployment (Take Up To 5 Minutes)',
-                    self._TOTAL_NEW_STEPS))
-            app_url = self._deploygae_workflow.deploy_gae_app(
-                project_id, django_directory_path)
+            with self._console_io.progressbar(
+                    300, '[8/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
+                app_url = self._deploygae_workflow.deploy_gae_app(
+                    project_id, django_directory_path)
 
         # Create configuration file to save information needed in "update"
         # command.
@@ -257,7 +247,7 @@ class WorkflowManager(object):
             'django_project_name': django_project_name
         }
         self._save_config(django_directory_path, attributes)
-        print('Your app is running at {}.'.format(app_url))
+        self._console_io.tell('Your app is running at {}.'.format(app_url))
 
         if open_browser:
             webbrowser.open(app_url)
@@ -310,33 +300,33 @@ class WorkflowManager(object):
         self._source_generator.setup_django_environment(
             django_directory_path, django_project_name, database_username,
             database_password, cloud_sql_proxy_port)
-        print(
-            self._generate_section_header(1, 'Database Migration',
-                                          self._TOTAL_UPDATE_STEPS))
-        self._database_workflow.migrate_database(
-            project_id=project_id,
-            instance_name=database_instance_name,
-            cloud_sql_proxy_path=cloud_sql_proxy_path,
-            region=region,
-            port=cloud_sql_proxy_port)
+        with self._console_io.progressbar(
+                120,
+                '[1/{}]: Database Migration'.format(self._TOTAL_UPDATE_STEPS)):
+            self._database_workflow.migrate_database(
+                project_id=project_id,
+                instance_name=database_instance_name,
+                cloud_sql_proxy_path=cloud_sql_proxy_path,
+                region=region,
+                port=cloud_sql_proxy_port)
 
-        print(
-            self._generate_section_header(2, 'Static Content Update',
-                                          self._TOTAL_UPDATE_STEPS))
-        self._static_content_workflow.update_static_content(
-            cloud_storage_bucket_name, static_content_dir)
+        with self._console_io.progressbar(
+                120, '[2/{}]: Static Content Update'.format(
+                    self._TOTAL_UPDATE_STEPS)):
+            self._static_content_workflow.update_static_content(
+                cloud_storage_bucket_name, static_content_dir)
 
-        print(
-            self._generate_section_header(3, 'Update Deployment',
-                                          self._TOTAL_UPDATE_STEPS))
-        if backend == 'gke':
-            app_url = self._deploygke_workflow.update_app_sync(
-                project_id, cluster_name, django_directory_path,
-                django_project_name, image_name)
-        else:
-            app_url = self._deploygae_workflow.deploy_gae_app(
-                project_id, django_directory_path, is_new=False)
-        print('Your app is running at {}.'.format(app_url))
+        with self._console_io.progressbar(
+                180,
+                '[3/{}]: Update Deployment'.format(self._TOTAL_UPDATE_STEPS)):
+            if backend == 'gke':
+                app_url = self._deploygke_workflow.update_app_sync(
+                    project_id, cluster_name, django_directory_path,
+                    django_project_name, image_name)
+            else:
+                app_url = self._deploygae_workflow.deploy_gae_app(
+                    project_id, django_directory_path, is_new=False)
+        self._console_io.tell('Your app is running at {}.'.format(app_url))
         if open_browser:
             webbrowser.open(app_url)
 
@@ -358,11 +348,6 @@ class WorkflowManager(object):
         for key, value in attributes.items():
             config_obj.set(key, value)
         config_obj.save()
-
-    def _generate_section_header(self, step: int, section_name: str,
-                                 total_steps: int):
-        return '\n**Step {} of {}: {}**\n'.format(
-            str(step), total_steps, section_name)
 
     def _generate_secrets(
             self, project_id: str, database_username: str,

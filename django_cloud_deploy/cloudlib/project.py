@@ -125,7 +125,8 @@ class ProjectClient(object):
 
     # The SLO is 30s at the 90th percentile:
     # https://cloud.google.com/resource-manager/reference/rest/v1/projects/create
-    @backoff.on_predicate(backoff.constant, max_tries=20, interval=3)
+    @backoff.on_predicate(
+        backoff.constant, max_tries=20, interval=3, logger=None)
     def _confirm_project_creation(self, project_id: str) -> bool:
         return self.project_exists(project_id)
 

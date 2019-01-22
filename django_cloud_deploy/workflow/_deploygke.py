@@ -169,7 +169,7 @@ class DeploygkeWorkflow(object):
         api = kubernetes.client.CoreV1Api(api_client)
         return self._try_get_ingress_url(api)
 
-    @backoff.on_predicate(backoff.constant, interval=0.5)
+    @backoff.on_predicate(backoff.constant, interval=0.5, logger=None)
     def _try_get_ingress_url(self, api: kubernetes.client.CoreV1Api) -> str:
         """Return Ingress url when service is ready."""
         items = api.list_service_for_all_namespaces().items
@@ -198,7 +198,7 @@ class DeploygkeWorkflow(object):
         label_selector = '='.join(['app', app_name])
         self._try_get_ready_replicas(api, label_selector)
 
-    @backoff.on_predicate(backoff.constant, interval=0.5)
+    @backoff.on_predicate(backoff.constant, interval=0.5, logger=None)
     def _try_get_ready_replicas(self,
                                 api: kubernetes.client.ExtensionsV1beta1Api,
                                 label_selector: str) -> int:
