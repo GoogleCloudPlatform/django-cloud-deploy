@@ -6,6 +6,7 @@ on public clouds
 (e.g. [Kubernetes Engine](https://cloud.google.com/kubernetes-engine/)).
 
 Currently, **Django Deploy** can only
+- Deploy to [Google App Engine](https://cloud.google.com/appengine/).
 - Deploy to [Kubernetes Engine](https://cloud.google.com/kubernetes-engine/).
 - Deploy applications created using its own template code.
 

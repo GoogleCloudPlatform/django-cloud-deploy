@@ -51,7 +51,8 @@ class ProjectClient(object):
 
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
-        http_client = http.set_user_agent(http.build_http(), 'cloud-deploy')
+        http_client = http.set_user_agent(http.build_http(),
+                                          'django-cloud-deploy')
         auth_http = google_auth_httplib2.AuthorizedHttp(
             credentials, http=http_client)
         return cls(
