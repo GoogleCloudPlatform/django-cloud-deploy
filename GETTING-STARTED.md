@@ -6,9 +6,9 @@
 
 This guide will step you through:
 1. Installing the prerequisites for **Django Deploy**
-2. Creating and deploying a new Django application on [Kubernetes Engine](https://cloud.google.com/kubernetes-engine/)
-3. Making a change to the newly created Django application and updating it on
-   [Kubernetes Engine](https://cloud.google.com/kubernetes-engine/)
+2. Creating and deploying a new Django application on [Google App Engine](https://cloud.google.com/appengine/) or
+[Kubernetes Engine](https://cloud.google.com/kubernetes-engine/)
+3. Making a change to the newly created Django application and updating it.
 
 ## Setup and Installation
 
@@ -17,7 +17,7 @@ This guide will step you through:
 In order to use **Django Deploy**, you must first install the following dependencies:
 - [Python](https://www.python.org/downloads/) 3.5 or higher
 - [virtualenv](https://virtualenv.pypa.io/en/stable/installation/)
-- [Docker](https://docs.docker.com/install/overview/) (any edition)
+- [Docker](https://docs.docker.com/install/overview/) (Kubernetes Only)(any edition)
 - [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstarts)
 - [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/connect-admin-proxy#install)
 
@@ -42,7 +42,7 @@ $ pip install django-cloud-deploy
 ## Creating a New Project
 
 At the end of this step, you will have a skeleton Django project that is
-deployed on
+deployed on [Google App Engine](https://cloud.google.com/appengine/) or
 [Kubernetes Engine](https://cloud.google.com/kubernetes-engine/). The following
 [step](#updating-your-project) will show you how to start modifying it to meet
 your unique requirements.
@@ -52,6 +52,11 @@ You can create a new Django project after completing the
 command:
 ```bash
 $ django-cloud-deploy new
+```
+
+If you wish to deploy on Kubernetes Engine use:
+```bash
+$ django-cloud-deploy new --backend=gke
 ```
 
 Follow the prompts displayed in the terminal. Make sure that you remember the
@@ -72,9 +77,7 @@ If you don't already have a billing account setup then you will have the option
 of creating one in your web browser.
 
 Once you have answered all of the prompts, your new Django project will be
-created and deployed to
-[Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/). This
-can take up to 20 minutes and will finish with a message like:
+created and deployed on the chosen platform. This will finish with a message like:
 
 ```
 Your app is running at <url>
@@ -85,7 +88,7 @@ You can open `<url>` in your browser to see your application running.
 ## Updating Your Project
 
 In this step, you will make a change to your Django project and redeploy it
-to [Kubernetes Engine](https://cloud.google.com/kubernetes-engine/).
+to your preferred platform.
 
 You can make any change that you want to your application. For example, open
 `<app name>/views.py` and you should see this code:
@@ -108,6 +111,11 @@ When you are satisfied with your changes, you can deploy your changes to the
 cloud with:
 ```bash
 $ django-cloud-deploy update --project-path=<project path>
+```
+
+For kubernetes use:
+```bash
+$ django-cloud-deploy update --project-path=<project path> --backend=gke
 ```
 
 Follow the prompts displayed in the terminal.
