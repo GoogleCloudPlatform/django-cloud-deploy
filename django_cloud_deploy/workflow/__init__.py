@@ -140,10 +140,6 @@ class WorkflowManager(object):
         Returns:
             The url of the deployed Django app.
         """
-
-        # Set Env Variable used by Gcloud for User Agent String
-        os.environ['CLOUDSDK_METRICS_ENVIRONMENT'] = 'django-cloud-deploy'
-
         # A bunch of variables necessary for deployment we hardcode for user.
         database_username = 'postgres'
         cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
