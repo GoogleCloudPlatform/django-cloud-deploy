@@ -53,7 +53,7 @@ class DeploygaeWorkflow(object):
         env_vars = dict(os.environ)
 
         # Set Env Variable used by Gcloud for User Agent String
-        os.environ['CLOUDSDK_METRICS_ENVIRONMENT'] = 'django-cloud-deploy'
+        env_vars['CLOUDSDK_METRICS_ENVIRONMENT'] = 'django-cloud-deploy'
         process = pexpect.spawn('gcloud', args, env=env_vars)
         try:
             if is_new:
