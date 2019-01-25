@@ -49,7 +49,7 @@ Password (again):
 # Getting Started
 
 For detailed instructions on how to use **Django Deploy**, see the
-[Getting Started Guide](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/GETTING-STARTED.md).
+[Quickstart](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/QUICKSTART.md).
 
 # Development Workflow (Linux)
 
