@@ -49,7 +49,12 @@ class DeploygaeWorkflow(object):
         app_yaml_path = os.path.join(django_directory_path, 'app.yaml')
         project = '--project={}'.format(project_id)
         args = ['app', 'deploy', app_yaml_path, project]
-        process = pexpect.spawn('gcloud', args)
+        # We need to grab all environment variables to pass to the subprocess
+        env_vars = dict(os.environ)
+
+        # Set Env Variable used by Gcloud for User Agent String
+        env_vars['CLOUDSDK_METRICS_ENVIRONMENT'] = 'django-cloud-deploy'
+        process = pexpect.spawn('gcloud', args, env=env_vars)
         try:
             if is_new:
                 index = process.expect(
