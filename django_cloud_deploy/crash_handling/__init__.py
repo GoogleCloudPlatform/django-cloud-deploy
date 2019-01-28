@@ -15,6 +15,7 @@
 
 import os
 import platform
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -126,23 +127,44 @@ def _create_issue_body(command: str) -> str:
         Github issue body in string.
     """
     template_env = jinja2.Environment()
-    try:
-        gcloud_version = subprocess.check_output(
-            ['gcloud', 'info', '--format=value(basic.version)'],
-            universal_newlines=True).rstrip()
-    except subprocess.CalledProcessError:
+
+    gcloud_path = shutil.which('gcloud')
+    if gcloud_path:
+        try:
+            gcloud_version = subprocess.check_output(
+                [gcloud_path, 'info', '--format=value(basic.version)'],
+                stdin=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True).rstrip()
+        except subprocess.CalledProcessError as e:
+            gcloud_version = 'Error: {!r}'.format(e.stderr)
+    else:
         gcloud_version = 'Not installed or not on PATH'
 
-    try:
-        docker_version = subprocess.check_output(
-            ['docker', '--version'], universal_newlines=True).rstrip()
-    except subprocess.CalledProcessError:
+    docker_path = shutil.which('docker')
+    if docker_path:
+        try:
+            docker_version = subprocess.check_output(
+                ['docker', '--version'],
+                stdin=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True).rstrip()
+        except subprocess.CalledProcessError:
+            docker_version = 'Error: {!r}'.format(e.stderr)
+    else:
         docker_version = 'Not installed or not on PATH'
 
-    try:
-        cloud_sql_proxy_version = subprocess.check_output(
-            ['cloud_sql_proxy', '--version'], universal_newlines=True).rstrip()
-    except subprocess.CalledProcessError:
+    cloud_sql_proxy_path = shutil.which('cloud_sql_proxy')
+    if cloud_sql_proxy_path:
+        try:
+            cloud_sql_proxy_version = subprocess.check_output(
+                [cloud_sql_proxy_path, '--version'],
+                stdin=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True).rstrip()
+        except subprocess.CalledProcessError:
+            cloud_sql_proxy_version = 'Error: {!r}'.format(e.stderr)
+    else:
         cloud_sql_proxy_version = 'Not installed or not on PATH'
 
     template = template_env.from_string(_ISSUE_TEMPLATE)
