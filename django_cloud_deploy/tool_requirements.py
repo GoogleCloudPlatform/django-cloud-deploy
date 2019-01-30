@@ -15,7 +15,6 @@
 """Checks the user has the necessary requirements to run the tool."""
 
 import getpass
-import grp
 import os
 import shutil
 import subprocess
@@ -195,6 +194,8 @@ class Docker(Requirement):
     @staticmethod
     def _is_missing_group_membership():
         """Returns True if a 'docker' group exists and the user isn't in it."""
+        import grp  # Not available on Windows
+
         try:
             docker_group = grp.getgrnam('docker')
         except KeyError:
@@ -257,6 +258,22 @@ class CloudSqlProxy(Requirement):
         'https://cloud.google.com/sql/docs/mysql/sql-proxy#install\n\n'
         'NOTE: cloud_sql_proxy must be added to the PATH for it to be useable.')
 
+    _OLD_GCLOUD_VERSION = (
+        'Unable to install Cloud SQL Proxy automatically using the command:\n'
+        '    gcloud components install cloud_sql_proxy\n\n'
+        'The installed version of gcloud is too old. You can upgrade it '
+        'using the command:\n'
+        '    gcloud components update\n\n')
+
+    _MUST_INSTALL_INTERACTIVE = (
+        'Unable to install Cloud SQL Proxy automatically using the command:\n'
+        '    gcloud components install cloud_sql_proxy\n\n'
+        'You can run this command yourself or follow the manual installation'
+        'instructions at:\n'
+        'https://cloud.google.com/sql/docs/mysql/sql-proxy#install\n\n'
+        'NOTE: in the manual installation case, cloud_sql_proxy must be '
+        'added to the PATH for it to be useable.')
+
     @classmethod
     def check(cls):
         """Checks if Cloud SQL Proxy is installed.
@@ -274,7 +291,8 @@ class CloudSqlProxy(Requirement):
         Raises:
             UnableToAutomaticallyInstall: If the installation fails.
         """
-        if shutil.which('gcloud') is None:
+        gcloud_path = shutil.which('gcloud')
+        if gcloud_path is None:
             msg = "gcloud is needed to install Cloud SQL Proxy"
             raise UnableToAutomaticallyInstallError(cls.NAME, msg)
 
@@ -287,12 +305,21 @@ class CloudSqlProxy(Requirement):
             elif answer in ['y', '']:
                 break
 
-        command = ['gcloud', '-q', 'components', 'install', 'cloud_sql_proxy']
-        if subprocess.call(command,
-                           stdout=subprocess.DEVNULL,
-                           stderr=subprocess.DEVNULL) != 0:
-            raise UnableToAutomaticallyInstallError(
-                cls.NAME, cls._AUTOMATIC_INSTALLATION_ERROR)
+        command = [gcloud_path, '-q', 'components', 'install', 'cloud_sql_proxy']
+        install_result = subprocess.run(command,
+                                        stdout=subprocess.DEVNULL,
+                                        stderr=subprocess.PIPE,
+                                        universal_newlines=True)
+        if install_result.returncode != 0:
+            if 'gcloud components update' in install_result.stderr:
+                raise UnableToAutomaticallyInstallError(
+                    cls.NAME, cls._OLD_GCLOUD_VERSION)
+            elif 'non-interactive mode' in install_result.stderr:
+                raise UnableToAutomaticallyInstallError(
+                    cls.NAME, cls._MUST_INSTALL_INTERACTIVE)
+            else:
+                raise UnableToAutomaticallyInstallError(
+                    cls.NAME, cls._AUTOMATIC_INSTALLATION_ERROR)
 
 
 _REQUIREMENTS = {
