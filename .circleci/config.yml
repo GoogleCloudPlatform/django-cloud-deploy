@@ -2,18 +2,99 @@
 #
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 #
+_setup_environment:
+  install_gcloud: &install_gcloud
+    # Following tutorial on https://cloud.google.com/sdk/docs/quickstart-debian-ubuntu
+    name: Install Gcloud
+    command: |
+      export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
+      echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+      sudo apt-get -qqy update && sudo apt-get -qqy install google-cloud-sdk
+  install_nox: &install_nox
+    name: Install Nox
+    command: |
+      sudo apt-get -qqy install python3-pip
+      sudo python3 -m pip install --upgrade nox-automation
+  install_cloud_sql_proxy: &install_cloud_sql_proxy
+    name: Install Cloud SQL Proxy
+    command: |
+      sudo curl -L -o /usr/local/bin/cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64
+      sudo chmod +x /usr/local/bin/cloud_sql_proxy
+  dump_credentials: &dump_credentials
+    name: Dump Google Cloud Credentials to file
+    # Content of service account key is saved in the environment variable $GCP_CREDENTIAL
+    command: |
+      echo ${GCP_CREDENTIAL} > "${GOOGLE_APPLICATION_CREDENTIALS}"
+      gcloud auth activate-service-account --key-file ${GOOGLE_APPLICATION_CREDENTIALS}
+      gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+
 version: 2
 jobs:
-  build:
+  Unit Test:
     docker:
       - image: googleapis/nox:0.18.2
 
-    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          command: |
+            nox -f django_cloud_deploy/nox.py -s unit_test
+  Lint:
+    docker:
+      - image: googleapis/nox:0.18.2
 
     steps:
       - checkout
-
       - run:
-          name: Test CircleCI
           command: |
-            echo "hello world"
+            nox -f django_cloud_deploy/nox.py -s lint
+  Integration Test:
+    # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
+    # Using machine newer than circleci/classic:201710-01 will make "apt-get"
+    # fail to install packages
+    machine:
+      image: circleci/classic:201710-01
+
+    steps:
+      - checkout
+      - run: *install_gcloud
+      - run: *install_nox
+      - run: *install_cloud_sql_proxy
+      - run: *dump_credentials
+      - run:
+          name: Run Test
+          command: |
+            pyenv global 2.7.12 3.5.2
+            nox -f django_cloud_deploy/nox.py -s integration_test
+          # Timeout of integration test is set to 20 minutes
+          no_output_timeout: 20m
+  E2E Test:
+    # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
+    # Using machine newer than circleci/classic:201710-01 will make "apt-get"
+    # fail to install packages
+    machine:
+      image: circleci/classic:201710-01
+
+    steps:
+      - checkout
+      - run: *install_gcloud
+      - run: *install_nox
+      - run: *install_cloud_sql_proxy
+      - run: *dump_credentials
+      - run:
+          name: Run Test
+          command: |
+            pyenv global 2.7.12 3.5.2
+            nox -f django_cloud_deploy/nox.py -s e2e_test
+          # Timeout of e2e test is set to 30 minutes
+          no_output_timeout: 30m
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - Unit Test
+      - Lint
+      - Integration Test
+      - E2E Test
