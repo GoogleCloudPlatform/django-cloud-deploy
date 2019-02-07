@@ -48,8 +48,15 @@ Password (again):
 
 # Getting Started
 
-For detailed instructions on how to use **Django Deploy**, see the
+For the fastest path to a working Django application running in the cloud,
+see the
 [Quickstart](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/QUICKSTART.md).
+
+# Building a new application
+
+For detailed instructions on how to create a new Django project and then deploy
+and update it, see the
+[HOWTO](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/DEPLOY_NEW_HOWTO.md).
 
 # Development Workflow (Linux)
 
