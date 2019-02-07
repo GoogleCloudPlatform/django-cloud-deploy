@@ -1,5 +1,4 @@
-from .extra_settings import *
-
+from .google_settings import *
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

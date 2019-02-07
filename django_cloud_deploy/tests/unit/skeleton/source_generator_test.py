@@ -74,8 +74,8 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
         files_list = os.listdir(os.path.join(self._project_dir, project_name))
         self.assertCountEqual(self.DJANGO_ROOT_FOLDER_FILES, files_list)
 
-    def test_wsgi_module_uses_remote_settings(self):
-        project_name = 'test_wsgi_module_uses_remote_settings'
+    def test_wsgi_module_uses_cloud_settings(self):
+        project_name = 'test_wsgi_module_uses_cloud_settings'
         app_name = 'test_app_name'
         self._generator.generate(project_name, self._project_dir, app_name)
 
@@ -84,7 +84,7 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
             wsgi_content = wsgi_file.read()
 
             # Test wsgi uses remote settings.
-            self.assertIn('remote_settings', wsgi_content)
+            self.assertIn('cloud_settings', wsgi_content)
 
 
 class DjangoAppFileGeneratorTest(FileGeneratorTest):
@@ -158,7 +158,7 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         sys.path.append(self._project_dir)
         module = importlib.import_module(project_name + '.local_settings')
 
-        # Test local settings imports extra_settings
+        # Test local settings imports google_settings
         self.assertIn('cloud_admin.apps.CloudAdminConfig',
                       getattr(module, 'INSTALLED_APPS'))
 
@@ -172,8 +172,8 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         # Test local settings use local file systems to serve static files
         self.assertEqual(getattr(module, 'STATIC_URL'), '/static/')
 
-    def test_remote_settings_gke(self):
-        project_name = 'test_remote_settings_gke'
+    def test_cloud_settings_gke(self):
+        project_name = 'test_cloud_settings_gke'
         project_id = project_name + 'project_id'
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
@@ -181,9 +181,9 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
                                  cloud_sql_connection_string)
 
         sys.path.append(self._project_dir)
-        module = importlib.import_module(project_name + '.remote_settings')
+        module = importlib.import_module(project_name + '.cloud_settings')
 
-        # Test remote settings imports extra_settings
+        # Test remote settings imports google_settings
         self.assertIn('cloud_admin.apps.CloudAdminConfig',
                       getattr(module, 'INSTALLED_APPS'))
 
@@ -201,15 +201,15 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         # Test remote settings does not use DEBUG mode
         self.assertEqual(getattr(module, 'DEBUG'), False)
 
-    def test_remote_settings_gae(self):
-        project_name = 'test_remote_settings_gke'
+    def test_cloud_settings_gae(self):
+        project_name = 'test_cloud_settings_gke'
         project_id = project_name + 'project_id'
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
         self._generator.generate(project_id, project_name, self._project_dir,
                                  cloud_sql_connection_string)
         settings_file_path = os.path.join(self._project_dir, project_name,
-                                          'remote_settings.py')
+                                          'cloud_settings.py')
 
         # Not able to load the remote settings module because it runs
         # get_database_password() which does not work locally
@@ -220,8 +220,8 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
                 cloud_sql_connection_string)
             self.assertIn(value, settings_content)
 
-    def test_customize_remote_settings(self):
-        project_name = 'test_remote_settings_customize_database_name'
+    def test_customize_cloud_settings(self):
+        project_name = 'test_cloud_settings_customize_database_name'
         project_id = project_name + 'project_id'
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
@@ -231,9 +231,9 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
                                  'customize-bucket')
 
         sys.path.append(self._project_dir)
-        module = importlib.import_module(project_name + '.remote_settings')
+        module = importlib.import_module(project_name + '.cloud_settings')
 
-        # Test remote settings imports extra_settings
+        # Test remote settings imports google_settings
         self.assertIn('cloud_admin.apps.CloudAdminConfig',
                       getattr(module, 'INSTALLED_APPS'))
 
@@ -264,7 +264,7 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
                                  cloud_sql_connection_string)
 
         expected_settings_files = ('base_settings.py', 'local_settings.py',
-                                   'remote_settings.py', 'extra_settings.py')
+                                   'cloud_settings.py', 'google_settings.py')
         files_list = os.listdir(os.path.join(self._project_dir, project_name))
         self.assertContainsSubset(expected_settings_files, files_list)
 
@@ -273,7 +273,7 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         # Test local settings
         module = importlib.import_module(project_name + '.local_settings')
 
-        # Test local settings imports extra_settings
+        # Test local settings imports google_settings
         self.assertIn('cloud_admin.apps.CloudAdminConfig',
                       getattr(module, 'INSTALLED_APPS'))
 
@@ -288,9 +288,9 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         self.assertEqual(getattr(module, 'STATIC_URL'), '/static/')
 
         # Test remote settings
-        module = importlib.import_module(project_name + '.remote_settings')
+        module = importlib.import_module(project_name + '.cloud_settings')
 
-        # Test remote settings imports extra_settings
+        # Test remote settings imports google_settings
         self.assertIn('cloud_admin.apps.CloudAdminConfig',
                       getattr(module, 'INSTALLED_APPS'))
 
@@ -330,7 +330,7 @@ class DockerfileGeneratorTest(FileGeneratorTest):
             self.assertIn('virtualenv -p python3', dockerfile_content)
 
             # Test using remote settings when deployed on GKE
-            self.assertIn('remote_settings', dockerfile_content)
+            self.assertIn('cloud_settings', dockerfile_content)
 
             # Test using gunicorn instead of Django builtin to run server
             self.assertIn('gunicorn', dockerfile_content)
@@ -454,7 +454,7 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
     DEPENDENCY_FILE = ('requirements.txt',)
     PROJECT_ROOT_FOLDER_FILES = ('manage.py',)
     SETTINGS_FILES = ('base_settings.py', 'local_settings.py',
-                      'remote_settings.py')
+                      'cloud_settings.py')
 
     @classmethod
     def setUpClass(cls):

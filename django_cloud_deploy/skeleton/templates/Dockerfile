@@ -9,7 +9,7 @@ FROM gcr.io/google_appengine/python
 # Create a virtualenv for the application dependencies.
 RUN virtualenv -p python3 /env
 ENV PATH /env/bin:$PATH
-ENV DJANGO_SETTINGS_MODULE {{ project_name }}.remote_settings
+ENV DJANGO_SETTINGS_MODULE {{ project_name }}.cloud_settings
 
 ADD requirements.txt /app/requirements.txt
 RUN /env/bin/pip install -r /app/requirements.txt
