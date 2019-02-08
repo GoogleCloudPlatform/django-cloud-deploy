@@ -82,7 +82,7 @@ def integration_test(session, python_version):
 
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('py.test', 'tests/integration', '--forked', '--timeout=1200')
+    session.run('py.test', 'tests/integration', '--forked', '--timeout=1800')
 
 
 @nox.session

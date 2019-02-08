@@ -67,8 +67,8 @@ jobs:
           command: |
             pyenv global 2.7.12 3.5.2
             nox -f django_cloud_deploy/nox.py -s integration_test
-          # Timeout of integration test is set to 20 minutes
-          no_output_timeout: 20m
+          # Timeout of integration test is set to 30 minutes
+          no_output_timeout: 30m
   E2E Test:
     # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
     # Using machine newer than circleci/classic:201710-01 will make "apt-get"

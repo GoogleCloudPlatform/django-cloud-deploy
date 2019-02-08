@@ -13,6 +13,7 @@
 # limitations under the License.
 """Integration tests for module django_cloud_deploy.cloudlib."""
 
+from django_cloud_deploy.cloudlib import database
 from django_cloud_deploy.cloudlib import static_content_serve
 from django_cloud_deploy.tests.lib import test_base
 from django_cloud_deploy.tests.lib import utils
@@ -34,3 +35,23 @@ class StaticContentServeClientIntegrationTest(test_base.DjangoFileGeneratorTest,
             for _ in range(3):
                 self._static_content_serve_client.create_bucket(
                     self.project_id, bucket_name)
+
+
+class DatabaseClientIntegrationTest(test_base.DjangoFileGeneratorTest,
+                                    test_base.ResourceCleanUpTest):
+    """Integration test for django_cloud_deploy.cloudlib.database."""
+
+    def setUp(self):
+        super().setUp()
+        self._database_client = database.DatabaseClient.from_credentials(
+            self.credentials)
+
+    def test_reuse_cloud_sql_instance_and_database(self):
+        with self.clean_up_sql_instance(self.instance_name):
+            for _ in range(2):
+                self._database_client.create_instance_sync(
+                    self.project_id, self.instance_name)
+
+            for _ in range(2):
+                self._database_client.create_database_sync(
+                    self.project_id, self.instance_name, self.database_name)

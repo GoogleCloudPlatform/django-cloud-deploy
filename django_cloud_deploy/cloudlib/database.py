@@ -27,6 +27,7 @@ from django_cloud_deploy import crash_handling
 import pexpect
 
 from googleapiclient import discovery
+from googleapiclient import errors
 from google.auth import credentials
 
 
@@ -86,8 +87,8 @@ class DatabaseClient(object):
             'databaseVersion': database_version,
             'settings': {
                 'tier': tier,
-                "backupConfiguration": {
-                    "enabled": True
+                'backupConfiguration': {
+                    'enabled': True
                 }
             }
         }
@@ -96,7 +97,13 @@ class DatabaseClient(object):
 
         # See
         # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances/insert
-        request.execute()
+        try:
+            request.execute()
+        except errors.HttpError as e:
+            if e.resp.status == 409:
+                # A cloud SQL instance with the same name already exist. This is
+                # fine because we can reuse this instance.
+                return
 
         while True:
             request = self._sqladmin_service.instances().get(
