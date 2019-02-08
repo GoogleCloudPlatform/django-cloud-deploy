@@ -143,11 +143,12 @@ class ResourceCleanUpTest(BaseTest):
         """
         request = storage_service.objects().list(bucket=bucket_name)
         response = request.execute()
-        object_names = [item['name'] for item in response['items']]
-        for object_name in object_names:
-            request = storage_service.objects().delete(
-                bucket=bucket_name, object=object_name)
-            request.execute()
+        if 'items' in response:  # This bucket might be empty
+            object_names = [item['name'] for item in response['items']]
+            for object_name in object_names:
+                request = storage_service.objects().delete(
+                    bucket=bucket_name, object=object_name)
+                request.execute()
 
     @contextlib.contextmanager
     def clean_up_bucket(self, bucket_name: str):

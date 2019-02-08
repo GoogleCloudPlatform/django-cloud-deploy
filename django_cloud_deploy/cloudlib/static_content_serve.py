@@ -44,6 +44,28 @@ class StaticContentServeClient(object):
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(discovery.build('storage', 'v1', credentials=credentials))
 
+    def _bucket_exist(self, project_id: str, bucket_name: str) -> bool:
+        """Returns whether the given bucket exists under the given project.
+
+        Args:
+            project_id: Id of the GCP project.
+            bucket_name: Name of the bucket.
+
+        Returns:
+           Whether the given bucket exists under the given project.
+
+        Raises:
+            StaticContentServeError: When it fails to list buckets under the
+                given project.
+        """
+        request = self._storage_service.buckets().list(project=project_id)
+        response = request.execute()
+        if 'items' not in response:
+            raise StaticContentServeError(
+                'Unexpected response listing buckets in project "{}"'
+                ': {}'.format(project_id, response))
+        return any(item['name'] == bucket_name for item in response['items'])
+
     def create_bucket(self, project_id: str, bucket_name: str):
         """Create a Google Cloud Storage Bucket on the given project.
 
@@ -72,10 +94,17 @@ class StaticContentServeClient(object):
                     'You do not have permission to create bucket in project: '
                     '"{}"'.format(project_id))
             elif e.resp.status == 409:
-                raise StaticContentServeError(
-                    'Bucket "{}" already exist. Name of the bucket should be '
-                    'unique across the whole Google Cloud Platform.'.format(
-                        bucket_name))
+                # A bucket with the given name already exist. But we don't know
+                # whether that bucket exist under our GCP project or it exist
+                # under somebody else's GCP project.
+                # We will reuse the bucket if it exists under our GCP project.
+                if self._bucket_exist(project_id, bucket_name):
+                    return
+                else:
+                    raise StaticContentServeError(
+                        'Bucket "{}" already exist. Name of the bucket should '
+                        'be unique across the whole Google Cloud '
+                        'Platform.'.format(bucket_name))
             else:
                 raise StaticContentServeError(
                     'Unexpected error when creating bucket "{}" in project "{}"'

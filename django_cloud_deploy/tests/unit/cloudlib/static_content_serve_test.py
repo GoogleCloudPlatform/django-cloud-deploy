@@ -23,6 +23,13 @@ from googleapiclient import errors
 
 PROJECT_ID = 'fake_project_id'
 BUCKET_NAME = 'fake_bucket_name'
+EXISTING_BUCKET_NAME = 'existing_bucket'
+
+FAKE_BUCKET_LIST_RESPONSE = {
+    'items': [{
+        'name': EXISTING_BUCKET_NAME,
+    }]
+}
 
 FAKE_IAM_POLICY = {
     'bindings': [],
@@ -54,7 +61,7 @@ class BucketsFake(object):
     """A fake object returned by ...buckets()."""
 
     def __init__(self):
-        self.buckets = ['exist']
+        self.buckets = [EXISTING_BUCKET_NAME]
         self.iam_policy = FAKE_IAM_POLICY
 
     def insert(self, project, body):
@@ -65,9 +72,17 @@ class BucketsFake(object):
                     http_fake.HttpResponseFake(403), b'permission denied'))
         elif 'invalid' in bucket_name:
             return http_fake.HttpRequestFake({'invalid': 'response'})
+        elif bucket_name == EXISTING_BUCKET_NAME:
+            return http_fake.HttpRequestFake(
+                errors.HttpError(
+                    http_fake.HttpResponseFake(409), b'permission denied'))
         else:
             self.buckets.append(bucket_name)
             return http_fake.HttpRequestFake(body)
+
+    def list(self, project):
+        del project
+        return http_fake.HttpRequestFake(FAKE_BUCKET_LIST_RESPONSE)
 
     def getIamPolicy(self, bucket):
         if 'invalid' in bucket:
@@ -125,6 +140,12 @@ class StaticContentServeClientTest(absltest.TestCase):
                 PROJECT_ID, bucket_name)
         self.assertNotIn(bucket_name,
                          self._storage_service_fake.buckets().buckets)
+
+    def test_reuse_bucket_already_exist(self):
+        self._static_content_serve_client.create_bucket(PROJECT_ID,
+                                                        EXISTING_BUCKET_NAME)
+        self.assertIn(EXISTING_BUCKET_NAME,
+                      self._storage_service_fake.buckets().buckets)
 
     def test_make_bucket_public_success(self):
         self._static_content_serve_client.make_bucket_public(BUCKET_NAME)
