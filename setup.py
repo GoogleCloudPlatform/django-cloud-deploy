@@ -30,7 +30,7 @@ with open(os.path.join(here, 'README.md'), 'r') as fh:
 install_requires = [
     'urllib3==1.23',  # https://github.com/requests/requests/issues/4830
     'oauth2client>=4.1.2',
-    'django>=2.1',
+    'django>=2.1.5,<2.2',
     'backoff>=1.8.0',
     'jinja2>=2.10',
     'google-cloud-resource-manager>=0.28.1',

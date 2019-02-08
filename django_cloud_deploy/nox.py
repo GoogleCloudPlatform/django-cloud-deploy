@@ -20,7 +20,7 @@ PACKAGES = [
     'pytest-timeout==1.3.2',
     'oauth2client==4.1.2',
     'absl-py==0.3.0',
-    'django==2.1',
+    'django==2.1.5',
     'backoff==1.8.0',
     'jinja2==2.10',
     'google-cloud-resource-manager==0.28.1',
