@@ -88,7 +88,7 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
     if remaining_parameters_to_prompt:
 
         num_steps = len(remaining_parameters_to_prompt)
-        console.tell('<b>{} steps to update project</b>'.format(num_steps))
+        console.tell('<b>{} steps to update your project</b>'.format(num_steps))
         console.tell()
         parameter_and_prompt = sorted(
             remaining_parameters_to_prompt.items(),
