@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import shutil
 import subprocess
 from typing import Optional
 
@@ -66,7 +67,10 @@ class AuthClient(object):
     @staticmethod
     def get_active_account() -> str:
         """Get the active account logged in on gcloud."""
-        command = ['gcloud', 'info', '--format=value(config.account)']
+        gcloud_path = shutil.which('gcloud')
+        assert gcloud_path, 'gcloud could not be found'
+
+        command = [gcloud_path, 'info', '--format=value(config.account)']
         return subprocess.check_output(
             command, universal_newlines=True).rstrip()
 
@@ -84,8 +88,12 @@ class AuthClient(object):
             Absolute path of the application default credentials path of the
             given account.
         """
+        gcloud_path = shutil.which('gcloud')
+        assert gcloud_path, 'gcloud could not be found'
+
         command = [
-            'gcloud', 'info', '--format=value(config.paths.global_config_dir)'
+            gcloud_path, 'info',
+            '--format=value(config.paths.global_config_dir)'
         ]
         gcloud_config_path = subprocess.check_output(
             command, universal_newlines=True).rstrip()
