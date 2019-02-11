@@ -15,6 +15,7 @@
 
 from django_cloud_deploy.cloudlib import container
 from django_cloud_deploy.cloudlib import database
+from django_cloud_deploy.cloudlib import service_account
 from django_cloud_deploy.cloudlib import static_content_serve
 from django_cloud_deploy.tests.lib import test_base
 from django_cloud_deploy.tests.lib import utils
@@ -36,6 +37,29 @@ class StaticContentServeClientIntegrationTest(test_base.DjangoFileGeneratorTest,
             for _ in range(3):
                 self._static_content_serve_client.create_bucket(
                     self.project_id, bucket_name)
+
+
+class ServiceAccountClientIntegrationTest(test_base.ResourceCleanUpTest):
+    """Integration test for cloudlib.service_account."""
+
+    _ROLES = ('roles/cloudsql.client', 'roles/cloudsql.editor',
+              'roles/cloudsql.admin')
+
+    def setUp(self):
+        super().setUp()
+        self._service_account_client = (
+            service_account.ServiceAccountClient.from_credentials(
+                self.credentials))
+
+    def test_create_duplicate_service_account(self):
+        service_account_id = utils.get_resource_name(resource_type='sa')
+
+        # Assert no exceptions are raised when creating the same
+        # service account twice
+        for _ in range(2):
+            self._service_account_client.create_service_account(
+                self.project_id, service_account_id, 'Test Service Account',
+                self._ROLES)
 
 
 class DatabaseClientIntegrationTest(test_base.DjangoFileGeneratorTest,

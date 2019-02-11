@@ -120,10 +120,12 @@ class ServiceAccountClient(object):
                     format(service_account_id, response))
         except errors.HttpError as e:
             if e.resp.status == 409:
-                raise ServiceAccountCreationError(
-                    'Service account {} already exists within project {}'.
-                    format(service_account_id, project_id))
-            elif e.resp.status == 400:
+                # Most likely our tool has created the service account already
+                # and is being re-run. This error code is fine as we just need
+                # the service accounts to exist. Later on we assign the
+                # appropriate roles for each one.
+                pass
+            if e.resp.status == 400:
                 raise ServiceAccountCreationError(
                     'Service account id {} is invalid'.format(
                         service_account_id))

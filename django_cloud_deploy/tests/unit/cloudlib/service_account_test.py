@@ -154,8 +154,8 @@ class ServiceAccountClientTestCase(absltest.TestCase):
     def test_update_iam_policy_member_already_exist(self):
         """Test adding an existing member to an existing role.
 
-    This should not change the iam policy.
-    """
+        This should not change the iam policy.
+        """
         policy = FAKE_IAM_POLICY
         role = FAKE_ROLE
         member = FAKE_SERVICE_ACCOUNT
@@ -212,10 +212,8 @@ class ServiceAccountClientTestCase(absltest.TestCase):
         service_account_id = SERVICE
         service_account_name = 'Fake Service Account'
 
-        with self.assertRaises(service_account.ServiceAccountCreationError):
-            self._service_account_client.create_service_account(
-                PROJECT_ID, service_account_id, service_account_name,
-                [FAKE_ROLE])
+        self._service_account_client.create_service_account(
+            PROJECT_ID, service_account_id, service_account_name, [FAKE_ROLE])
 
         # Assert the service account list is unchanged
         all_service_accounts = (self._iam_service_fake.projects_fake.
