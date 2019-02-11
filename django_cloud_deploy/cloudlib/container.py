@@ -162,9 +162,9 @@ class ContainerClient(object):
                     ('You do not have permission to create a cluster in '
                      'project: "{}"').format(project_id))
             elif e.resp.status == 409:
-                raise ContainerCreationError(
-                    'Cluster "{}" already exist in project "{}".'.format(
-                        cluster_name, project_id))
+                # Cluster with the same name already exist. It is fine to reuse
+                # the same cluster for deployment.
+                pass
             else:
                 raise ContainerCreationError(
                     ('Unexpected error when creating cluster "{}" in '
