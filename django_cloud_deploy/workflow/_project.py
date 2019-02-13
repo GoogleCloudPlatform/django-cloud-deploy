@@ -68,12 +68,10 @@ class ProjectWorkflow(object):
             if project_creation == CreationMode.CREATE:
                 raise ProjectExistsError(
                     'project {!r} already exists'.format(project_id))
-            else:
-                self._project_client.set_existing_project(project_id)
         else:
             if project_creation == CreationMode.MUST_EXIST:
                 raise ProjectionCreationError(
                     'project {!r} does not exist'.format(project_id))
             else:
-                self._project_client.create_and_set_project(
+                self._project_client.create_project(
                     project_id, project_name)

@@ -116,40 +116,5 @@ class ProjectClientTestCase(absltest.TestCase):
         with self.assertRaises(project.ProjectExistsError):
             self._project_client.create_project('fn123', 'Duplicate!')
 
-    @mock.patch('subprocess.check_call')
-    def test_create_and_set_project(self, check_call):
-        self._project_client.create_and_set_project('fn123', 'Friendly Name')
-        self.assertEqual(self._service_fake.projects_fake.projects,
-                         [{
-                             'name': 'Friendly Name',
-                             'projectId': 'fn123',
-                         }])
-
-        check_call.assert_called_once_with(
-            ['gcloud', '-q', 'config', 'set', 'project', 'fn123'],
-            stderr=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL)
-
-    @mock.patch('subprocess.check_call')
-    def test_project_exists_does(self, check_call):
-        self._project_client.create_and_set_project('p123', 'Friendly Name')
-        check_call.assert_called_once_with(
-            ['gcloud', '-q', 'config', 'set', 'project', 'p123'],
-            stderr=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL)
-
     def test_project_exists_doesnot(self):
         self.assertFalse(self._project_client.project_exists('p123'))
-
-    @mock.patch('subprocess.check_call')
-    def test_set_existing_project(self, check_call):
-        self._project_client.create_project('fn123', 'Friendly Name')
-        self._project_client.set_existing_project('fn123')
-        check_call.assert_called_once_with(
-            ['gcloud', '-q', 'config', 'set', 'project', 'fn123'],
-            stderr=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL)
-
-    def test_set_existing_project_non_existant(self):
-        with self.assertRaises(project.ProjectError):
-            self._project_client.set_existing_project('fn123')
