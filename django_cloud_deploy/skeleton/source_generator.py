@@ -434,7 +434,7 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
         }
         self._render_directory(settings_templates_dir, django_dir,
                                options=options)
-        os.rename(settings_file_path, base_settings_path)
+        os.replace(settings_file_path, base_settings_path)
 
 
 class _DockerfileGenerator(_Jinja2FileGenerator):
