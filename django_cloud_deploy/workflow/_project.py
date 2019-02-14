@@ -73,5 +73,4 @@ class ProjectWorkflow(object):
                 raise ProjectionCreationError(
                     'project {!r} does not exist'.format(project_id))
             else:
-                self._project_client.create_project(
-                    project_id, project_name)
+                self._project_client.create_project(project_id, project_name)
