@@ -31,11 +31,10 @@ class OrganizationsFake(object):
 
     def search(self, body):
         if self._is_google:
-            return http_fake.HttpRequestFake({
-                'organizations': [{
+            return http_fake.HttpRequestFake(
+                {'organizations': [{
                     'displayName': 'google.com',
-                }]
-            })
+                }]})
         else:
             return http_fake.HttpRequestFake({})
 
@@ -54,10 +53,8 @@ class ProjectsFake(object):
                         http_fake.HttpResponseFake(409),
                         b'Requested entity already exists'))
         self.projects.append(body)
-        return http_fake.HttpRequestFake({
-            'name':
-            'operations/cp.7730969938063130608'
-        })
+        return http_fake.HttpRequestFake(
+            {'name': 'operations/cp.7730969938063130608'})
 
     def get(self, projectId):
         for p in self.projects:
@@ -101,15 +98,14 @@ class ProjectClientTestCase(absltest.TestCase):
         service_fake = ServiceFake(is_google=True)
         project_client = project.ProjectClient(service_fake)
         project_client.create_project('fn123', 'Friendly Name')
-        self.assertEqual(service_fake.projects_fake.projects,
-                         [{
-                             'name': 'Friendly Name',
-                             'projectId': 'fn123',
-                             'parent': {
-                                 'id': project._DEFAULT_GOOGLE_FOLDER_ID,
-                                 'type': 'folder'
-                             }
-                         }])
+        self.assertEqual(service_fake.projects_fake.projects, [{
+            'name': 'Friendly Name',
+            'projectId': 'fn123',
+            'parent': {
+                'id': project._DEFAULT_GOOGLE_FOLDER_ID,
+                'type': 'folder'
+            }
+        }])
 
     def test_create_project_exists(self):
         self._project_client.create_project('fn123', 'Friendly Name')

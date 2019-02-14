@@ -55,10 +55,8 @@ class ClustersFake(object):
                 self.clusters_to_get_count[name] = [0, 1]
             else:
                 self.clusters_to_get_count[name] = [0, 2]
-        return http_fake.HttpRequestFake({
-            'name':
-            'operations/cp.7730969938063130608'
-        })
+        return http_fake.HttpRequestFake(
+            {'name': 'operations/cp.7730969938063130608'})
 
     def get(self, projectId, zone, clusterId):
         ca = base64.standard_b64encode(FAKE_CA).decode('utf-8')
@@ -91,9 +89,8 @@ class LocationsFake(object):
 
     def getServerConfig(self, name):
         del name
-        return http_fake.HttpRequestFake({
-            'defaultClusterVersion': '1.9.7-gke.6'
-        })
+        return http_fake.HttpRequestFake(
+            {'defaultClusterVersion': '1.9.7-gke.6'})
 
 
 class ProjectsFake(object):

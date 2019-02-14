@@ -41,10 +41,8 @@ class ServicesFake(object):
 
     def enable(self, name):
         self.service_to_get_count.setdefault(name, 0)
-        return http_fake.HttpRequestFake({
-            'name':
-            'operations/cp.7730969938063130608'
-        })
+        return http_fake.HttpRequestFake(
+            {'name': 'operations/cp.7730969938063130608'})
 
     def get(self, name):
         self.service_to_get_count[name] = (

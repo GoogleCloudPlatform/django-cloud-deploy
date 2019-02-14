@@ -773,8 +773,8 @@ class BillingPrompt(Prompt):
         billing_client = billing.BillingClient.from_credentials(credentials)
 
         if ('project_creation_mode' in arguments and
-            (arguments['project_creation_mode'] == workflow.ProjectCreationMode.
-             MUST_EXIST)):
+            (arguments['project_creation_mode'] ==
+             workflow.ProjectCreationMode.MUST_EXIST)):
 
             assert 'project_id' in arguments, 'project_id must be set'
             project_id = arguments['project_id']
