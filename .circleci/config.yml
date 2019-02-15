@@ -89,6 +89,18 @@ jobs:
             nox -f django_cloud_deploy/nox.py -s e2e_test
           # Timeout of e2e test is set to 30 minutes
           no_output_timeout: 30m
+  Coverage Report:
+    docker:
+      - image: googleapis/nox:0.18.2
+
+    steps:
+      - checkout
+      - run:
+          name: Run Test
+          command: |
+            nox -f django_cloud_deploy/nox.py -s coverage
+          # Timeout of coverage report is set to 10 minutes
+          no_output_timeout: 10m
 
 workflows:
   version: 2

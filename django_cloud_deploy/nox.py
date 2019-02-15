@@ -16,11 +16,13 @@ import nox
 
 PACKAGES = [
     'pytest==3.6.3',
+    'pytest-cov==2.6.1',
     'pytest-forked==0.2',
     'pytest-timeout==1.3.2',
     'oauth2client==4.1.2',
     'absl-py==0.3.0',
     'django==2.1.5',
+    'coverage==4.5.2',
     'backoff==1.8.0',
     'jinja2==2.10',
     'google-cloud-resource-manager==0.28.1',
@@ -50,7 +52,14 @@ def unit_test(session, python_version):
     # Run unit tests against all supported versions of Python.
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('py.test', 'tests/unit', '--timeout=60')
+    session.run('py.test',
+                '--cov-config',
+                '.coveragerc',
+                '--cov=django_cloud_deploy',
+                '--cov-append',
+                '--cov-report=',
+                'tests/unit',
+                '--timeout=60')
 
 
 @nox.session
@@ -82,8 +91,15 @@ def integration_test(session, python_version):
 
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('py.test', 'tests/integration', '--forked', '--timeout=1800')
-
+    session.run('py.test',
+                '--cov-config',
+                '.coveragerc',
+                '--cov=django_cloud_deploy',
+                '--cov-append',
+                '--cov-report=',
+                'tests/integration',
+                '--forked',
+                '--timeout=1800')
 
 @nox.session
 @nox.parametrize('python_version', ['3.5'])
@@ -92,4 +108,17 @@ def e2e_test(session, python_version):
 
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('py.test', 'tests/e2e', '--timeout=1800')
+    session.run('py.test',
+                '--cov-config',
+                '.coveragerc',
+                '--cov=django_cloud_deploy',
+                '--cov-append',
+                '--cov-report=',
+                'tests/e2e',
+                '--timeout=1800')
+
+@nox.session
+def coverage(session):
+    """Coverage analysis."""
+    session.run("coverage", "report")
+    session.run("coverage", "erase")
