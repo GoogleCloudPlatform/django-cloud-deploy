@@ -99,8 +99,6 @@ jobs:
           name: Run Test
           command: |
             nox -f django_cloud_deploy/nox.py -s coverage
-          # Timeout of coverage report is set to 10 minutes
-          no_output_timeout: 10m
 
 workflows:
   version: 2
@@ -110,3 +108,4 @@ workflows:
       - Lint
       - Integration Test
       - E2E Test
+      - Coverage Report
