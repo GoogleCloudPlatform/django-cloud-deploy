@@ -41,7 +41,7 @@ class CrashHandlingTest(unittest.TestCase):
 
     def parse_body_and_title_from_url(self, url):
         params = parse.parse_qs(parse.urlparse(url).query)
-        return params['title'][0], params['body'][0]
+        return params['title'][0], params['body'][0], params['labels'][0]
 
     @mock.patch('webbrowser.open')
     def test_create_issue(self, mock_open_browser, *unused_mocks):
@@ -51,9 +51,10 @@ class CrashHandlingTest(unittest.TestCase):
         crash_handling.handle_crash(error, 'command_fake', test_io)
         self.assertEqual(mock_open_browser.call_count, 1)
         url = mock_open_browser.call_args[0][0]
-        title, body = self.parse_body_and_title_from_url(url)
+        title, body, label = self.parse_body_and_title_from_url(url)
         self.assert_valid_issue_title(title, error)
         self.assert_valid_issue_body(body)
+        self.assertEqual(label, crash_handling._ISSUE_LABEL)
         self.assertIn(type(error).__name__, title)
 
     @mock.patch('webbrowser.open')
