@@ -64,7 +64,7 @@ class WorkflowManager(object):
         if backend == 'gke':
             self._deploygke_workflow = _deploygke.DeploygkeWorkflow(credentials)
         else:
-            self._deploygae_workflow = _deploygae.DeploygaeWorkflow()
+            self._deploygae_workflow = _deploygae.DeploygaeWorkflow(credentials)
         self._enable_service_workflow = _enable_service.EnableServiceWorkflow(
             credentials)
         self._service_account_workflow = (

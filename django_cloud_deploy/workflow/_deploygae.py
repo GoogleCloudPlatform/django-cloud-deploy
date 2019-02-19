@@ -14,8 +14,13 @@
 """Workflow for deploying a Django app to GAE."""
 
 import os
+import shutil
+import subprocess
+import time
 
-import pexpect
+from googleapiclient import discovery
+
+from google.auth import credentials
 
 
 class DeployNewAppError(Exception):
@@ -24,6 +29,33 @@ class DeployNewAppError(Exception):
 
 class DeploygaeWorkflow(object):
     """Workflow to deploy Django app on GAE."""
+
+    def __init__(self, credentials: credentials.Credentials):
+        self._appengine_service = discovery.build(
+            'appengine', 'v1', credentials=credentials)
+
+    def _create_app(self, project_id: str, region: str):
+        """Synchronously create an App Engine application in the project."""
+        create_response = self._appengine_service.apps().create(
+            body={
+                'id': project_id,
+                'locationId': region
+            }).execute()
+
+        # The creation response will be reference to an on-going operation.
+        # Pool the operation until it is complete or returns an error. See:
+        # https://cloud.google.com/appengine/docs/admin-api/creating-an-application
+        operation_id = create_response['name'].split('/')[-1]
+        while True:
+            operation = self._appengine_service.apps().operations().get(
+                appsId=project_id, operationsId=operation_id).execute()
+            if 'error' in operation:
+                raise DeployNewAppError(
+                    'Failed to create App Engine app: {}'.format(
+                        operation['error']))
+            elif operation.get('done'):
+                break
+            time.sleep(2)
 
     def deploy_gae_app(self,
                        project_id: str,
@@ -46,27 +78,24 @@ class DeploygaeWorkflow(object):
             The url of the deployed Django app.
         """
 
+        if is_new:
+            self._create_app(project_id, region)
+
+        gcloud_path = shutil.which('gcloud')
+        assert gcloud_path, 'could not find gcloud'
+
         app_yaml_path = os.path.join(django_directory_path, 'app.yaml')
         project = '--project={}'.format(project_id)
-        args = ['app', 'deploy', app_yaml_path, project]
+
         # We need to grab all environment variables to pass to the subprocess
         env_vars = dict(os.environ)
-
-        # Set Env Variable used by Gcloud for User Agent String
         env_vars['CLOUDSDK_METRICS_ENVIRONMENT'] = 'django-cloud-deploy'
-        process = pexpect.spawn('gcloud', args, env=env_vars)
-        try:
-            if is_new:
-                index = process.expect(
-                    ['\[{}\]\s*{}'.format(i, region) for i in range(1, 10)])
-                process.sendline(str(index))
-            process.expect('Do you want to continue (Y/n)?')
-            process.sendline('Y')
-            process.expect('Deployed service', timeout=600)  # 10 Min Timeout
-        except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
-            raise DeployNewAppError(
-                ('Error occured when trying to deploy GAE application. Output '
-                 'of process: \n{}').format(process.before))
-        finally:
-            process.close()
+        gcloud_result = subprocess.run(
+            [gcloud_path, '-q', project, 'app', 'deploy', app_yaml_path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            env=env_vars)
+        if gcloud_result.returncode != 0:
+            raise DeployNewAppError(gcloud_result.stderr)
         return 'https://{}.appspot.com/'.format(project_id)
