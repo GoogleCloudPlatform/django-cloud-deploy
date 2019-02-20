@@ -60,7 +60,7 @@ class StaticContentServeWorkflow(object):
 
         self._static_content_serve_client.create_bucket(project_id, bucket_name)
         self._static_content_serve_client.upload_content(
-            bucket_name, secrec_content_dir, folder_root='secrets')
+            bucket_name, secrec_content_dir, gcs_folder_root='secrets')
 
     def update_static_content(self, bucket_name: str, static_content_dir: str):
         """Update GCS bucket after user modified the Django app.
