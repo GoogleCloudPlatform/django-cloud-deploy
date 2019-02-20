@@ -233,11 +233,11 @@ class StaticContentServeClient(object):
                 gcs_folder_root = gcs_folder_root or self.GCS_ROOT
                 # Path of the file in the GCS bucket. Always use POSIX paths
                 # to avoid backslashes in names when running on Windows.
-                gcs_relative_path = pathlib.PosixPath(
+                gcs_relative_path = pathlib.PurePosixPath(
                     directory_relative_path.replace('\\', '/'))
                 gcs_object_path = (
-                    pathlib.PosixPath(gcs_folder_root) / gcs_relative_path /
-                    pathlib.PosixPath(filename))
+                    pathlib.PurePosixPath(gcs_folder_root) / gcs_relative_path /
+                    pathlib.PurePosixPath(filename))
 
                 # Local absolute path of the file
                 local_file_path = os.path.join(directory_absolute_path,
