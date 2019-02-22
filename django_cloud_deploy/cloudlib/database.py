@@ -312,6 +312,14 @@ class DatabaseClient(object):
             # This can only be imported after django.setup() is called
             try:
                 from django.contrib.auth.models import User
+
+                # Check whether the super user we want to create exist or not
+                # If a superuser with the same name already exist, we will skip
+                # creation
+                users = User.objects.filter(username=superuser_name)
+                for user in users:
+                    if user.is_superuser:
+                        return
                 User.objects.create_superuser(
                     username=superuser_name,
                     email=superuser_email,
