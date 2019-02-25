@@ -7,6 +7,7 @@ __pycache__
 *.pyd
 .Python
 env
+venv
 pip-log.txt
 pip-delete-this-directory.txt
 .tox
@@ -17,3 +18,5 @@ coverage.xml
 *,cover
 *.log
 .git
+static
+staticfiles

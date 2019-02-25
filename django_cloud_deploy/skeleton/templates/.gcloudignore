@@ -15,3 +15,15 @@
 
 # Python pycache:
 __pycache__/
+
+# Static files
+static/
+staticfiles/
+
+# Virtual environment
+venv/
+env/
+
+# Docker files
+.dockerignore
+Dockerfile
