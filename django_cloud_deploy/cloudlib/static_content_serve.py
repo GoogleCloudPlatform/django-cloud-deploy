@@ -15,6 +15,7 @@
 
 import os
 import pathlib
+from typing import Any, Dict
 
 from django.conf import settings
 from django.core import management
@@ -66,6 +67,46 @@ class StaticContentServeClient(object):
                 'Unexpected response listing buckets in project "{}"'
                 ': {}'.format(project_id, response))
         return any(item['name'] == bucket_name for item in response['items'])
+
+    def _generate_updated_iam_policy(self, policy: Dict[str, Any], member: str,
+                                     role: str) -> Dict[str, Any]:
+        """Generate a new bindings object after updating iam policy.
+
+        Args:
+            policy: An object specifies what roles each account has. For
+                example,
+                    {
+                        "bindings": [
+                            {
+                            "role": "roles/roles1",
+                            "members": [
+                                "account1",
+                            ]
+                        ]
+                    }
+            member: The account name.
+            role: What role to add for this account.
+
+        Returns:
+            The updated policy object.
+        """
+
+        # Avoid changing the input policy.
+        policy = dict(policy)
+
+        # The given member might already have the provided role
+        for binding in policy['bindings']:
+            if binding['role'] == role:
+                if member not in binding['members']:
+                    binding['members'].append(member)
+                return policy
+
+        new_bindings = {
+            'members': [member],
+            'role': role,
+        }
+        policy['bindings'].append(new_bindings)
+        return policy
 
     def create_bucket(self, project_id: str, bucket_name: str):
         """Create a Google Cloud Storage Bucket on the given project.
@@ -143,15 +184,11 @@ class StaticContentServeClient(object):
                     'Unexpected error getting iam policy of bucket "{}"'.format(
                         bucket_name)) from e
 
-        bindings = response['bindings']
-        new_binding = {
-            'role': 'roles/storage.objectViewer',
-            'members': ['allUsers']
-        }
-        bindings.append(new_binding)
-        body = {'bindings': bindings}
+        new_policy = self._generate_updated_iam_policy(
+            response, 'allUsers', 'roles/storage.objectViewer')
+
         request = self._storage_service.buckets().setIamPolicy(
-            bucket=bucket_name, body=body)
+            bucket=bucket_name, body=new_policy)
         try:
             response = request.execute()
             if 'bindings' not in response:
