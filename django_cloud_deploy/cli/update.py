@@ -41,14 +41,6 @@ def add_arguments(parser):
         help=('The file path of the credentials file to use for update. '
               'Test only, do not use.'))
 
-    parser.add_argument(
-        '--backend',
-        dest='backend',
-        type=str,
-        default='gae',
-        choices=['gae', 'gke'],
-        help='The desired backend to update the Django App on.')
-
 
 def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
 
@@ -100,11 +92,9 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
                 console, step, actual_parameters)
 
     workflow_manager = workflow.WorkflowManager(
-        actual_parameters['credentials'], args.backend)
-    workflow_manager.update_project(
-        actual_parameters['django_directory_path'],
-        actual_parameters['database_password'],
-        backend=args.backend)
+        actual_parameters['credentials'])
+    workflow_manager.update_project(actual_parameters['django_directory_path'],
+                                    actual_parameters['database_password'])
 
 
 if __name__ == '__main__':

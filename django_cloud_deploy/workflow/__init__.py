@@ -25,9 +25,8 @@ from django_cloud_deploy.cli import io
 from django_cloud_deploy.cloudlib import billing
 from django_cloud_deploy.skeleton import source_generator
 from django_cloud_deploy.workflow import _database
-from django_cloud_deploy.workflow import _deploygae
-from django_cloud_deploy.workflow import _deploygke
 from django_cloud_deploy.workflow import _enable_service
+from django_cloud_deploy.workflow import deploy_workflow
 from django_cloud_deploy.workflow import _project
 from django_cloud_deploy.workflow import _service_account
 from django_cloud_deploy.workflow import _static_content_serve
@@ -55,16 +54,13 @@ class WorkflowManager(object):
     _TOTAL_NEW_STEPS = 8
     _TOTAL_UPDATE_STEPS = 3
 
-    def __init__(self, credentials: credentials.Credentials, backend: str):
+    def __init__(self, credentials: credentials.Credentials):
         self._source_generator = source_generator.DjangoSourceFileGenerator()
         self._billing_client = billing.BillingClient.from_credentials(
             credentials)
         self._project_workflow = _project.ProjectWorkflow(credentials)
         self._database_workflow = _database.DatabaseWorkflow(credentials)
-        if backend == 'gke':
-            self._deploygke_workflow = _deploygke.DeploygkeWorkflow(credentials)
-        else:
-            self._deploygae_workflow = _deploygae.DeploygaeWorkflow(credentials)
+        self.deploy_workflow = deploy_workflow.DeployWorkflow(credentials)
         self._enable_service_workflow = _enable_service.EnableServiceWorkflow(
             credentials)
         self._service_account_workflow = (
@@ -229,21 +225,22 @@ class WorkflowManager(object):
         if backend == 'gke':
             with self._console_io.progressbar(
                     1200, '[8/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
-                app_url = self._deploygke_workflow.deploy_new_app_sync(
+                app_url = self.deploy_workflow.deploy_gke_app(
                     project_id, cluster_name, django_directory_path,
                     django_project_name, image_name, secrets)
         else:
             self._upload_secrets_to_bucket(project_id, secrets)
             with self._console_io.progressbar(
                     300, '[8/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
-                app_url = self._deploygae_workflow.deploy_gae_app(
+                app_url = self.deploy_workflow.deploy_gae_app(
                     project_id, django_directory_path)
 
         # Create configuration file to save information needed in "update"
         # command.
         attributes = {
             'project_id': project_id,
-            'django_project_name': django_project_name
+            'django_project_name': django_project_name,
+            'backend': backend
         }
         self._save_config(django_directory_path, attributes)
         self._console_io.tell('Your app is running at {}.'.format(app_url))
@@ -257,9 +254,8 @@ class WorkflowManager(object):
                        database_password: str,
                        cloud_sql_proxy_path: str = 'cloud_sql_proxy',
                        region: str = 'us-west1',
-                       backend: str = 'gke',
                        open_browser: bool = True):
-        """Workflow of updating a deployed Django app on GKE.
+        """Workflow of updating a deployed Django app.
 
         Args:
             django_directory_path: The location where the generated Django
@@ -267,7 +263,6 @@ class WorkflowManager(object):
             database_password: The password for the default database user.
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             region: Where the service is hosted.
-            backend: The desired backend to deploy the Django App on.
             open_browser: Whether we open the browser to show the deployed app
                 at the end.
 
@@ -279,8 +274,9 @@ class WorkflowManager(object):
         config_obj = config.Configuration(django_directory_path)
         project_id = config_obj.get('project_id')
         django_project_name = config_obj.get('django_project_name')
+        backend = config_obj.get('backend')
         cloud_sql_proxy_port = portpicker.pick_unused_port()
-        if not project_id or not django_project_name:
+        if not project_id or not backend or not django_project_name:
             raise InvalidConfigError(
                 'Configuration file in [{}] does not contain enough '
                 'information to update a Django project.'.format(
@@ -319,11 +315,11 @@ class WorkflowManager(object):
                 180,
                 '[3/{}]: Update Deployment'.format(self._TOTAL_UPDATE_STEPS)):
             if backend == 'gke':
-                app_url = self._deploygke_workflow.update_app_sync(
+                app_url = self.deploy_workflow.update_gke_app(
                     project_id, cluster_name, django_directory_path,
                     django_project_name, image_name)
             else:
-                app_url = self._deploygae_workflow.deploy_gae_app(
+                app_url = self.deploy_workflow.deploy_gae_app(
                     project_id, django_directory_path, is_new=False)
         self._console_io.tell('Your app is running at {}.'.format(app_url))
         if open_browser:
