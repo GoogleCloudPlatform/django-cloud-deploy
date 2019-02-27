@@ -14,7 +14,6 @@
 """Create and deploy a new Django project on GKE."""
 
 import argparse
-import sys
 
 from django_cloud_deploy import tool_requirements
 from django_cloud_deploy import workflow
@@ -112,41 +111,9 @@ def add_arguments(parser):
 
 
 def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
-
     if not tool_requirements.check_and_handle_requirements(
             console, args.backend):
         return
-
-    prompt_order = [
-        'credentials',
-        'project_id',
-        'project_name',
-        'billing_account_name',
-        'database_password',
-        'django_directory_path',
-        'django_project_name',
-        'django_app_name',
-        'django_superuser_login',
-        'django_superuser_password',
-        'django_superuser_email',
-    ]
-
-    required_parameters_to_prompt = {
-        'credentials': prompt.CredentialsPrompt,
-        'project_id': prompt.ProjectIdPrompt,
-        'project_name': prompt.GoogleCloudProjectNamePrompt,
-        'billing_account_name': prompt.BillingPrompt,
-        'database_password': prompt.PostgresPasswordPrompt,
-        'django_directory_path': prompt.DjangoFilesystemPath,
-        'django_project_name': prompt.DjangoProjectNamePrompt,
-        'django_app_name': prompt.DjangoAppNamePrompt,
-        'django_superuser_login': prompt.DjangoSuperuserLoginPrompt,
-        'django_superuser_password': prompt.DjangoSuperuserPasswordPrompt,
-        'django_superuser_email': prompt.DjangoSuperuserEmailPrompt
-    }
-
-    # Parameters that were *not* provided as command flags.
-    remaining_parameters_to_prompt = {}
 
     actual_parameters = {
         'project_creation_mode': workflow.ProjectCreationMode.CREATE,
@@ -155,41 +122,10 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
         'services': getattr(args, 'services', None)
     }
 
-    for parameter_name, prompter in required_parameters_to_prompt.items():
-        value = getattr(args, parameter_name, None)
-        if value is not None:
-            try:
-                prompter.validate(value)
-            except ValueError as e:
-                print(e, file=sys.stderr)
-                sys.exit(1)
-            actual_parameters[parameter_name] = value
-        else:
-            remaining_parameters_to_prompt[parameter_name] = prompter
-
-    if args.use_existing_project:
-        actual_parameters['project_creation_mode'] = (
-            workflow.ProjectCreationMode.MUST_EXIST)
-        remaining_parameters_to_prompt['project_name'] = (
-            prompt.GoogleCloudProjectNamePrompt)
-        remaining_parameters_to_prompt['project_id'] = (
-            prompt.ExistingProjectIdPrompt)
-
-    if remaining_parameters_to_prompt:
-        num_steps = len(remaining_parameters_to_prompt)
-        console.tell(
-            '<b>{} steps to setup your new project</b>'.format(num_steps))
-        console.tell()
-        parameter_and_prompt = sorted(
-            remaining_parameters_to_prompt.items(),
-            key=lambda i: prompt_order.index(i[0]))
-
-        for step, (parameter_name, prompter) in enumerate(parameter_and_prompt):
-            step = '<b>[{}/{}]</b>'.format(step + 1, num_steps)
-            actual_parameters[parameter_name] = prompter.prompt(
-                console, step, actual_parameters,
-                actual_parameters.get('credentials', None))
-
+    prompt_args = {**vars(args), **actual_parameters}
+    root_prompt = prompt.RootPrompt()
+    actual_parameters = root_prompt.prompt(prompt.Command.NEW, console,
+                                           prompt_args)
     workflow_manager = workflow.WorkflowManager(
         actual_parameters['credentials'])
 
@@ -220,5 +156,5 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='')
     add_arguments(parser)
-    args = parser.parse_args()
-    main(args)
+    arguments = parser.parse_args()
+    main(arguments)

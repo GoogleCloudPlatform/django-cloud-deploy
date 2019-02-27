@@ -155,6 +155,7 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUpTest):
             # Test update command
             test_io = io.TestIO()
             test_io.password_answers.append(fake_password)  # database password
+            test_io.password_answers.append(fake_password)  # Confirm password
             test_io.answers.append(self.project_dir)  # django_directory_path
 
             view_file_path = os.path.join(self.project_dir, 'home', 'views.py')

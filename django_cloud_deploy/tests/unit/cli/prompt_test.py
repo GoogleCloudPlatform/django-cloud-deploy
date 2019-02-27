@@ -13,7 +13,6 @@
 # limitations under the License.
 """Tests for django_cloud_deploy.cli.prompt."""
 
-import random
 import tempfile
 from unittest import mock
 
@@ -23,6 +22,8 @@ from absl.testing import parameterized
 from django_cloud_deploy import workflow
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import prompt
+from django_cloud_deploy.cloudlib import project
+from django_cloud_deploy.cloudlib import billing
 
 from google.auth import credentials
 
@@ -42,14 +43,20 @@ _FAKE_PROJECT_RESPONSE = {
 class GoogleCloudProjectNamePromptTest(absltest.TestCase):
     """Tests for prompt.GoogleCloudProjectNamePrompt."""
 
-    def setUp(self):
-        self.credentials = mock.Mock(credentials.Credentials, authSpec=True)
+    @classmethod
+    def setUpClass(cls):
+        creds = mock.Mock(credentials.Credentials, authSpec=True)
+        project_client = project.ProjectClient.from_credentials(creds)
+
+        cls.google_project_name_prompt = prompt.GoogleProjectName(
+            project_client)
 
     def test_prompt(self):
         test_io = io.TestIO()
 
         test_io.answers.append('My Project')
-        name = prompt.GoogleCloudProjectNamePrompt.prompt(test_io, '[1/2]', {})
+        args = self.google_project_name_prompt.prompt(test_io, '[1/2]', {})
+        name = args['project_name']
         self.assertEqual(name, 'My Project')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -57,7 +64,8 @@ class GoogleCloudProjectNamePromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        name = prompt.GoogleCloudProjectNamePrompt.prompt(test_io, '[1/2]', {})
+        args = self.google_project_name_prompt.prompt(test_io, '[1/2]', {})
+        name = args['project_name']
         self.assertEqual(name, 'Django Project')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -66,16 +74,10 @@ class GoogleCloudProjectNamePromptTest(absltest.TestCase):
 
         test_io.answers.append('S')
         test_io.answers.append('Long Enough')
-        name = prompt.GoogleCloudProjectNamePrompt.prompt(test_io, '[1/2]', {})
+        args = self.google_project_name_prompt.prompt(test_io, '[1/2]', {})
+        name = args['project_name']
         self.assertEqual(name, 'Long Enough')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
-
-    def test_validate_success(self):
-        prompt.GoogleCloudProjectNamePrompt.validate('My Project')
-
-    def test_validate_short(self):
-        with self.assertRaisesRegex(ValueError, 'XXX'):
-            prompt.GoogleCloudProjectNamePrompt.validate('XXX')
 
     @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
                 'get_project',
@@ -87,19 +89,24 @@ class GoogleCloudProjectNamePromptTest(absltest.TestCase):
             'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
             'project_id': 'project-abc'
         }
-        name = prompt.GoogleCloudProjectNamePrompt.prompt(
-            test_io, '[1/2]', args, self.credentials)
+        args = self.google_project_name_prompt.prompt(test_io, '[1/2]', args)
+        name = args['project_name']
         self.assertEqual(name, _FAKE_PROJECT_RESPONSE['name'])
 
 
 class DjangoProjectNamePromptTest(absltest.TestCase):
     """Tests for prompt.DjangoProjectNamePrompt."""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.djang_project_name_prompt = prompt.DjangoProjectNamePrompt()
+
     def test_prompt(self):
         test_io = io.TestIO()
 
         test_io.answers.append('djangoproject')
-        name = prompt.DjangoProjectNamePrompt.prompt(test_io, '[1/2]', {})
+        args = self.djang_project_name_prompt.prompt(test_io, '[1/2]', {})
+        name = args['django_project_name']
         self.assertEqual(name, 'djangoproject')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -107,7 +114,8 @@ class DjangoProjectNamePromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        name = prompt.DjangoProjectNamePrompt.prompt(test_io, '[1/2]', {})
+        args = self.djang_project_name_prompt.prompt(test_io, '[1/2]', {})
+        name = args['django_project_name']
         self.assertEqual(name, 'mysite')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -116,26 +124,25 @@ class DjangoProjectNamePromptTest(absltest.TestCase):
 
         test_io.answers.append('5')
         test_io.answers.append('djangoproject')
-        name = prompt.DjangoProjectNamePrompt.prompt(test_io, '[1/2]', {})
+        args = self.djang_project_name_prompt.prompt(test_io, '[1/2]', {})
+        name = args['django_project_name']
         self.assertEqual(name, 'djangoproject')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
-
-    def test_validate_success(self):
-        prompt.DjangoProjectNamePrompt.validate('mysite5')
-
-    def test_validate_non_identifier(self):
-        with self.assertRaisesRegex(ValueError, '5'):
-            prompt.DjangoProjectNamePrompt.validate('5')
 
 
 class DjangoAppNamePromptTest(absltest.TestCase):
     """Tests for prompt.DjangoAppNamePrompt."""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.django_app_name_prompt = prompt.DjangoAppNamePrompt()
+
     def test_prompt(self):
         test_io = io.TestIO()
 
         test_io.answers.append('djangoapp')
-        name = prompt.DjangoAppNamePrompt.prompt(test_io, '[1/2]', {})
+        args = self.django_app_name_prompt.prompt(test_io, '[1/2]', {})
+        name = args['django_app_name']
         self.assertEqual(name, 'djangoapp')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -143,7 +150,8 @@ class DjangoAppNamePromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        name = prompt.DjangoAppNamePrompt.prompt(test_io, '[1/2]', {})
+        args = self.django_app_name_prompt.prompt(test_io, '[1/2]', {})
+        name = args['django_app_name']
         self.assertEqual(name, 'home')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -152,26 +160,25 @@ class DjangoAppNamePromptTest(absltest.TestCase):
 
         test_io.answers.append('5')
         test_io.answers.append('djangoapp')
-        name = prompt.DjangoAppNamePrompt.prompt(test_io, '[1/2]', {})
+        args = self.django_app_name_prompt.prompt(test_io, '[1/2]', {})
+        name = args['django_app_name']
         self.assertEqual(name, 'djangoapp')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
-
-    def test_validate_success(self):
-        prompt.DjangoAppNamePrompt.validate('myapp7')
-
-    def test_validate_non_identifier(self):
-        with self.assertRaisesRegex(ValueError, '5'):
-            prompt.DjangoAppNamePrompt.validate('5')
 
 
 class DjangoSuperuserLoginPromptTest(absltest.TestCase):
     """Tests for prompt.DjangoSuperuserLoginPrompt."""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.django_superuser_prompt = prompt.DjangoSuperuserLoginPrompt()
+
     def test_prompt(self):
         test_io = io.TestIO()
 
         test_io.answers.append('myusername')
-        name = prompt.DjangoSuperuserLoginPrompt.prompt(test_io, '[1/2]', {})
+        args = self.django_superuser_prompt.prompt(test_io, '[1/2]', {})
+        name = args['django_superuser_login']
         self.assertEqual(name, 'myusername')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -179,7 +186,8 @@ class DjangoSuperuserLoginPromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        name = prompt.DjangoSuperuserLoginPrompt.prompt(test_io, '[1/2]', {})
+        args = self.django_superuser_prompt.prompt(test_io, '[1/2]', {})
+        name = args['django_superuser_login']
         self.assertEqual(name, 'admin')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -188,26 +196,25 @@ class DjangoSuperuserLoginPromptTest(absltest.TestCase):
 
         test_io.answers.append('My Name')
         test_io.answers.append('myname')
-        name = prompt.DjangoSuperuserLoginPrompt.prompt(test_io, '[1/2]', {})
+        args = self.django_superuser_prompt.prompt(test_io, '[1/2]', {})
+        name = args['django_superuser_login']
         self.assertEqual(name, 'myname')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
-
-    def test_validate_success(self):
-        prompt.DjangoSuperuserLoginPrompt.validate('myapp7')
-
-    def test_validate_non_identifier(self):
-        with self.assertRaisesRegex(ValueError, 'My Name'):
-            prompt.DjangoSuperuserLoginPrompt.validate('My Name')
 
 
 class DjangoSuperuserEmailPromptTest(absltest.TestCase):
     """Tests for prompt.DjangoSuperuserEmailPrompt."""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.django_superuser_email_prompt = prompt.DjangoSuperuserEmailPrompt()
+
     def test_prompt(self):
         test_io = io.TestIO()
 
         test_io.answers.append('admin@example.com')
-        email = prompt.DjangoSuperuserEmailPrompt.prompt(test_io, '[1/2]', {})
+        args = self.django_superuser_email_prompt.prompt(test_io, '[1/2]', {})
+        email = args['django_superuser_email']
         self.assertEqual(email, 'admin@example.com')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -215,7 +222,8 @@ class DjangoSuperuserEmailPromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        email = prompt.DjangoSuperuserEmailPrompt.prompt(test_io, '[1/2]', {})
+        args = self.django_superuser_email_prompt.prompt(test_io, '[1/2]', {})
+        email = args['django_superuser_email']
         self.assertEqual(email, 'test@example.com')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -224,55 +232,67 @@ class DjangoSuperuserEmailPromptTest(absltest.TestCase):
 
         test_io.answers.append('Not An Email Address')
         test_io.answers.append('admin@example.com')
-        email = prompt.DjangoSuperuserEmailPrompt.prompt(test_io, '[1/2]', {})
+        args = self.django_superuser_email_prompt.prompt(test_io, '[1/2]', {})
+        email = args['django_superuser_email']
         self.assertEqual(email, 'admin@example.com')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
-
-    def test_validate_success(self):
-        prompt.DjangoSuperuserEmailPrompt.validate('admin@example.com')
-
-    def test_validate_non_identifier(self):
-        with self.assertRaisesRegex(ValueError, 'Not An Email Address'):
-            prompt.DjangoSuperuserEmailPrompt.validate('Not An Email Address')
 
 
 class ProjectIdPromptTest(parameterized.TestCase):
     """Tests for prompt.ProjectIdPrompt."""
 
-    @parameterized.parameters(''.join(
-        chr(random.randint(0, 256))
-        for _ in range(random.randint(1, 60)))
-                              for _ in range(1000))
-    def test_generates_valid_project_ids(self, project_name):
-        test_io = io.TestIO()
-        test_io.answers.append('')
-        project_id = prompt.ProjectIdPrompt._generate_default_project_id(
-            project_name)
-        prompt.ProjectIdPrompt.validate(project_id)
+    @classmethod
+    def setUpClass(cls):
+        creds = mock.Mock(credentials.Credentials, authSpec=True)
+        project_client = project.ProjectClient.from_credentials(creds)
+        cls.project_id_prompt = prompt.GoogleProjectId(project_client)
 
-    def test_prompt(self):
+    def test_new_prompt(self):
         test_io = io.TestIO()
-
+        args = {
+            'project_creation_mode': workflow.ProjectCreationMode.CREATE,
+        }
         test_io.answers.append('projectid-123')
-        project_id = prompt.ProjectIdPrompt.prompt(test_io, '[1/2]', {})
+        args = self.project_id_prompt.prompt(test_io, '[1/2]', args)
+        project_id = args['project_id']
+
         self.assertEqual(project_id, 'projectid-123')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
     def test_prompt_default(self):
         test_io = io.TestIO()
-
+        args = {
+            'project_creation_mode': workflow.ProjectCreationMode.CREATE,
+        }
         test_io.answers.append('')
-        project_id = prompt.ProjectIdPrompt.prompt(test_io, '[1/2]', {})
+        args = self.project_id_prompt.prompt(test_io, '[1/2]', args)
+        project_id = args['project_id']
         self.assertRegex(project_id, r'django-\d{6}')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'project_exists',
+                return_value=True)
+    def test_existing_prompt(self, unused_mock):
+        test_io = io.TestIO()
+        args = {
+            'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
+            'project_id': 'projectid-123'
+        }
+        test_io.answers.append('projectid-123')
+        args = self.project_id_prompt.prompt(test_io, '[1/2]', args)
+        project_id = args['project_id']
+
+        self.assertEqual(project_id, 'projectid-123')
+        self.assertEqual(len(test_io.answers), 1)  # Answer is not used.
 
     def test_prompt_default_project_name(self):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        project_id = prompt.ProjectIdPrompt.prompt(
-            test_io, '[1/2]', {'project_name': 'My Project'})
-        self.assertRegex(project_id, r'my-project-\d{6}')
+        args = self.project_id_prompt.prompt(test_io, '[1/2]', {})
+        project_id = args['project_id']
+        self.assertRegex(project_id, r'django-\d{6}')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
     def test_prompt_bad_id(self):
@@ -280,7 +300,8 @@ class ProjectIdPromptTest(parameterized.TestCase):
 
         test_io.answers.append('2short')
         test_io.answers.append('long-enough')
-        project_id = prompt.ProjectIdPrompt.prompt(test_io, '[1/2]', {})
+        args = self.project_id_prompt.prompt(test_io, '[1/2]', {})
+        project_id = args['project_id']
         self.assertEqual(project_id, 'long-enough')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -288,11 +309,16 @@ class ProjectIdPromptTest(parameterized.TestCase):
 class DjangoFilesystemPathTest(parameterized.TestCase):
     """Tests for prompt.DjangoFilesystemPath."""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.file_system_prompt = prompt.DjangoFilesystemPath()
+
     def test_prompt(self):
         test_io = io.TestIO()
 
         test_io.answers.append('/tmp/foo')
-        path = prompt.DjangoFilesystemPath.prompt(test_io, '[1/2]', {})
+        args = self.file_system_prompt.prompt(test_io, '[1/2]', {})
+        path = args['django_directory_path']
         self.assertEqual(path, '/tmp/foo')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -303,7 +329,8 @@ class DjangoFilesystemPathTest(parameterized.TestCase):
         with tempfile.NamedTemporaryFile() as f:
             test_io.answers.append(f.name)
             test_io.answers.append(yes_replace_character)
-            path = prompt.DjangoFilesystemPath.prompt(test_io, '[1/2]', {})
+            args = self.file_system_prompt.prompt(test_io, '[1/2]', {})
+            path = args['django_directory_path']
             self.assertEqual(path, f.name)
             self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -315,7 +342,8 @@ class DjangoFilesystemPathTest(parameterized.TestCase):
             test_io.answers.append(f.name)
             test_io.answers.append(no_replace_character)
             test_io.answers.append('/tmp/newname')
-            path = prompt.DjangoFilesystemPath.prompt(test_io, '[1/2]', {})
+            args = self.file_system_prompt.prompt(test_io, '[1/2]', {})
+            path = args['django_directory_path']
             self.assertEqual(path, '/tmp/newname')
             self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -324,15 +352,16 @@ class DjangoFilesystemPathTest(parameterized.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        prompt.DjangoFilesystemPath.prompt(test_io, '[1/2]', {})
+        self.file_system_prompt.prompt(test_io, '[1/2]', {})
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
     def test_prompt_default_project_name(self):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        path = prompt.DjangoFilesystemPath.prompt(
-            test_io, '[1/2]', {'project_name': 'Project Name'})
+        args = {'project_name': 'Project Name'}
+        args = self.file_system_prompt.prompt(test_io, '[1/2]', args)
+        path = args['django_directory_path']
         self.assertIn('project-name', path)
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -340,12 +369,17 @@ class DjangoFilesystemPathTest(parameterized.TestCase):
 class PostgresPasswordPromptTest(parameterized.TestCase):
     """Tests for prompt.PostgresPasswordPrompt."""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.postgres_password_prompt = prompt.PostgresPasswordPrompt()
+
     def test_prompt(self):
         test_io = io.TestIO()
 
         test_io.password_answers.append('mypass32')
         test_io.password_answers.append('mypass32')
-        password = prompt.PostgresPasswordPrompt.prompt(test_io, '[1/2]', {})
+        args = self.postgres_password_prompt.prompt(test_io, '[1/2]', {})
+        password = args['database_password']
         self.assertEqual(password, 'mypass32')
         self.assertEqual(len(test_io.password_answers), 0)  # All answers used.
 
@@ -356,7 +390,8 @@ class PostgresPasswordPromptTest(parameterized.TestCase):
         test_io.password_answers.append('mypass64')
         test_io.password_answers.append('secondtry2')
         test_io.password_answers.append('secondtry2')
-        password = prompt.PostgresPasswordPrompt.prompt(test_io, '[1/2]', {})
+        args = self.postgres_password_prompt.prompt(test_io, '[1/2]', {})
+        password = args['database_password']
         self.assertEqual(password, 'secondtry2')
         self.assertEqual(len(test_io.password_answers), 0)  # All answers used.
 
@@ -366,7 +401,8 @@ class PostgresPasswordPromptTest(parameterized.TestCase):
         test_io.password_answers.append(' ')
         test_io.password_answers.append('secondtry2')
         test_io.password_answers.append('secondtry2')
-        password = prompt.PostgresPasswordPrompt.prompt(test_io, '[1/2]', {})
+        args = self.postgres_password_prompt.prompt(test_io, '[1/2]', {})
+        password = args['database_password']
         self.assertEqual(password, 'secondtry2')
         self.assertEqual(len(test_io.password_answers), 0)  # All answers used.
 
@@ -374,13 +410,18 @@ class PostgresPasswordPromptTest(parameterized.TestCase):
 class DjangoSuperuserPasswordPromptTest(parameterized.TestCase):
     """Tests for prompt.DjangoSuperuserPasswordPrompt."""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.superuser_password_prompt = prompt.DjangoSuperuserPasswordPrompt()
+
     def test_prompt(self):
         test_io = io.TestIO()
 
         test_io.password_answers.append('mypass32')
         test_io.password_answers.append('mypass32')
-        password = prompt.DjangoSuperuserPasswordPrompt.prompt(
-            test_io, '[1/2]', {})
+        args = {'django_superuser_login': 'guido'}
+        args = self.superuser_password_prompt.prompt(test_io, '[1/2]', args)
+        password = args['django_superuser_password']
         self.assertEqual(password, 'mypass32')
         self.assertEqual(len(test_io.password_answers), 0)  # All answers used.
 
@@ -389,8 +430,9 @@ class DjangoSuperuserPasswordPromptTest(parameterized.TestCase):
 
         test_io.password_answers.append('mypass32')
         test_io.password_answers.append('mypass32')
-        password = prompt.DjangoSuperuserPasswordPrompt.prompt(
-            test_io, '[1/2]', {'django_superuser_login': 'guido'})
+        args = {'django_superuser_login': 'guido'}
+        args = self.superuser_password_prompt.prompt(test_io, '[1/2]', args)
+        password = args['django_superuser_password']
         self.assertIn('guido', ' '.join(c for (c, *a) in test_io.tell_calls))
         self.assertEqual(password, 'mypass32')
         self.assertEqual(len(test_io.password_answers), 0)  # All answers used.
@@ -402,8 +444,8 @@ class DjangoSuperuserPasswordPromptTest(parameterized.TestCase):
         test_io.password_answers.append('mypass64')
         test_io.password_answers.append('secondtry2')
         test_io.password_answers.append('secondtry2')
-        password = prompt.DjangoSuperuserPasswordPrompt.prompt(
-            test_io, '[1/2]', {})
+        args = self.superuser_password_prompt.prompt(test_io, '[1/2]', {})
+        password = args['django_superuser_password']
         self.assertEqual(password, 'secondtry2')
         self.assertEqual(len(test_io.password_answers), 0)  # All answers used.
 
@@ -413,8 +455,8 @@ class DjangoSuperuserPasswordPromptTest(parameterized.TestCase):
         test_io.password_answers.append(' ')
         test_io.password_answers.append('secondtry2')
         test_io.password_answers.append('secondtry2')
-        password = prompt.DjangoSuperuserPasswordPrompt.prompt(
-            test_io, '[1/2]', {})
+        args = self.superuser_password_prompt.prompt(test_io, '[1/2]', {})
+        password = args['django_superuser_password']
         self.assertEqual(password, 'secondtry2')
         self.assertEqual(len(test_io.password_answers), 0)  # All answers used.
 
@@ -459,8 +501,11 @@ _FAKE_NO_BILLING_INFO = {
 class BillingPromptTest(absltest.TestCase):
     """Tests for prompt.BillingPrompt."""
 
-    def setUp(self):
-        self.credentials = mock.Mock(credentials.Credentials, authSpec=True)
+    @classmethod
+    def setUpClass(cls):
+        creds = mock.Mock(credentials.Credentials, authSpec=True)
+        cls.billing_prompt = prompt.BillingPrompt(
+            billing.BillingClient.from_credentials(creds))
 
     @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
                  'list_billing_accounts'),
@@ -469,8 +514,12 @@ class BillingPromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('1')
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', {},
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(
+            test_io,
+            '[1/2]',
+            {},
+        )
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -484,8 +533,8 @@ class BillingPromptTest(absltest.TestCase):
             'project_id': 'project-abc'
         }
 
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', args,
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(test_io, '[1/2]', args)
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _FAKE_BILLING_INFO['billingAccountName'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -504,8 +553,8 @@ class BillingPromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('1')
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', args,
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(test_io, '[1/2]', args)
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -517,8 +566,8 @@ class BillingPromptTest(absltest.TestCase):
 
         test_io.answers.append('12345')
         test_io.answers.append('1')
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', {},
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(test_io, '[1/2]', {})
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -530,8 +579,8 @@ class BillingPromptTest(absltest.TestCase):
 
         test_io.answers.append('-12345')
         test_io.answers.append('1')
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', {},
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(test_io, '[1/2]', {})
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -543,8 +592,8 @@ class BillingPromptTest(absltest.TestCase):
 
         test_io.answers.append('a')
         test_io.answers.append('1')
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', {},
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(test_io, '[1/2]', {})
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -556,12 +605,12 @@ class BillingPromptTest(absltest.TestCase):
 
         test_io.answers.append('a')
         test_io.answers.append('1')
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', {},
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(test_io, '[1/2]', {})
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _SINGLE_FAKE_ACCOUNT[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
-        self.assertIn('enter "1" to use "Fake Account 1"',
-                      test_io.ask_prompts[-1])
+        error_msg = str(test_io.error_calls[0])
+        self.assertIn('Please enter a numeric value', error_msg)
 
     @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
                  'list_billing_accounts'),
@@ -571,11 +620,12 @@ class BillingPromptTest(absltest.TestCase):
 
         test_io.answers.append('a')
         test_io.answers.append('1')
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', {},
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(test_io, '[1/2]', {})
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _FAKE_BILLING_ACCOUNTS[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
-        self.assertIn('enter a value between 1 and 2', test_io.ask_prompts[-1])
+        error_msg = str(test_io.error_calls[0])
+        self.assertIn('Please enter a numeric value', error_msg)
 
     @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
                  'list_billing_accounts'),
@@ -587,8 +637,8 @@ class BillingPromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', {},
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(test_io, '[1/2]', {})
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name,
                          _FAKE_BILLING_ACCOUNTS_AFTER_CREATE[-1]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
@@ -601,8 +651,8 @@ class BillingPromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', {},
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(test_io, '[1/2]', {})
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _SINGLE_FAKE_ACCOUNT[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
@@ -615,24 +665,10 @@ class BillingPromptTest(absltest.TestCase):
         test_io = io.TestIO()
 
         test_io.answers.append('')
-        billing_name = prompt.BillingPrompt.prompt(test_io, '[1/2]', {},
-                                                   self.credentials)
+        args = self.billing_prompt.prompt(test_io, '[1/2]', {})
+        billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _SINGLE_FAKE_ACCOUNT[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
-
-    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
-                 'list_billing_accounts'),
-                return_value=_FAKE_BILLING_ACCOUNTS)
-    def test_validate_success(self, unused_mock):
-        prompt.BillingPrompt.validate(_FAKE_BILLING_ACCOUNTS[0]['name'],
-                                      self.credentials)
-
-    @mock.patch(('django_cloud_deploy.cloudlib.billing.BillingClient.'
-                 'list_billing_accounts'),
-                return_value=_FAKE_BILLING_ACCOUNTS)
-    def test_validate_fail(self, unused_mock):
-        with self.assertRaises(ValueError):
-            prompt.BillingPrompt.validate('fakeaccount', self.credentials)
 
 
 if __name__ == '__main__':
