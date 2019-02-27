@@ -1,4 +1,5 @@
 # [START django_app]
+service: {{ service_name }}
 runtime: python37
 entrypoint: gunicorn -b :$PORT --access-logfile - --error-logfile - {{ project_name }}.wsgi
 
