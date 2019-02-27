@@ -33,7 +33,7 @@ class DeploygaeWorkflow(object):
 
     def __init__(self, credentials: credentials.Credentials):
         self._appengine_service = discovery.build(
-            'appengine', 'v1', credentials=credentials)
+            'appengine', 'v1', credentials=credentials, cache_discovery=False)
 
     def _create_app(self, project_id: str, region: str):
         """Synchronously create an App Engine application in the project."""

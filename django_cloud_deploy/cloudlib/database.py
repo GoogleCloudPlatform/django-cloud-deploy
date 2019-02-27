@@ -47,7 +47,11 @@ class DatabaseClient(object):
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(
-            discovery.build('sqladmin', 'v1beta4', credentials=credentials))
+            discovery.build(
+                'sqladmin',
+                'v1beta4',
+                credentials=credentials,
+                cache_discovery=False))
 
     def create_instance_sync(self,
                              project_id: str,

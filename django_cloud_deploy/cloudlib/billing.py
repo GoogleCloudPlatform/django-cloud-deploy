@@ -32,7 +32,11 @@ class BillingClient(object):
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(
-            discovery.build('cloudbilling', 'v1', credentials=credentials))
+            discovery.build(
+                'cloudbilling',
+                'v1',
+                credentials=credentials,
+                cache_discovery=False))
 
     def check_billing_enabled(self, project_id: str) -> bool:
         """Check is billing enabled for the given project.

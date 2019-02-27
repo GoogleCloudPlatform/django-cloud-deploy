@@ -143,7 +143,10 @@ class ResourceCleanUpTest(BaseTest):
             yield
         finally:
             container_service = discovery.build(
-                'container', 'v1', credentials=self.credentials)
+                'container',
+                'v1',
+                credentials=self.credentials,
+                cache_discovery=False)
             request = container_service.projects().zones().clusters().delete(
                 projectId=self.project_id,
                 zone=self.zone,
@@ -183,7 +186,10 @@ class ResourceCleanUpTest(BaseTest):
             yield
         finally:
             storage_service = discovery.build(
-                'storage', 'v1', credentials=self.credentials)
+                'storage',
+                'v1',
+                credentials=self.credentials,
+                cache_discovery=False)
             self._delete_objects(bucket_name, storage_service)
             request = storage_service.buckets().delete(bucket=bucket_name)
             request.execute()
@@ -229,7 +235,10 @@ class ResourceCleanUpTest(BaseTest):
             yield
         finally:
             service_usage_service = discovery.build(
-                'serviceusage', 'v1', credentials=self.credentials)
+                'serviceusage',
+                'v1',
+                credentials=self.credentials,
+                cache_discovery=False)
             for service in services:
                 service_name = '/'.join(
                     ['projects', self.project_id, 'services', service['name']])
@@ -251,7 +260,10 @@ class ResourceCleanUpTest(BaseTest):
             yield
         finally:
             iam_service = discovery.build(
-                'iam', 'v1', credentials=self.credentials)
+                'iam',
+                'v1',
+                credentials=self.credentials,
+                cache_discovery=False)
             resource_name = 'projects/{}/serviceAccounts/{}'.format(
                 self.project_id, service_account_email)
             request = iam_service.projects().serviceAccounts().delete(
@@ -281,7 +293,10 @@ class ResourceCleanUpTest(BaseTest):
             yield
         finally:
             cloudresourcemanager_service = discovery.build(
-                'cloudresourcemanager', 'v1', credentials=self.credentials)
+                'cloudresourcemanager',
+                'v1',
+                credentials=self.credentials,
+                cache_discovery=False)
             request = cloudresourcemanager_service.projects().getIamPolicy(
                 resource=self.project_id)
             policy = request.execute()
@@ -313,7 +328,10 @@ class ResourceCleanUpTest(BaseTest):
             yield
         finally:
             sqladmin_service = discovery.build(
-                'sqladmin', 'v1beta4', credentials=self.credentials)
+                'sqladmin',
+                'v1beta4',
+                credentials=self.credentials,
+                cache_discovery=False)
             request = sqladmin_service.instances().delete(
                 instance=instance_name, project=self.project_id)
             request.execute()
@@ -334,7 +352,10 @@ class ResourceCleanUpTest(BaseTest):
             yield
         finally:
             sqladmin_service = discovery.build(
-                'sqladmin', 'v1beta4', credentials=self.credentials)
+                'sqladmin',
+                'v1beta4',
+                credentials=self.credentials,
+                cache_discovery=False)
             request = sqladmin_service.databases().delete(
                 database=database_name,
                 instance=instance_name,

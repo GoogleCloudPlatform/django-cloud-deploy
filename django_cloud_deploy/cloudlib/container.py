@@ -90,8 +90,11 @@ class ContainerClient(object):
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(
-            discovery.build('container', 'v1', credentials=credentials),
-            credentials)
+            discovery.build(
+                'container',
+                'v1',
+                credentials=credentials,
+                cache_discovery=False), credentials)
 
     @staticmethod
     def _load_cluster_definition_template():

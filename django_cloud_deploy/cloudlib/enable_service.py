@@ -31,7 +31,11 @@ class EnableServiceClient(object):
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(
-            discovery.build('serviceusage', 'v1', credentials=credentials))
+            discovery.build(
+                'serviceusage',
+                'v1',
+                credentials=credentials,
+                cache_discovery=False))
 
     def enable_service_sync(self, project_id: str, service: str):
         """Enable a service for the given project.

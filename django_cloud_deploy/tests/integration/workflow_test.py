@@ -43,7 +43,10 @@ class EnableServiceWorkflowIntegrationTest(test_base.ResourceCleanUpTest):
         self.enable_service_workflow = _enable_service.EnableServiceWorkflow(
             self.credentials)
         self.service_usage_service = discovery.build(
-            'serviceusage', 'v1', credentials=self.credentials)
+            'serviceusage',
+            'v1',
+            credentials=self.credentials,
+            cache_discovery=False)
 
     def _list_enabled_services(self):
         parent = '/'.join(['projects', self.project_id])
@@ -80,9 +83,12 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
             _service_account.ServiceAccountKeyGenerationWorkflow(
                 self.credentials))
         self.iam_service = discovery.build(
-            'iam', 'v1', credentials=self.credentials)
+            'iam', 'v1', credentials=self.credentials, cache_discovery=False)
         self.cloudresourcemanager_service = discovery.build(
-            'cloudresourcemanager', 'v1', credentials=self.credentials)
+            'cloudresourcemanager',
+            'v1',
+            credentials=self.credentials,
+            cache_discovery=False)
 
     def _list_service_accounts(self):
         resource_name = '/'.join(['projects', self.project_id])

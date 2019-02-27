@@ -44,7 +44,10 @@ class StaticContentServeClient(object):
 
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
-        return cls(discovery.build('storage', 'v1', credentials=credentials))
+        return cls(
+            discovery.build(
+                'storage', 'v1', credentials=credentials,
+                cache_discovery=False))
 
     def _bucket_exist(self, project_id: str, bucket_name: str) -> bool:
         """Returns whether the given bucket exists under the given project.
