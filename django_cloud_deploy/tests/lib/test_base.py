@@ -111,6 +111,25 @@ class ResourceCleanUpTest(BaseTest):
     """Class for test cases which need resource cleaning up."""
 
     @contextlib.contextmanager
+    def clean_up_appengine_service(self, service_id: str):
+        """A context manager to delete the given app engine service at the end.
+
+        Args:
+            service_id: Id of the app engine service to delete.
+
+        Yields:
+            None
+        """
+        try:
+            yield
+        finally:
+            appengine_service = discovery.build(
+                'appengine', 'v1', credentials=self.credentials)
+            request = appengine_service.apps().services().delete(
+                appsId=self.project_id, servicesId=service_id)
+            request.execute()
+
+    @contextlib.contextmanager
     def clean_up_cluster(self, cluster_name: str):
         """A context manager to delete the given cluster at the end.
 
