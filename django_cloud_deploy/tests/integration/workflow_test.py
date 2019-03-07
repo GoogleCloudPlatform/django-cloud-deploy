@@ -97,7 +97,12 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
         response = request.execute()
         accounts = []
         while True:
-            accounts += [account['email'] for account in response['accounts']]
+            # Sometimes the response does not contain any accounts object, but
+            # only contains the nextPageToken. At this time, there are still
+            # more accounts in the remaining pages.
+            accounts += [
+                account['email'] for account in response.get('accounts', [])
+            ]
             if 'nextPageToken' in response:
                 request = self.iam_service.projects().serviceAccounts().list(
                     name=resource_name, pageToken=response.get('nextPageToken'))
