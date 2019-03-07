@@ -85,6 +85,7 @@ class WorkflowManager(object):
             required_services: Optional[List[Dict[str, str]]] = None,
             required_service_accounts: Optional[
                 Dict[str, List[Dict[str, Any]]]] = None,
+            appengine_service_name: Optional[str] = None,
             cloud_storage_bucket_name: str = None,
             region: str = 'us-west1',
             cloud_sql_proxy_path: str = 'cloud_sql_proxy',
@@ -124,6 +125,8 @@ class WorkflowManager(object):
                         ]
                     }],
                 }
+            appengine_service_name: Name of App engine services. This is helpful
+                in e2e test.
             cloud_storage_bucket_name: Name of the Google Cloud Storage Bucket
                 we use to serve static content. By default it is equal to
                 project id.
@@ -184,6 +187,7 @@ class WorkflowManager(object):
             cloud_storage_bucket_name=cloud_storage_bucket_name,
             cloudsql_secrets=cloud_sql_secrets,
             django_secrets=django_secrets,
+            service_name=appengine_service_name,
             image_tag=image_name)
 
         with self._console_io.progressbar(

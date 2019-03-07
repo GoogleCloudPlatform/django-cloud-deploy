@@ -109,6 +109,12 @@ def add_arguments(parser):
         help=('Services necessary for the deployment. '
               'Test only, do not use.'))
 
+    parser.add_argument(
+        '--appengine-service-name',
+        dest='appengine_service_name',
+        nargs='+',
+        help=('App engine service name. Test only, do not use.'))
+
 
 def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
     if not tool_requirements.check_and_handle_requirements(
@@ -119,7 +125,8 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
         'project_creation_mode': workflow.ProjectCreationMode.CREATE,
         'bucket_name': getattr(args, 'bucket_name', None),
         'service_accounts': getattr(args, 'service_accounts', None),
-        'services': getattr(args, 'services', None)
+        'services': getattr(args, 'services', None),
+        'appengine_service_name': getattr(args, 'appengine_service_name', None)
     }
 
     prompt_args = {**vars(args), **actual_parameters}
@@ -145,6 +152,7 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
             database_password=actual_parameters['database_password'],
             required_services=actual_parameters['services'],
             required_service_accounts=actual_parameters['service_accounts'],
+            appengine_service_name=actual_parameters['appengine_service_name'],
             cloud_storage_bucket_name=actual_parameters['bucket_name'],
             backend=args.backend)
         return admin_url
