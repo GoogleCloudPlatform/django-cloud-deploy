@@ -21,10 +21,15 @@ https://cloud.google.com/resource-manager/reference/rest/
 import base64
 from typing import List
 
+import backoff
 from googleapiclient import discovery
 from googleapiclient import errors
 
 from google.auth import credentials
+
+
+def _not_conflict_code(error: errors.HttpError) -> bool:
+    return error.resp.status != 409
 
 
 class ServiceAccountCreationError(Exception):
@@ -85,6 +90,17 @@ class ServiceAccountClient(object):
         policy['bindings'].append(new_bindings)
         return policy
 
+    @staticmethod
+    @backoff.on_exception(
+        backoff.expo, errors.HttpError, max_tries=7, giveup=_not_conflict_code)
+    def _request_with_retry(request):
+        # This function is used when changing iam policy.
+        # Most likely errors.HttpError with error code 409 happens when
+        # concurrent changes are made to iam policy change. We might be able to
+        # make this iam change when trying again.
+        # When giveup event happens, the exception is reraised.
+        return request.execute()
+
     def create_service_account(self, project_id: str, service_account_id: str,
                                service_account_name: str, roles: List[str]):
         """Create a service account and assign it with the given roles.
@@ -144,7 +160,8 @@ class ServiceAccountClient(object):
         body = {'policy': policy}
         request = self._cloudresourcemanager_service.projects().setIamPolicy(
             resource=project_id, body=body)
-        response = request.execute()
+
+        response = self._request_with_retry(request)
 
         # When the api call succeed, the response is a Policy object.
         # See

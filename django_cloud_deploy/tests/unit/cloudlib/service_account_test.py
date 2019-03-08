@@ -291,3 +291,44 @@ class ServiceAccountClientTestCase(absltest.TestCase):
         key_count = (self._iam_service_fake.projects_fake.service_accounts_fake.
                      service_account_keys_fake.key_count)
         self.assertEqual(key_count, 0)
+
+    def test_request_with_retry_simple_success(self):
+        responses = [1]
+        request = http_fake.HttpRequestFakeMultiple(responses)
+        response = service_account.ServiceAccountClient._request_with_retry(
+            request)
+        self.assertEqual(request.call_count, 1)
+        self.assertEqual(response, 1)
+
+    def test_request_with_retry_success_at_second_time(self):
+        responses = [
+            errors.HttpError(
+                http_fake.HttpResponseFake(409),
+                b'service account already exists'), 1
+        ]
+        request = http_fake.HttpRequestFakeMultiple(responses)
+        response = service_account.ServiceAccountClient._request_with_retry(
+            request)
+        self.assertEqual(request.call_count, 2)
+        self.assertEqual(response, 1)
+
+    def test_request_with_retry_fail(self):
+        err = errors.HttpError(
+            http_fake.HttpResponseFake(409), b'service account already exists')
+        responses = [err] * 7
+        request = http_fake.HttpRequestFakeMultiple(responses)
+        with self.assertRaises(errors.HttpError):
+            service_account.ServiceAccountClient._request_with_retry(request)
+
+    def test_request_with_retry_other_error_code(self):
+        err1 = errors.HttpError(
+            http_fake.HttpResponseFake(409), b'service account already exists')
+        err2 = errors.HttpError(
+            http_fake.HttpResponseFake(400), b'invalid request')
+        responses = [err1, err2, err1]
+        request = http_fake.HttpRequestFakeMultiple(responses)
+        with self.assertRaises(errors.HttpError) as cm:
+            service_account.ServiceAccountClient._request_with_retry(request)
+
+        exception = cm.exception
+        self.assertEqual(exception.resp.status, 400)

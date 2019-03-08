@@ -50,7 +50,7 @@ def unit_test(session, python_version):
     # Run unit tests against all supported versions of Python.
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('py.test', 'tests/unit', '--timeout=60')
+    session.run('py.test', 'tests/unit', '--timeout=120')
 
 
 @nox.session
