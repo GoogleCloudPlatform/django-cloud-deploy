@@ -234,10 +234,14 @@ class WorkflowManager(object):
                     django_project_name, image_name, secrets)
         else:
             self._upload_secrets_to_bucket(project_id, secrets)
+
+            # If the app engine service name is provided, then this function
+            # is run in E2E test.
+            is_new = appengine_service_name is None
             with self._console_io.progressbar(
                     300, '[8/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
                 app_url = self.deploy_workflow.deploy_gae_app(
-                    project_id, django_directory_path)
+                    project_id, django_directory_path, is_new=is_new)
 
         # Create configuration file to save information needed in "update"
         # command.

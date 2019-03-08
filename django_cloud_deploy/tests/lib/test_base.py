@@ -124,7 +124,10 @@ class ResourceCleanUpTest(BaseTest):
             yield
         finally:
             appengine_service = discovery.build(
-                'appengine', 'v1', credentials=self.credentials)
+                'appengine',
+                'v1',
+                credentials=self.credentials,
+                cache_discovery=False)
             request = appengine_service.apps().services().delete(
                 appsId=self.project_id, servicesId=service_id)
             request.execute()
