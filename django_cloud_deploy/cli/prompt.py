@@ -562,7 +562,7 @@ class GoogleExistingProjectId(TemplatePrompt):
                                      self._validate):
             return new_args
 
-        msg = ('{} Enter the <b>existing<b> Google Cloud Platform Project ID '
+        msg = ('{} Enter the <b>existing</b> Google Cloud Platform Project ID '
                'to use.').format(step)
         answer = _ask_prompt(msg, console, self._validate)
         new_args[self.PARAMETER] = answer
