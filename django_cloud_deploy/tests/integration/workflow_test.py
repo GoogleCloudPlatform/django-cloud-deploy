@@ -134,9 +134,6 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
                                 self.project_id, service_account_id,
                                 'Test Service Account', self.ROLES))
                 self.assert_valid_service_account_key(json.loads(key_data))
-                # Assert the service account is created
-                all_service_accounts = self._list_service_accounts()
-                self.assertIn(service_account_email, all_service_accounts)
 
                 # Assert the service account has correct roles
                 policy = self._get_iam_policy()
