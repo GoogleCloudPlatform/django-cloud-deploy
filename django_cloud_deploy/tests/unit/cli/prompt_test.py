@@ -39,6 +39,24 @@ _FAKE_PROJECT_RESPONSE = {
     }
 }
 
+_FAKE_PERMISSIONS_RESPONSE_OWNER = {
+    'bindings': [
+        {
+            'role': 'roles/owner',
+            'members': ['email@email.com']
+        }
+    ]
+}
+
+_FAKE_PERMISSIONS_RESPONSE_EDITOR = {
+    'bindings': [
+        {
+            'role': 'roles/editor',
+            'members': ['email@email.com']
+        }
+    ]
+}
+
 
 class GoogleCloudProjectNamePromptTest(absltest.TestCase):
     """Tests for prompt.GoogleCloudProjectNamePrompt."""
@@ -275,9 +293,13 @@ class ProjectIdPromptTest(parameterized.TestCase):
     @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
                 'project_exists',
                 return_value=True)
-    def test_existing_prompt(self, unused_mock):
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'get_project_permissions',
+                return_value=_FAKE_PERMISSIONS_RESPONSE_OWNER)
+    def test_existing_prompt(self, *unused_mock):
         test_io = io.TestIO()
         args = {
+            'backend': 'gae',
             'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
             'project_id': 'projectid-123'
         }
@@ -287,6 +309,27 @@ class ProjectIdPromptTest(parameterized.TestCase):
 
         self.assertEqual(project_id, 'projectid-123')
         self.assertEqual(len(test_io.answers), 1)  # Answer is not used.
+
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'project_exists',
+                return_value=True)
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'get_project_permissions',
+                return_value=_FAKE_PERMISSIONS_RESPONSE_EDITOR)
+    def test_existing_prompt_incorrect_permission(self, *unused_mock):
+        test_io = io.TestIO()
+        args = {
+            'backend': 'gae',
+            'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
+            'project_id': 'projectid-123'
+        }
+        test_io.answers.append('projectid-123')
+
+        with self.assertRaises(ValueError) as e:
+            self.project_id_prompt.prompt(test_io, '[1/2]', args)
+            msg = 'User must be a Project Owner to deploy on GAE'
+            self.assertEquals(msg, str(e))
+
 
     def test_prompt_default_project_name(self):
         test_io = io.TestIO()
