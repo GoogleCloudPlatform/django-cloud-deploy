@@ -19,7 +19,7 @@ https://cloud.google.com/resource-manager/reference/rest/
 """
 
 import base64
-from typing import List
+from typing import Any, Dict, List
 
 import backoff
 from googleapiclient import discovery
@@ -90,15 +90,36 @@ class ServiceAccountClient(object):
         policy['bindings'].append(new_bindings)
         return policy
 
-    @staticmethod
     @backoff.on_exception(
-        backoff.expo, errors.HttpError, max_tries=7, giveup=_not_conflict_code)
-    def _request_with_retry(request):
-        # This function is used when changing iam policy.
-        # Most likely errors.HttpError with error code 409 happens when
-        # concurrent changes are made to iam policy change. We might be able to
-        # make this iam change when trying again.
-        # When giveup event happens, the exception is reraised.
+        backoff.expo, errors.HttpError, max_tries=5, giveup=_not_conflict_code)
+    def _update_iam_policy_with_retry(self, project_id: str, member: str,
+                                      roles: List[str]) -> Dict[str, Any]:
+        """Try updating iam policy for at most 5 times.
+
+        This function is used when changing iam policy. Most likely
+        errors.HttpError with error code 409 happens when concurrent changes are
+        made to iam policy change. We might be able to make this iam change when
+        trying again. When giveup event happens, the exception is reraised.
+
+        Args:
+            project_id: GCP project id.
+            member: Identifier for a service account in the following format:
+                'serviceAccount:<service_account_id>@<project_id>.iam.gserviceaccount.com'
+            roles: Roles the service account should have. Valid roles can be
+                found on https://cloud.google.com/iam/docs/understanding-roles
+
+        Returns:
+            A valid iam policy object.
+        """
+
+        policy = self._get_iam_policy(project_id)
+        for role in roles:
+            policy = self._generate_updated_iam_policy(policy, member, role)
+
+        body = {'policy': policy}
+        request = self._cloudresourcemanager_service.projects().setIamPolicy(
+            resource=project_id, body=body)
+
         return request.execute()
 
     def create_service_account(self, project_id: str, service_account_id: str,
@@ -153,15 +174,7 @@ class ServiceAccountClient(object):
         # Bind the newly created service account with given roles
         member = ('serviceAccount:{}@{}.iam.gserviceaccount.com'.format(
             service_account_id, project_id))
-        policy = self._get_iam_policy(project_id)
-        for role in roles:
-            policy = self._generate_updated_iam_policy(policy, member, role)
-
-        body = {'policy': policy}
-        request = self._cloudresourcemanager_service.projects().setIamPolicy(
-            resource=project_id, body=body)
-
-        response = self._request_with_retry(request)
+        response = self._update_iam_policy_with_retry(project_id, member, roles)
 
         # When the api call succeed, the response is a Policy object.
         # See
