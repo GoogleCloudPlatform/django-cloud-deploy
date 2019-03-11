@@ -245,7 +245,9 @@ class ProjectIdPromptTest(parameterized.TestCase):
     def setUpClass(cls):
         creds = mock.Mock(credentials.Credentials, authSpec=True)
         project_client = project.ProjectClient.from_credentials(creds)
-        cls.project_id_prompt = prompt.GoogleProjectId(project_client)
+        active_account = 'email@email.com'
+        cls.project_id_prompt = prompt.GoogleProjectId(project_client,
+                                                       active_account)
 
     def test_new_prompt(self):
         test_io = io.TestIO()

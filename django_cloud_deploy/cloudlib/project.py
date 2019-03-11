@@ -16,8 +16,7 @@
 See https://gcloud-python.readthedocs.io/en/latest/resource-manager/api.html
 """
 
-import subprocess
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import backoff
 import google_auth_httplib2
@@ -80,6 +79,17 @@ class ProjectClient(object):
             return request.execute()
         except errors.HttpError as e:
             raise e
+
+    def get_project_permissions(self, project_id: str) -> List[Dict[str, Any]]:
+        """Returns a list of permissions from the project"""
+        request = self._cloudresourcemanager_service.projects().getIamPolicy(
+            resource=project_id, body={})
+        try:
+            response = request.execute()
+            return response.get('bindings', [])
+        except errors.HttpError as e:
+            if e.resp.status in [403, 404]:
+                return []
 
     def _is_google_account(self) -> bool:
         """Returns whether the user logged in with a google.com account."""
