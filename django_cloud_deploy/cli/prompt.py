@@ -616,17 +616,17 @@ class GoogleExistingProjectId(TemplatePrompt):
         assert active_account != ''
 
         permissions = self.project_client.get_project_permissions(project_id)
-        owner_permission = filter(lambda d: d.get('role') == 'roles/owner',
-                                  permissions)
-        editor_permission = filter(lambda d: d.get('role') == 'roles/editor',
-                                   permissions)
+        owner_permission = list(
+            filter(lambda d: d.get('role') == 'roles/owner', permissions))
+        editor_permission = list(
+            filter(lambda d: d.get('role') == 'roles/editor', permissions))
 
         owners = []
         editors = []
         if owner_permission:
-            owners = next(owner_permission).get('members', [])
+            owners = owner_permission[0].get('members', [])
         if editor_permission:
-            editors = next(editor_permission).get('members', [])
+            editors = editor_permission[0].get('members', [])
 
         active_account = 'user:{}'.format(active_account)
 

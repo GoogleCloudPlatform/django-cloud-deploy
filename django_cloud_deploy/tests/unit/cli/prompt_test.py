@@ -39,23 +39,15 @@ _FAKE_PROJECT_RESPONSE = {
     }
 }
 
-_FAKE_PERMISSIONS_RESPONSE_OWNER = {
-    'bindings': [
-        {
-            'role': 'roles/owner',
-            'members': ['email@email.com']
-        }
-    ]
-}
+_FAKE_PERMISSIONS_RESPONSE_OWNER = [{
+    'role': 'roles/owner',
+    'members': ['user:email@email.com']
+}]
 
-_FAKE_PERMISSIONS_RESPONSE_EDITOR = {
-    'bindings': [
-        {
-            'role': 'roles/editor',
-            'members': ['email@email.com']
-        }
-    ]
-}
+_FAKE_PERMISSIONS_RESPONSE_EDITOR = [{
+    'role': 'roles/editor',
+    'members': ['user:email@email.com']
+}]
 
 
 class GoogleCloudProjectNamePromptTest(absltest.TestCase):
@@ -301,7 +293,8 @@ class ProjectIdPromptTest(parameterized.TestCase):
         args = {
             'backend': 'gae',
             'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
-            'project_id': 'projectid-123'
+            'project_id': 'projectid-123',
+            'use_existing_project': True
         }
         test_io.answers.append('projectid-123')
         args = self.project_id_prompt.prompt(test_io, '[1/2]', args)
@@ -321,15 +314,13 @@ class ProjectIdPromptTest(parameterized.TestCase):
         args = {
             'backend': 'gae',
             'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
-            'project_id': 'projectid-123'
+            'project_id': 'projectid-123',
+            'use_existing_project': True
         }
         test_io.answers.append('projectid-123')
 
-        with self.assertRaises(ValueError) as e:
+        with self.assertRaises(SystemExit):
             self.project_id_prompt.prompt(test_io, '[1/2]', args)
-            msg = 'User must be a Project Owner to deploy on GAE'
-            self.assertEquals(msg, str(e))
-
 
     def test_prompt_default_project_name(self):
         test_io = io.TestIO()
