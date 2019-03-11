@@ -140,6 +140,7 @@ class WorkflowManager(object):
             The url of the deployed Django app.
         """
         # A bunch of variables necessary for deployment we hardcode for user.
+        appengine_service_name = appengine_service_name or 'default'
         database_username = 'postgres'
         cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
 
