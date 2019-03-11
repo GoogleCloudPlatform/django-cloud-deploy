@@ -357,7 +357,7 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
     def test_dependencies(self):
         # TODO: This is a change-detector test. It should be modified to not
         # check for exact dependencies.
-        dependencies = ('Django==2.1.5', 'mysqlclient==1.3.13', 'wheel==0.31.1',
+        dependencies = ('Django>=2.1.7', 'mysqlclient==1.3.13', 'wheel==0.31.1',
                         'gunicorn==19.9.0', 'psycopg2-binary==2.7.5',
                         'google-cloud-logging==1.8.0',
                         'google-cloud-storage==1.13.0',
