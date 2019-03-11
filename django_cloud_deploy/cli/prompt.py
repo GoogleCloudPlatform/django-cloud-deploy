@@ -36,6 +36,7 @@ from django_cloud_deploy.skeleton import utils
 class Command(enum.Enum):
     NEW = 1
     UPDATE = 2
+    CLOUDIFY = 3
 
 
 def _ask_prompt(question: str,
@@ -979,6 +980,31 @@ class DjangoFilesystemPathUpdate(TemplatePrompt):
                 ).format(s))
 
 
+class DjangoFilesystemPathCloudify(StringTemplatePrompt):
+    """Allow the user to indicate the file system path for their project."""
+
+    PARAMETER = 'django_directory_path_cloudify'
+    MESSAGE = ('{} Enter the directory of the Django project you want to '
+               'deploy: ')
+
+    def _validate(self, s: str):
+        """Validates that a string is a valid Django project path.
+
+        Args:
+            s: The string to validate.
+
+        Raises:
+            ValueError: if the input string is not valid.
+        """
+        if not os.path.exists(s):
+            raise ValueError(('Path ["{}"] does not exist.').format(s))
+
+        if not utils.is_valid_django_project(s):
+            raise ValueError(
+                ('Path ["{}"] does not contain a valid Django project.'
+                ).format(s))
+
+
 class DjangoProjectNamePrompt(StringTemplatePrompt):
     """Allow the user to enter a Django project name."""
 
@@ -1125,6 +1151,17 @@ class RootPrompt(object):
         'django_directory_path_update',
     ]
 
+    CLOUDIFY_PROMPT_ORDER = [
+        'project_id',
+        'project_name',
+        'billing_account_name',
+        'database_password',
+        'django_directory_path_cloudify',
+        'django_superuser_login',
+        'django_superuser_password',
+        'django_superuser_email',
+    ]
+
     def _get_creds(self, console: io.IO, first_step: str, args: Dict[str, Any],
                    auth_client: auth.AuthClient):
         return CredentialsPrompt(auth_client).prompt(console, first_step,
@@ -1142,6 +1179,7 @@ class RootPrompt(object):
             'database_password': PostgresPasswordPrompt(),
             'django_directory_path': DjangoFilesystemPath(),
             'django_directory_path_update': DjangoFilesystemPathUpdate(),
+            'django_directory_path_cloudify': DjangoFilesystemPathCloudify(),
             'django_project_name': DjangoProjectNamePrompt(),
             'django_app_name': DjangoAppNamePrompt(),
             'django_superuser_login': DjangoSuperuserLoginPrompt(),
@@ -1171,6 +1209,8 @@ class RootPrompt(object):
             prompt_order = self.NEW_PROMPT_ORDER
         elif command == Command.UPDATE:
             prompt_order = self.UPDATE_PROMPT_ORDER
+        elif command == Command.CLOUDIFY:
+            prompt_order = self.CLOUDIFY_PROMPT_ORDER
 
         total_steps = len(prompt_order) + 1
         step_template = '<b>[{}/{}]</b>'

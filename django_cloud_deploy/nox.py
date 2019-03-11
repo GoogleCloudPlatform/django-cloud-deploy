@@ -50,7 +50,7 @@ def unit_test(session, python_version):
     # Run unit tests against all supported versions of Python.
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('py.test', 'tests/unit', '--timeout=60')
+    session.run('py.test', 'tests/unit', '--timeout=120')
 
 
 @nox.session
@@ -87,9 +87,19 @@ def integration_test(session, python_version):
 
 @nox.session
 @nox.parametrize('python_version', ['3.5'])
-def e2e_test(session, python_version):
+def e2e_test_gke(session, python_version):
     """Run the e2e test suite."""
 
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
-    session.run('py.test', 'tests/e2e', '--timeout=1800')
+    session.run('py.test', 'tests/e2e/gke_deploy_test.py', '--timeout=1800')
+
+
+@nox.session
+@nox.parametrize('python_version', ['3.5'])
+def e2e_test_gae(session, python_version):
+    """Run the e2e test suite."""
+
+    session.interpreter = 'python{}'.format(python_version)
+    session.install(*PACKAGES)
+    session.run('py.test', 'tests/e2e/gae_deploy_test.py', '--timeout=1800')

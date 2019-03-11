@@ -28,6 +28,26 @@ class HttpRequestFake(object):
         return self.response
 
 
+class HttpRequestFakeMultiple(object):
+    """A fake googleapiclient.http.HttpRequest.
+
+    This class will return multiple kinds of responses.
+    """
+
+    def __init__(self, responses):
+        self.responses = responses
+        self.call_count = 0
+
+    def execute(self):
+        if self.call_count >= len(self.responses):
+            return None
+        response = self.responses[self.call_count]
+        self.call_count += 1
+        if isinstance(response, errors.HttpError):
+            raise response
+        return response
+
+
 class HttpResponseFake(object):
     """A fake googleapiclient.http.HttpResponse."""
 

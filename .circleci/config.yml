@@ -7,10 +7,11 @@ _setup_environment:
     # Following tutorial on https://cloud.google.com/sdk/docs/quickstart-debian-ubuntu
     name: Install Gcloud
     command: |
-      export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
-      echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-      sudo apt-get -qqy update && sudo apt-get -qqy install google-cloud-sdk
+      curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-236.0.0-linux-x86_64.tar.gz
+      tar zxf google-cloud-sdk-236.0.0-linux-x86_64.tar.gz google-cloud-sdk
+      ./google-cloud-sdk/install.sh --rc-path /home/circleci/.bashrc -q
+      source /home/circleci/.bashrc
+      gcloud components update -q
   install_nox: &install_nox
     name: Install Nox
     command: |
@@ -69,7 +70,7 @@ jobs:
             nox -f django_cloud_deploy/nox.py -s integration_test
           # Timeout of integration test is set to 30 minutes
           no_output_timeout: 30m
-  E2E Test:
+  GKE E2E Test:
     # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
     # Using machine newer than circleci/classic:201710-01 will make "apt-get"
     # fail to install packages
@@ -86,7 +87,28 @@ jobs:
           name: Run Test
           command: |
             pyenv global 2.7.12 3.5.2
-            nox -f django_cloud_deploy/nox.py -s e2e_test
+            nox -f django_cloud_deploy/nox.py -s e2e_test_gke
+          # Timeout of e2e test is set to 30 minutes
+          no_output_timeout: 30m
+  GAE E2E Test:
+    # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
+    # Using machine newer than circleci/classic:201710-01 will make "apt-get"
+    # fail to install packages
+    machine:
+      image: circleci/classic:201710-01
+
+    steps:
+      - checkout
+      - run: *install_nox
+      - run: *install_cloud_sql_proxy
+      - run: *install_gcloud
+      - run: *dump_credentials
+      - run:
+          name: Run Test
+          command: |
+            source /home/circleci/.bashrc
+            pyenv global 2.7.12 3.5.2
+            nox -f django_cloud_deploy/nox.py -s e2e_test_gae
           # Timeout of e2e test is set to 30 minutes
           no_output_timeout: 30m
 
@@ -97,4 +119,5 @@ workflows:
       - Unit Test
       - Lint
       - Integration Test
-      - E2E Test
+      - GKE E2E Test
+      - GAE E2E Test
