@@ -54,6 +54,8 @@ class WorkflowManager(object):
     _TOTAL_NEW_STEPS = 8
     _TOTAL_UPDATE_STEPS = 3
 
+    DEFAULT_GAE_SERVICE_NAME = 'default'
+
     def __init__(self, credentials: credentials.Credentials):
         self._source_generator = source_generator.DjangoSourceFileGenerator()
         self._billing_client = billing.BillingClient.from_credentials(
@@ -140,7 +142,8 @@ class WorkflowManager(object):
             The url of the deployed Django app.
         """
         # A bunch of variables necessary for deployment we hardcode for user.
-        appengine_service_name = appengine_service_name or 'default'
+        appengine_service_name = appengine_service_name or self.DEFAULT_GAE_SERVICE_NAME
+
         database_username = 'postgres'
         cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
 
@@ -236,9 +239,10 @@ class WorkflowManager(object):
         else:
             self._upload_secrets_to_bucket(project_id, secrets)
 
-            # If the app engine service name is provided, then this function
-            # is run in E2E test.
-            is_new = appengine_service_name is None
+            # If the app engine service name is not equal to 'default, then this
+            # function is running in E2E test. In E2E test, a GAE application is
+            # already created.
+            is_new = appengine_service_name == self.DEFAULT_GAE_SERVICE_NAME
             with self._console_io.progressbar(
                     300, '[8/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
                 app_url = self.deploy_workflow.deploy_gae_app(
