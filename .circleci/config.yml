@@ -134,6 +134,9 @@ workflows:
     jobs:
       - Release:
           filters:
+            # Runs for no branches and only for tags like "1.2.3"
             branches:
+              ignore: /.*/
+            tags:
               only:
-                - release
+                - /^\d+\.\d+\.\d+$/
