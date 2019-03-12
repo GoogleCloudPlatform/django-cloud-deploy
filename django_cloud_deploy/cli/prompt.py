@@ -14,7 +14,6 @@
 """Prompts the user for information e.g. project name."""
 
 import abc
-import copy
 import enum
 import functools
 import os.path
@@ -347,7 +346,7 @@ class StringTemplatePrompt(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step,
                                      args.get(self.PARAMETER, None),
                                      self._validate):
@@ -429,7 +428,7 @@ class GoogleProjectName(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
 
         project_id = args.get('project_id', None)
         mode = args.get('project_creation_mode', None)
@@ -490,7 +489,7 @@ class GoogleNewProjectId(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step,
                                      args.get(self.PARAMETER, None),
                                      self._validate):
@@ -559,7 +558,7 @@ class GoogleExistingProjectId(TemplatePrompt):
         Returns: A Copy of args + the new parameter collected.
         """
 
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         backend = args.get('backend')
         validate = functools.partial(self._validate, backend,
                                      self.active_account)
@@ -629,16 +628,14 @@ class GoogleExistingProjectId(TemplatePrompt):
         if editor_permission:
             editors = editor_permission[0].get('members', [])
 
-        active_account = 'user:{}'.format(active_account)
-        service_account = 'serviceAccount:{}'.format(active_account)
-
-        if active_account in owners or service_account in owners:
+        active_account = re.escape(active_account)
+        if re.search(active_account, ' '.join(owners)):
             return True
 
         if backend == 'gae':  # User needs to be in owner to deploy in GAE.
             return False
 
-        if active_account in editors or service_account in editors:
+        if re.search(active_account, ' '.join(editors)):
             return True
 
         return False
@@ -663,7 +660,7 @@ class CredentialsPrompt(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step,
                                      args.get(self.PARAMETER), lambda x: x):
             return new_args
@@ -774,7 +771,7 @@ class BillingPrompt(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
                                      self._validate):
             return new_args
@@ -843,7 +840,7 @@ class PostgresPasswordPrompt(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
                                      self._validate):
             return new_args
@@ -896,7 +893,7 @@ class DjangoFilesystemPath(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
 
         if self._is_valid_passed_arg(console, step,
                                      args.get(self.PARAMETER), lambda x: x):
@@ -947,7 +944,7 @@ class DjangoFilesystemPathUpdate(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
                                      self._validate):
             return new_args
@@ -1094,7 +1091,7 @@ class DjangoSuperuserPasswordPrompt(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
                                      self._validate):
             return new_args
@@ -1201,7 +1198,7 @@ class RootPrompt(object):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if new_args.get('use_existing_project', False):
             new_args['project_creation_mode'] = (
                 workflow.ProjectCreationMode.MUST_EXIST)
