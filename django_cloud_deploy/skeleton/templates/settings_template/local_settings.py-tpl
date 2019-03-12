@@ -20,3 +20,12 @@ DATABASES = {
 }
 
 STATIC_URL = '/static/'
+
+if 'STATICFILES_DIRS' not in locals():
+    STATICFILES_DIRS = []
+
+# Sometimes STATICFILES_DIRS has type tuple
+STATICFILES_DIRS = list(STATICFILES_DIRS)
+STATICFILES_DIRS += [
+    os.path.join(BASE_DIR, 'staticfiles')
+]

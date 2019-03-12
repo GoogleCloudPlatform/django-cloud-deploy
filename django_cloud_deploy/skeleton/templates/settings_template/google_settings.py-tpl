@@ -1,42 +1,50 @@
+import os
+
 from .base_settings import *
 
 
+if 'BASE_DIR' not in locals():
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 if 'INSTALLED_APPS' not in locals():
     INSTALLED_APPS = []
+
+# Use admin overwrite instead of the default admin
+if 'django.contrib.admin' in INSTALLED_APPS:
+    INSTALLED_APPS.remove('django.contrib.admin')
 
 INSTALLED_APPS += [
     'cloud_admin.apps.CloudAdminConfig',
 ]
 
 if 'TEMPLATES' not in locals():
-    TEMPLATES = []
-
-TEMPLATES += [
-    {
-        # Add the templates required by CloudAdminSite.
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
+    TEMPLATES = [
+        {
+            # Add the templates required by CloudAdminSite.
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [],
+            'APP_DIRS': True,
+            'OPTIONS': {
+                'context_processors': [
+                    'django.template.context_processors.debug',
+                    'django.template.context_processors.request',
+                    'django.contrib.auth.context_processors.auth',
+                    'django.contrib.messages.context_processors.messages',
+                ],
+            },
         },
-    },
-]
+    ]
 
+# Add the templates required by CloudAdminSite if 'TEMPLATES' is already defined
+# in settings file.
+for template in TEMPLATES:
+    if template.get('BACKEND') == 'django.template.backends.django.DjangoTemplates':
+        template['DIRS'] = template.get('DIRS', [])
+        template_path = os.path.join(BASE_DIR, 'templates')
+        if template_path not in template['DIRS']:
+            template['DIRS'].append(template_path)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/{{ docs_version }}/howto/static-files/
 
 STATIC_ROOT = 'static'
-
-if 'STATICFILES_DIRS' not in locals():
-    STATICFILES_DIRS = []
-
-STATICFILES_DIRS += [
-    os.path.join(BASE_DIR, 'staticfiles')
-]
