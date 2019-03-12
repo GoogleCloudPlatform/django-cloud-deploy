@@ -556,6 +556,7 @@ class GoogleExistingProjectId(TemplatePrompt):
         If the user supplies the project_id as a flag we want to validate that
         it exists. We tell the user to supply a new one if it does not.
 
+        Returns: A Copy of args + the new parameter collected.
         """
 
         new_args = copy.deepcopy(args)

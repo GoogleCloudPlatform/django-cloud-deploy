@@ -29,7 +29,35 @@ BILLING_INFO_DISABLED = {
     'billingEnabled': False,
 }
 
+ALL_BILLING_ACCOUNTS = [
+    {
+        'name': 'billingAccounts/1',
+        'displayName': 'Fake Account 1',
+        'open': True
+    },
+    {
+        'name': 'billingAccounts/2',
+        'displayName': 'Fake Account 2',
+        'open': False
+    },
+    {
+        'name': 'billingAccounts/3',
+        'displayName': 'Fake Account 3',
+        'open': True
+    },
+]
+
 BILLING_ACCOUNT_LIST_RESPONSE = {
+    'billingAccounts': [{
+        'name': 'billingAccounts/3',
+        'displayName': 'Fake Account 3',
+        'open': True
+    }],
+    'nextPageToken':
+    '<page_token>',
+}
+
+BILLING_ACCOUNT_LIST_RESPONSE_NO_TOKEN = {
     'billingAccounts': [
         {
             'name': 'billingAccounts/1',
@@ -41,14 +69,24 @@ BILLING_ACCOUNT_LIST_RESPONSE = {
             'displayName': 'Fake Account 2',
             'open': False
         },
-    ]
+    ],
 }
 
 
 class BillingAccountsFake(object):
 
-    def list(self):
-        return http_fake.HttpRequestFake(BILLING_ACCOUNT_LIST_RESPONSE)
+    def __init__(self,
+                 billing_account_responses=[BILLING_ACCOUNT_LIST_RESPONSE]):
+        self.call_count = 0
+        self.responses = billing_account_responses
+
+    def list(self, pageToken=None):
+        if self.call_count >= len(self.responses):
+            return http_fake.HttpRequestFake({})
+        else:
+            response = self.responses[self.call_count]
+            self.call_count += 1
+            return http_fake.HttpRequestFake(response)
 
 
 class ProjectsFake(object):
@@ -72,9 +110,12 @@ class ProjectsFake(object):
 
 class CloudBillingServiceFake(object):
 
-    def __init__(self, query_times=1):
+    def __init__(self,
+                 query_times=1,
+                 billing_account_responses=[BILLING_ACCOUNT_LIST_RESPONSE]):
         self.projects_fake = ProjectsFake()
-        self.billing_accounts_fake = BillingAccountsFake()
+        self.billing_accounts_fake = BillingAccountsFake(
+            billing_account_responses)
 
     def projects(self):
         return self.projects_fake
@@ -107,18 +148,34 @@ class BillingClientTestCase(absltest.TestCase):
             self._billing_client.enable_project_billing('invalid-project-id',
                                                         BILLING_ACCOUNT_NAME)
 
-    def test_list_billing_accounts(self):
+    def test_list_billing_accounts_no_page_token(self):
         accounts = self._billing_client.list_billing_accounts()
-        self.assertEqual(
-            len(BILLING_ACCOUNT_LIST_RESPONSE['billingAccounts']),
-            len(accounts))
+        self.assertEqual(BILLING_ACCOUNT_LIST_RESPONSE['billingAccounts'],
+                         accounts)
+
+    def test_list_billing_accounts_with_page_token(self):
+        responses = [
+            BILLING_ACCOUNT_LIST_RESPONSE,
+            BILLING_ACCOUNT_LIST_RESPONSE_NO_TOKEN
+        ]
+        cloudbillingservice_fake = CloudBillingServiceFake(
+            billing_account_responses=responses)
+        billing_client = billing.BillingClient(cloudbillingservice_fake)
+        accounts = billing_client.list_billing_accounts()
+        self.assertCountEqual(ALL_BILLING_ACCOUNTS, accounts)
+
+    def test_list_billing_accounts_with_empty_responses(self):
+        responses = [{}]
+        cloudbillingservice_fake = CloudBillingServiceFake(
+            billing_account_responses=responses)
+        billing_client = billing.BillingClient(cloudbillingservice_fake)
+        accounts = billing_client.list_billing_accounts()
+        self.assertEmpty(accounts)
 
     def test_list_billing_accounts_only_open(self):
         accounts = self._billing_client.list_billing_accounts(
             only_open_accounts=True)
-        self.assertNotEqual(
-            len(BILLING_ACCOUNT_LIST_RESPONSE['billingAccounts']),
-            len(accounts))
+        self.assertNotEqual(len(ALL_BILLING_ACCOUNTS), len(accounts))
         for account in accounts:
             self.assertTrue(account['open'])
 
