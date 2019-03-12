@@ -112,8 +112,8 @@ jobs:
           # Timeout of e2e test is set to 30 minutes
           no_output_timeout: 30m
   Release:
-    machine:
-      image: circleci/classic:201710-01
+    docker:
+      - image: googleapis/nox:0.18.2
 
     steps:
       - checkout
