@@ -630,14 +630,15 @@ class GoogleExistingProjectId(TemplatePrompt):
             editors = editor_permission[0].get('members', [])
 
         active_account = 'user:{}'.format(active_account)
+        service_account = 'serviceAccount:{}'.format(active_account)
 
-        if active_account in owners:
+        if active_account in owners or service_account in owners:
             return True
 
         if backend == 'gae':  # User needs to be in owner to deploy in GAE.
             return False
 
-        if active_account in editors:
+        if active_account in editors or service_account in editors:
             return True
 
         return False
