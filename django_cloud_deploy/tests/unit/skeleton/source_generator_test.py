@@ -17,7 +17,6 @@ import os
 import shutil
 import sys
 import tempfile
-from unittest import mock
 
 from absl.testing import absltest
 from django.core import management
@@ -50,26 +49,26 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
         django_root_dir = os.path.join(self._project_dir, project_name)
         app_name = 'test_app_name'
 
-        self._generator.generate(project_name, self._project_dir, app_name)
+        self._generator.generate_new(project_name, self._project_dir, app_name)
         self.assertTrue(os.path.exists(django_root_dir))
 
         files_list = os.listdir(self._project_dir)
         files_list.remove(project_name)
         self.assertCountEqual(self.PROJECT_ROOT_FOLDER_FILES, files_list)
 
-    def test_generate_files_twice(self):
+    def test_generate_new_files_twice(self):
         project_name = 'test_generate_files_twice'
         app_name = 'test_app_name'
         django_root_dir = os.path.join(self._project_dir, project_name)
-        self._generator.generate(project_name, self._project_dir, app_name)
-        self._generator.generate('generate_again', self._project_dir, app_name)
+        for _ in range(2):
+            self._generator.generate_new(project_name, self._project_dir,
+                                         app_name)
         self.assertTrue(os.path.exists(django_root_dir))
-        self.assertFalse(os.path.exists('generate_again'))
 
     def test_django_root_structure(self):
         project_name = 'test_django_root'
         app_name = 'test_app_name'
-        self._generator.generate(project_name, self._project_dir, app_name)
+        self._generator.generate_new(project_name, self._project_dir, app_name)
 
         files_list = os.listdir(os.path.join(self._project_dir, project_name))
         self.assertCountEqual(self.DJANGO_ROOT_FOLDER_FILES, files_list)
@@ -77,7 +76,7 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
     def test_wsgi_module_uses_cloud_settings(self):
         project_name = 'test_wsgi_module_uses_cloud_settings'
         app_name = 'test_app_name'
-        self._generator.generate(project_name, self._project_dir, app_name)
+        self._generator.generate_new(project_name, self._project_dir, app_name)
 
         with open(os.path.join(self._project_dir, project_name,
                                'wsgi.py')) as wsgi_file:
@@ -99,7 +98,7 @@ class DjangoAppFileGeneratorTest(FileGeneratorTest):
     def test_app_root_structure(self):
         app_name = 'test_app_root'
         app_folder_path = os.path.join(self._project_dir, app_name)
-        self._generator.generate(app_name, self._project_dir)
+        self._generator.generate_new(app_name, self._project_dir)
         self.assertTrue(os.path.exists(app_folder_path))
 
         files_list = os.listdir(app_folder_path)
@@ -111,7 +110,7 @@ class DjangoAppFileGeneratorTest(FileGeneratorTest):
     def test_generate_app_twice(self):
         """Test app generation does not overwrite app with same name."""
         app_name = 'test_generate_app_twice'
-        self._generator.generate(app_name, self._project_dir)
+        self._generator.generate_new(app_name, self._project_dir)
 
         # Generate an app and add customized files
         app_folder_path = os.path.join(self._project_dir, app_name)
@@ -119,7 +118,7 @@ class DjangoAppFileGeneratorTest(FileGeneratorTest):
             new_file.write('123')
 
         # Generate the same app again. This should not have any effects.
-        self._generator.generate(app_name, self._project_dir)
+        self._generator.generate_new(app_name, self._project_dir)
         files_list = os.listdir(app_folder_path)
         self.assertIn('new_file', files_list)
 
@@ -135,8 +134,9 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         project_id = project_name = 'test_base_settings'
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
-        self._generator.generate(project_id, project_name, self._project_dir,
-                                 cloud_sql_connection_string)
+        self._generator.generate_new(project_id, project_name,
+                                     self._project_dir,
+                                     cloud_sql_connection_string)
 
         sys.path.append(self._project_dir)
         module = importlib.import_module(project_name + '.base_settings')
@@ -152,8 +152,9 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
 
-        self._generator.generate(project_id, project_name, self._project_dir,
-                                 cloud_sql_connection_string)
+        self._generator.generate_new(project_id, project_name,
+                                     self._project_dir,
+                                     cloud_sql_connection_string)
 
         sys.path.append(self._project_dir)
         module = importlib.import_module(project_name + '.local_settings')
@@ -177,8 +178,9 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         project_id = project_name + 'project_id'
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
-        self._generator.generate(project_id, project_name, self._project_dir,
-                                 cloud_sql_connection_string)
+        self._generator.generate_new(project_id, project_name,
+                                     self._project_dir,
+                                     cloud_sql_connection_string)
 
         sys.path.append(self._project_dir)
         module = importlib.import_module(project_name + '.cloud_settings')
@@ -206,8 +208,9 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         project_id = project_name + 'project_id'
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
-        self._generator.generate(project_id, project_name, self._project_dir,
-                                 cloud_sql_connection_string)
+        self._generator.generate_new(project_id, project_name,
+                                     self._project_dir,
+                                     cloud_sql_connection_string)
         settings_file_path = os.path.join(self._project_dir, project_name,
                                           'cloud_settings.py')
 
@@ -226,9 +229,9 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
 
-        self._generator.generate(project_id, project_name, self._project_dir,
-                                 cloud_sql_connection_string, 'customize-db',
-                                 'customize-bucket')
+        self._generator.generate_new(
+            project_id, project_name, self._project_dir,
+            cloud_sql_connection_string, 'customize-db', 'customize-bucket')
 
         sys.path.append(self._project_dir)
         module = importlib.import_module(project_name + '.cloud_settings')
@@ -260,8 +263,9 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         # Generate Django project files
         management.call_command('startproject', project_name, self._project_dir)
 
-        self._generator.generate(project_id, project_name, self._project_dir,
-                                 cloud_sql_connection_string)
+        self._generator.generate_from_existing(project_id, project_name,
+                                               self._project_dir,
+                                               cloud_sql_connection_string)
 
         expected_settings_files = ('base_settings.py', 'local_settings.py',
                                    'cloud_settings.py', 'google_settings.py')
@@ -316,13 +320,13 @@ class DockerfileGeneratorTest(FileGeneratorTest):
         cls._generator = source_generator._DockerfileGenerator()
 
     def test_generate_dockerfile(self):
-        self._generator.generate('polls', self._project_dir)
+        self._generator.generate_new('polls', self._project_dir)
         files_list = os.listdir(self._project_dir)
         self.assertIn('Dockerfile', files_list)
         self.assertIn('.dockerignore', files_list)
 
     def test_dockerfile_content(self):
-        self._generator.generate('polls', self._project_dir)
+        self._generator.generate_new('polls', self._project_dir)
         with open(os.path.join(self._project_dir, 'Dockerfile')) as dockerfile:
             dockerfile_content = dockerfile.read()
 
@@ -339,8 +343,11 @@ class DockerfileGeneratorTest(FileGeneratorTest):
             self.assertIn('polls.wsgi', dockerfile_content)
 
     def test_generate_twice(self):
-        self._generator.generate('polls', self._project_dir)
-        self.assertTrue(self._generator.generated(self._project_dir))
+        self._generator.generate_new('polls', self._project_dir)
+        self._generator.generate_new('polls', self._project_dir)
+        files_list = os.listdir(self._project_dir)
+        self.assertIn('Dockerfile', files_list)
+        self.assertIn('.dockerignore', files_list)
 
 
 class DependencyFileGeneratorTest(FileGeneratorTest):
@@ -350,7 +357,7 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
         cls._generator = source_generator._DependencyFileGenerator()
 
     def test_generate_dependency_file(self):
-        self._generator.generate(self._project_dir)
+        self._generator.generate_new(self._project_dir)
         files_list = os.listdir(self._project_dir)
         self.assertIn('requirements.txt', files_list)
 
@@ -362,7 +369,7 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
                         'google-cloud-logging==1.8.0',
                         'google-cloud-storage==1.13.0',
                         'google-api-python-client==1.7.4')
-        self._generator.generate(self._project_dir)
+        self._generator.generate_new(self._project_dir)
         dependency_file_path = os.path.join(self._project_dir,
                                             'requirements.txt')
         with open(dependency_file_path) as dependency_file:
@@ -371,8 +378,10 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
                 dependency_file_content.split('\n'), dependencies)
 
     def test_generate_twice(self):
-        self._generator.generate(self._project_dir)
-        self.assertTrue(self._generator.generated(self._project_dir))
+        self._generator.generate_new(self._project_dir)
+        self._generator.generate_new(self._project_dir)
+        files_list = os.listdir(self._project_dir)
+        self.assertIn('requirements.txt', files_list)
 
 
 class YAMLFileGeneratorTest(FileGeneratorTest):
@@ -383,13 +392,15 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
 
     def test_generate_yaml_file(self):
         project_id = project_name = 'test_generate_yaml_file'
-        self._generator.generate(self._project_dir, project_name, project_id)
+        self._generator.generate_new(self._project_dir, project_name,
+                                     project_id)
         files_list = os.listdir(self._project_dir)
         self.assertIn(project_name + '.yaml', files_list)
 
     def test_default_yaml_file_content(self):
         project_id = project_name = 'test_default_yaml_file_content'
-        self._generator.generate(self._project_dir, project_name, project_id)
+        self._generator.generate_new(self._project_dir, project_name,
+                                     project_id)
 
         yaml_file_path = os.path.join(self._project_dir, project_name + '.yaml')
         with open(yaml_file_path) as yaml_file:
@@ -417,9 +428,9 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
         image_tag = 'fake_image'
         cloudsql_secrets = ['fakecloudsql_secret1', 'fakecloudsql_secret2']
         django_secrets = ['fakedjango_app_secret1', 'fakedjango_app_secret2']
-        self._generator.generate(self._project_dir, project_name, project_id,
-                                 instance_name, region, image_tag,
-                                 cloudsql_secrets, django_secrets)
+        self._generator.generate_new(
+            self._project_dir, project_name, project_id, instance_name, region,
+            image_tag, cloudsql_secrets, django_secrets)
 
         yaml_file_path = os.path.join(self._project_dir, project_name + '.yaml')
         with open(yaml_file_path) as yaml_file:
@@ -443,9 +454,12 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
 
     def test_generate_twice(self):
         project_id = project_name = 'test_generate_twice'
-        self._generator.generate(self._project_dir, project_name, project_id)
-        self.assertTrue(
-            self._generator.generated(self._project_dir, project_name))
+        self._generator.generate_new(self._project_dir, project_name,
+                                     project_id)
+        self._generator.generate_new(self._project_dir, project_name,
+                                     project_id)
+        files_list = os.listdir(self._project_dir)
+        self.assertIn(project_name + '.yaml', files_list)
 
 
 class DjangoSourceFileGeneratorTest(FileGeneratorTest):
@@ -475,21 +489,21 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
     def test_generate_all_source_files(self):
         project_id = project_name = 'test_generate_all_source_file'
         app_name = 'polls'
-        self._generator.generate_all_source_files(
-            project_id, project_name, app_name, self._project_dir,
-            'fake_db_user', 'fake_db_password')
+        self._generator.generate_new(project_id, project_name, app_name,
+                                     self._project_dir, 'fake_db_user',
+                                     'fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)
 
     def test_delete_existing_files(self):
         project_id = project_name = 'test_delete_existing_files1'
         app_name = 'polls1'
-        self._generator.generate_all_source_files(
-            project_id, project_name, app_name, self._project_dir,
-            'fake_db_user', 'fake_db_password')
+        self._generator.generate_new(project_id, project_name, app_name,
+                                     self._project_dir, 'fake_db_user',
+                                     'fake_db_password')
         project_id = project_name = 'test_delete_existing_files2'
-        self._generator.generate_all_source_files(
-            project_id, project_name, app_name, self._project_dir,
-            'fake_db_user', 'fake_db_password')
+        self._generator.generate_new(project_id, project_name, app_name,
+                                     self._project_dir, 'fake_db_user',
+                                     'fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)
         files_list = os.listdir(os.path.join(self._project_dir, project_name))
         self.assertNotIn(project_name, files_list)
@@ -501,9 +515,9 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         # Test generating Django files at the same place multiple times.
         # This should not throw exceptions.
         for _ in range(3):
-            self._generator.generate_all_source_files(
-                project_id, project_name, app_name, self._project_dir,
-                'fake_db_user', 'fake_db_password')
+            self._generator.generate_new(project_id, project_name, app_name,
+                                         self._project_dir, 'fake_db_user',
+                                         'fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)
 
     def test_file_generation_directory_not_exist(self):
@@ -511,9 +525,9 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         app_name = 'polls'
 
         project_dir = os.path.join(self._project_dir, 'dir_not_exist')
-        self._generator.generate_all_source_files(
-            project_id, project_name, app_name, project_dir, 'fake_db_user',
-            'fake_db_password')
+        self._generator.generate_new(project_id, project_name, app_name,
+                                     project_dir, 'fake_db_user',
+                                     'fake_db_password')
         self._test_project_structure(project_name, app_name, project_dir)
 
     def test_generate_missing_source_files(self):
@@ -522,13 +536,11 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         management.call_command('startproject', project_name, self._project_dir)
         existing_app_path = os.path.join(self._project_dir, 'existing_app')
         os.mkdir(existing_app_path)
-        management.call_command('startapp', 'existing_app', existing_app_path)
-        self._generator.generate_all_source_files(
-            project_id,
-            project_name,
-            app_name,
-            self._project_dir,
-            'fake_db_user',
-            'fake_db_password',
-            overwrite=False)
+        management.call_command('startapp', app_name, existing_app_path)
+        self._generator.generate_from_existing(
+            project_id=project_id,
+            project_name=project_name,
+            project_dir=self._project_dir,
+            database_user='fake_db_user',
+            database_password='fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)

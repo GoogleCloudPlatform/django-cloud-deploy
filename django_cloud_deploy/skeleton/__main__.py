@@ -60,7 +60,7 @@ def main():
     add_arguments(parser)
     args = parser.parse_args()
     generator = source_generator.DjangoSourceFileGenerator()
-    generator.generate_all_source_files(
+    generator.generate_new(
         project_id=args.project_id,
         project_name=args.project_name,
         app_name=args.app_name,

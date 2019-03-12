@@ -178,7 +178,7 @@ class WorkflowManager(object):
             self._service_account_workflow.load_service_accounts())
         cloud_sql_secrets, django_secrets = self._load_secret_names(
             required_service_accounts)
-        self._source_generator.generate_all_source_files(
+        self._source_generator.generate_new(
             project_id=project_id,
             project_name=django_project_name,
             app_name=django_app_name,

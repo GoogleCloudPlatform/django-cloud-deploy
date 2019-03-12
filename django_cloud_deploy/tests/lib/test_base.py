@@ -92,7 +92,7 @@ class DjangoFileGeneratorTest(BaseTest):
         self.database_name = utils.get_resource_name(resource_type='db')
         app_name = 'fake_app'
         generator = source_generator.DjangoSourceFileGenerator()
-        generator.generate_all_source_files(
+        generator.generate_new(
             project_id=self.project_id,
             project_name=self.project_name,
             app_name=app_name,
