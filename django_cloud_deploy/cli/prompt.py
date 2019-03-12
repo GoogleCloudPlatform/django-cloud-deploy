@@ -863,7 +863,7 @@ class DjangoFilesystemPathUpdate(TemplatePrompt):
     PARAMETER = 'django_directory_path_update'
 
     def _ask_for_directory(self, console, step, args) -> str:
-        base_msg = ('{} Enter the django project directory path'
+        base_msg = ('{} Enter the django project directory path '
                     'or leave blank to use').format(step)
 
         home_dir = os.path.expanduser('~')
