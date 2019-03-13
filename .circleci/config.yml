@@ -11,7 +11,6 @@ _setup_environment:
       tar zxf google-cloud-sdk-236.0.0-linux-x86_64.tar.gz google-cloud-sdk
       ./google-cloud-sdk/install.sh --rc-path /home/circleci/.bashrc -q
       source /home/circleci/.bashrc
-      gcloud components update -q
   install_nox: &install_nox
     name: Install Nox
     command: |
