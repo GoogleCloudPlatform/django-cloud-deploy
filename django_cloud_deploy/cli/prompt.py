@@ -613,7 +613,7 @@ class GoogleExistingProjectId(TemplatePrompt):
             active_account: Account that is logged in on gcloud cli.
         """
         # The user must have logged in
-        assert active_account != ''
+        assert active_account not in ['', None], "User must log in via gcloud"
 
         permissions = self.project_client.get_project_permissions(project_id)
         owner_permission = list(
@@ -628,7 +628,10 @@ class GoogleExistingProjectId(TemplatePrompt):
         if editor_permission:
             editors = editor_permission[0].get('members', [])
 
-        active_account = re.escape(active_account)
+        # Regex will catch user:email@email.com
+        # and serviceAccount:email@email.com
+        # which are currently the only cases
+        active_account = re.escape(r'\w+:{}'.format(active_account))
         if re.search(active_account, ' '.join(owners)):
             return True
 

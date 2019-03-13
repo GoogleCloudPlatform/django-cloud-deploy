@@ -309,7 +309,7 @@ class ProjectIdPromptTest(parameterized.TestCase):
     @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
                 'get_project_permissions',
                 return_value=_FAKE_PERMISSIONS_RESPONSE_EDITOR)
-    def test_existing_prompt_incorrect_permission(self, *unused_mock):
+    def test_existing_prompt_incorrect_permission_flag(self, *unused_mock):
         test_io = io.TestIO()
         args = {
             'backend': 'gae',
@@ -319,8 +319,34 @@ class ProjectIdPromptTest(parameterized.TestCase):
         }
         test_io.answers.append('projectid-123')
 
+        # When passed as a flag, if the validation fails we expect the
+        # command to exit out.
         with self.assertRaises(SystemExit):
             self.project_id_prompt.prompt(test_io, '[1/2]', args)
+
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'project_exists',
+                return_value=True)
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'get_project_permissions',
+                side_effect=[
+                    _FAKE_PERMISSIONS_RESPONSE_EDITOR,
+                    _FAKE_PERMISSIONS_RESPONSE_OWNER
+                ])
+    def test_existing_prompt_incorrect_permission_cli(self, *unused_mock):
+        test_io = io.TestIO()
+        args = {
+            'backend': 'gae',
+            'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
+            'use_existing_project': True
+        }
+        test_io.answers.append('projectid-wrong')
+        test_io.answers.append('projectid-123')
+        args = self.project_id_prompt.prompt(test_io, '[1/2]', args)
+        project_id = args['project_id']
+
+        self.assertEqual(len(test_io.answers), 0)
+        self.assertEqual(project_id, 'projectid-123')
 
     def test_prompt_default_project_name(self):
         test_io = io.TestIO()
