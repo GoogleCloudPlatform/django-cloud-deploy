@@ -631,7 +631,8 @@ class GoogleExistingProjectId(TemplatePrompt):
         # Regex will catch user:email@email.com
         # and serviceAccount:email@email.com
         # which are currently the only cases
-        active_account = re.escape(r'\w+:{}'.format(active_account))
+        active_account = re.escape(active_account)
+        active_account = r'\w+:{}'.format(active_account)
         if re.search(active_account, ' '.join(owners)):
             return True
 
