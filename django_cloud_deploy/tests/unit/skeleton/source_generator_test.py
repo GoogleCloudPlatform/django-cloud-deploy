@@ -85,6 +85,23 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
             # Test wsgi uses remote settings.
             self.assertIn('cloud_settings', wsgi_content)
 
+    def test_generate_project_files_from_existing_project(self):
+        project_name = 'mysite'
+        management.call_command('startproject', project_name, self._project_dir)
+        self._generator.generate_from_existing(project_name, self._project_dir)
+
+        with open(os.path.join(self._project_dir, project_name,
+                               'wsgi.py')) as f:
+            content = f.read()
+
+            # Test wsgi uses cloud settings.
+            self.assertIn(project_name + '.cloud_settings', content)
+        with open(os.path.join(self._project_dir, 'manage.py')) as f:
+            content = f.read()
+
+            # Test manage.py uses local settings.
+            self.assertIn(project_name + '.local_settings', content)
+
 
 class DjangoAppFileGeneratorTest(FileGeneratorTest):
 

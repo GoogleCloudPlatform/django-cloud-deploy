@@ -171,6 +171,33 @@ class _DjangoProjectFileGenerator(_Jinja2FileGenerator):
         self._generate_files(self.PROJECT_TEMPLATE_FOLDER, project_dir,
                              filename_template_replacement, options)
 
+    def generate_from_existing(self, project_name: str, project_dir: str):
+        """Modifications of existing Django project files.
+
+        Args:
+            project_name: Name of the project to be modified.
+            project_dir: The destination path to hold files of the project.
+        """
+        files_list = os.listdir(project_dir)
+        if 'manage.py' in files_list:
+            manage_py_path = os.path.join(project_dir, 'manage.py')
+            with open(manage_py_path) as f:
+                content = f.read()
+                content = content.replace(project_name + '.settings',
+                                          project_name + '.local_settings')
+            with open(manage_py_path, 'w') as f:
+                f.write(content)
+
+        files_list = os.listdir(os.path.join(project_dir, project_name))
+        if 'wsgi.py' in files_list:
+            wsgi_path = os.path.join(project_dir, project_name, 'wsgi.py')
+            with open(wsgi_path) as f:
+                content = f.read()
+                content = content.replace(project_name + '.settings',
+                                          project_name + '.cloud_settings')
+            with open(wsgi_path, 'w') as f:
+                f.write(content)
+
 
 class _DjangoAppFileGenerator(_Jinja2FileGenerator):
     """Generate Django and app files."""
@@ -687,6 +714,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
 
         # We assume django admin overwrite files never exist in an existing
         # Django project
+        self.django_project_generator.generate_from_existing(
+            project_name, project_dir)
         self.django_admin_overwrite_generator.generate_new(
             project_id, project_name, project_dir)
         self.settings_file_generator.generate_from_existing(
