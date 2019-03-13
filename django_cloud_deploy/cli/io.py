@@ -15,12 +15,14 @@
 
 import abc
 import contextlib
+import datetime
 import getpass
 import os
 import re
 import sys
 import threading
 import time
+import typing
 
 import progressbar
 
@@ -35,6 +37,7 @@ class _ProgressBar(object):
     def __init__(self,
                  expect_time: int,
                  message: str,
+                 fd: typing.TextIO = sys.stderr,
                  tty: bool = True,
                  width: int = 80):
         """Constructor of the class.
@@ -47,34 +50,47 @@ class _ProgressBar(object):
             expect_time: How long the progress bar is going to run.
                 (In seconds).
             message: A prefix of the progress bar showing what it is about.
+            fd: The file (probably a terminal) to write progress data to.
             tty: Whether the progress bar is being used in a terminal.
             width: Width of the whole progress bar, including the prefix and
                 suffix.
         """
         self._expect_time = expect_time
+        self._message = message
+        self._fd = fd
         self._tty = tty
+        self._bar = None
+        self._thread = None
+        self._bar_lock = None
+        self._start_time = None  # The time that the start() method was called.
 
-        if tty:
+        if self._tty:
             widgets = [
-                message,
+                self._message,
                 progressbar.Bar(marker='█', fill='∙'), ' (',
                 progressbar.ETA(), ') '
             ]
+            # The bar will tick every 0.5 seconds.
+            # term_width define width of the whole progress bar, including the
+            # prefix and suffix.
+            self._bar = progressbar.ProgressBar(
+                widgets=widgets,
+                max_value=expect_time * 2,
+                term_width=width,
+                fd=self._fd)
+
+            self._thread = threading.Thread(target=self._run)
+            self._bar_lock = threading.Lock()
         else:
             # Not showing progress bar when not writing to an interactive
             # console. This is because the progress bar might not show properly.
-            widgets = [message, ' (', progressbar.ETA(), ') ']
-        # The bar will tick every 0.5 seconds.
-        # term_width define width of the whole progress bar, including the
-        # prefix and suffix.
-        self._bar = progressbar.ProgressBar(
-            widgets=widgets, max_value=expect_time * 2, term_width=width)
-
-        self._thread = threading.Thread(target=self._run)
-        self._bar_lock = threading.Lock()
+            self._fd.write('{} (ETA: {} seconds)\n'.format(
+                self._message, self._expect_time))
 
     def start(self):
-        self._thread.start()
+        self._start_time = datetime.datetime.now()
+        if self._tty:
+            self._thread.start()
 
     def finish(self):
         """Make progress bar go to the end.
@@ -82,11 +98,18 @@ class _ProgressBar(object):
         This is useful when the task takes shorter than the expect time to
         finish.
         """
-        with self._bar_lock:
-            # Go to the end of progress bar.
-            if self._tty:
+        if self._tty:
+            with self._bar_lock:
+                # Go to the end of progress bar.
                 self._bar.update(self._expect_time * 2)
-            self._bar.finish()
+                self._bar.finish()
+        else:
+            # Format the output like:
+            # Updating FlimFlam (ETA: 120 seconds)
+            #                -> (actual: 74 seconds)
+            self._fd.write('{0} -> (actual: {1:.0f} seconds)\n'.format(
+                ' ' * (len(self._message) - len(' ->')),
+                (datetime.datetime.now() - self._start_time).total_seconds()))
 
     def _run(self):
         """The function to update progress bar."""
@@ -187,8 +210,9 @@ class ConsoleIO(IO):
             None
         """
 
-        is_tty = os.isatty(sys.stdout.fileno())
-        progress_bar = _ProgressBar(expect_time, message, tty=is_tty)
+        is_tty = os.isatty(sys.stderr.fileno())
+        progress_bar = _ProgressBar(
+            expect_time, message, sys.stderr, tty=is_tty)
         try:
             progress_bar.start()
             yield
