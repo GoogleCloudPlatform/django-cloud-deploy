@@ -16,7 +16,7 @@
 import os
 import webbrowser
 
-def open(url: str):
+def open_url(url: str):
     """Filter ugly terminal output with webbrowser"""
     with open(os.devnull, 'wb') as f:
         os.dup2(f.fileno(), 2)

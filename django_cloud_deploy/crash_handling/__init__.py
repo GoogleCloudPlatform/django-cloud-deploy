@@ -110,7 +110,7 @@ def _create_issue(issue_title: str, issue_content: str):
     params = urllib.parse.urlencode(
         {'title': issue_title, 'body': issue_content, 'labels': _ISSUE_LABEL})
     url = request_url.format(params)
-    webbrowser.open(url)
+    webbrowser.open_url(url)
 
 
 def _create_issue_title(err: Exception, command: str) -> str:

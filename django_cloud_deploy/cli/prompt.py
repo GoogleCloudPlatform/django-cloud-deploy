@@ -652,7 +652,7 @@ class BillingPrompt(TemplatePrompt):
         Returns:
             Name of the user's newly created billing account.
         """
-        webbrowser.open('https://console.cloud.google.com/billing/create')
+        webbrowser.open_url('https://console.cloud.google.com/billing/create')
         existing_billing_account_names = [
             account['name'] for account in existing_billing_accounts
         ]

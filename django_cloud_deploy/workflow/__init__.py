@@ -259,7 +259,7 @@ class WorkflowManager(object):
         self._console_io.tell('Your app is running at {}.'.format(app_url))
 
         if open_browser:
-            webbrowser.open(app_url)
+            webbrowser.open_url(app_url)
         return app_url
 
     def update_project(self,
@@ -336,7 +336,7 @@ class WorkflowManager(object):
                     project_id, django_directory_path, is_new=False)
         self._console_io.tell('Your app is running at {}.'.format(app_url))
         if open_browser:
-            webbrowser.open(app_url)
+            webbrowser.open_url(app_url)
 
     @staticmethod
     def _sanitize_name(name: str) -> str:
