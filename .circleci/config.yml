@@ -110,6 +110,26 @@ jobs:
             nox -f django_cloud_deploy/nox.py -s e2e_test_gae
           # Timeout of e2e test is set to 30 minutes
           no_output_timeout: 30m
+
+  Resource Clean Up:
+    # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
+    # Using machine newer than circleci/classic:201710-01 will make "apt-get"
+    # fail to install packages
+    machine:
+      image: circleci/classic:201710-01
+
+    steps:
+      - checkout
+      - run: *install_gcloud
+      - run: *install_nox
+      - run: *install_cloud_sql_proxy
+      - run: *dump_credentials
+      - run:
+          name: Run Clean Up
+          command: |
+            pyenv global 2.7.12 3.5.2
+            nox -f django_cloud_deploy/nox.py -s resource_cleanup
+
   Release:
     docker:
       - image: googleapis/nox:0.18.2
@@ -127,6 +147,7 @@ workflows:
       - Unit Test
       - Lint
       - Integration Test
+      - Resource Clean Up
       - GKE E2E Test
       - GAE E2E Test
   release:

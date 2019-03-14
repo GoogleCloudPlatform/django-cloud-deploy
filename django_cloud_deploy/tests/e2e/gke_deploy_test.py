@@ -31,7 +31,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome import options
 
 
-class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUpTest):
+class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUp):
     """End to end test for create and deploy new project."""
 
     _CLOUDSQL_ROLES = ('roles/cloudsql.client', 'roles/cloudsql.editor',

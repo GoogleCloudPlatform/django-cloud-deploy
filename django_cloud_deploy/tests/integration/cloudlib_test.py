@@ -22,7 +22,7 @@ from django_cloud_deploy.tests.lib import utils
 
 
 class StaticContentServeClientIntegrationTest(test_base.DjangoFileGeneratorTest,
-                                              test_base.ResourceCleanUpTest):
+                                              test_base.ResourceCleanUp):
     """Integration test for django_gke.cloudlib.static_content_serve."""
 
     def setUp(self):
@@ -39,7 +39,7 @@ class StaticContentServeClientIntegrationTest(test_base.DjangoFileGeneratorTest,
                     self.project_id, bucket_name)
 
 
-class ServiceAccountClientIntegrationTest(test_base.ResourceCleanUpTest):
+class ServiceAccountClientIntegrationTest(test_base.ResourceCleanUp):
     """Integration test for cloudlib.service_account."""
 
     _ROLES = ('roles/cloudsql.client', 'roles/cloudsql.editor',
@@ -63,7 +63,7 @@ class ServiceAccountClientIntegrationTest(test_base.ResourceCleanUpTest):
 
 
 class DatabaseClientIntegrationTest(test_base.DjangoFileGeneratorTest,
-                                    test_base.ResourceCleanUpTest):
+                                    test_base.ResourceCleanUp):
     """Integration test for django_cloud_deploy.cloudlib.database."""
 
     def setUp(self):
@@ -82,7 +82,7 @@ class DatabaseClientIntegrationTest(test_base.DjangoFileGeneratorTest,
                     self.project_id, self.instance_name, self.database_name)
 
 
-class ContainerClientIntegrationTest(test_base.ResourceCleanUpTest):
+class ContainerClientIntegrationTest(test_base.ResourceCleanUp):
     """Integration test for django_cloud_deploy.cloudlib.container."""
 
     def setUp(self):

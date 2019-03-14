@@ -31,7 +31,8 @@ from googleapiclient import errors
 import requests
 
 
-class EnableServiceWorkflowIntegrationTest(test_base.ResourceCleanUpTest):
+class EnableServiceWorkflowIntegrationTest(test_base.ResourceCleanUp,
+                                           test_base.ResourceList):
     """Integration test for django_cloud_deploy.workflow._enable_service."""
 
     # Google drive api is not already enabled on the GCP project for integration
@@ -48,24 +49,18 @@ class EnableServiceWorkflowIntegrationTest(test_base.ResourceCleanUpTest):
             credentials=self.credentials,
             cache_discovery=False)
 
-    def _list_enabled_services(self):
-        parent = '/'.join(['projects', self.project_id])
-        request = self.service_usage_service.services().list(
-            parent=parent, filter='state:ENABLED')
-        response = request.execute(num_retries=5)
-        return [service['config']['name'] for service in response['services']]
-
     def test_enable_services(self):
         with self.disable_services(self.SERVICES):
             self.enable_service_workflow.enable_required_services(
                 project_id=self.project_id, services=self.SERVICES)
-            enabled_services = self._list_enabled_services()
+            enabled_services = self.list_enabled_services(
+                self.service_usage_service)
             for service in self.SERVICES:
                 self.assertIn(service['name'], enabled_services)
 
 
 class ServiceAccountKeyGenerationWorkflowIntegrationTest(
-        test_base.ResourceCleanUpTest):
+        test_base.ResourceCleanUp, test_base.ResourceList):
     """Integration test for django_cloud_deploy.workflow._service_account."""
 
     ROLES = ('roles/cloudsql.client', 'roles/cloudsql.editor',
@@ -89,27 +84,6 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
             'v1',
             credentials=self.credentials,
             cache_discovery=False)
-
-    def _list_service_accounts(self):
-        resource_name = '/'.join(['projects', self.project_id])
-        request = self.iam_service.projects().serviceAccounts().list(
-            name=resource_name)
-        response = request.execute(num_retries=5)
-        accounts = []
-        while True:
-            # Sometimes the response does not contain any accounts object, but
-            # only contains the nextPageToken. At this time, there are still
-            # more accounts in the remaining pages.
-            accounts += [
-                account['email'] for account in response.get('accounts', [])
-            ]
-            if 'nextPageToken' in response:
-                request = self.iam_service.projects().serviceAccounts().list(
-                    name=resource_name, pageToken=response.get('nextPageToken'))
-                response = request.execute(num_retries=5)
-            else:
-                break
-        return accounts
 
     def _get_iam_policy(self):
         request = self.cloudresourcemanager_service.projects().getIamPolicy(
@@ -147,7 +121,7 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
 
 
 class DeploygkeWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest,
-                                       test_base.ResourceCleanUpTest):
+                                       test_base.ResourceCleanUp):
     """Integration test for django_cloud_deploy.workflow._deploygke."""
 
     def setUp(self):
@@ -236,7 +210,7 @@ class ProjectWorkflowIntegrationTest(test_base.BaseTest):
 
 
 class StaticContentServeWorkflowIntegrationTest(
-        test_base.DjangoFileGeneratorTest, test_base.ResourceCleanUpTest):
+        test_base.DjangoFileGeneratorTest, test_base.ResourceCleanUp):
     """Integration test for django_gke.workflow._static_content_serve."""
 
     def setUp(self):
@@ -258,7 +232,8 @@ class StaticContentServeWorkflowIntegrationTest(
 
 
 class DatabaseWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest,
-                                      test_base.ResourceCleanUpTest):
+                                      test_base.ResourceCleanUp,
+                                      test_base.ResourceList):
     """Integration test for django_cloud_deploy.workflow._database."""
 
     def setUp(self):
@@ -269,20 +244,6 @@ class DatabaseWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest,
             'v1beta4',
             cache_discovery=False,
             credentials=self.credentials)
-
-    def _list_instances(self):
-        request = self.sqladmin_service.instances().list(
-            project=self.project_id)
-        response = request.execute(num_retries=5)
-        instances = [item['name'] for item in response['items']]
-        return instances
-
-    def _list_databases(self, instance_name):
-        request = self.sqladmin_service.databases().list(
-            project=self.project_id, instance=instance_name)
-        response = request.execute(num_retries=5)
-        databases = [item['name'] for item in response['items']]
-        return databases
 
     def test_create_and_setup_database(self):
         """Test case for _database.DatabaseWorkflow.create_and_setup_database.
@@ -306,11 +267,12 @@ class DatabaseWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest,
                     superuser_password=superuser_password)
 
                 # Assert Cloud SQL instance is created
-                instances = self._list_instances()
+                instances = self.list_instances(self.sqladmin_service)
                 self.assertIn(self.instance_name, instances)
 
                 # Assert database is created
-                databases = self._list_databases(self.instance_name)
+                databases = self.list_databases(self.instance_name,
+                                                self.sqladmin_service)
                 self.assertIn(self.database_name, databases)
 
                 with self.database_workflow.with_cloud_sql_proxy(

@@ -103,3 +103,11 @@ def e2e_test_gae(session, python_version):
     session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
     session.run('py.test', 'tests/e2e/gae_deploy_test.py', '--timeout=1800')
+
+
+@nox.session
+def resource_cleanup(session):
+    """Cleanup GCP resources used by tests."""
+    session.interpreter = 'python3.5'
+    session.install(*PACKAGES)
+    session.run('py.test', 'tests/cleanup/resource_cleanup.py')
