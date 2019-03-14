@@ -105,7 +105,7 @@ class DatabaseClient(object):
         # See
         # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances/insert
         try:
-            request.execute()
+            request.execute(num_retries=5)
         except errors.HttpError as e:
             if e.resp.status == 409:
                 # A cloud SQL instance with the same name already exist. This is
@@ -115,7 +115,7 @@ class DatabaseClient(object):
         while True:
             request = self._sqladmin_service.instances().get(
                 project=project_id, instance=instance)
-            response = request.execute()
+            response = request.execute(num_retries=5)
             # Response format:
             # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances#resource
             if response['state'] == 'RUNNABLE':
@@ -146,7 +146,7 @@ class DatabaseClient(object):
             project=project_id, instance=instance, database=database)
         response = []
         try:
-            response = request.execute()
+            response = request.execute(num_retries=5)
         except errors.HttpError as e:
             if e.resp.status == 404:
                 # The database we would like to create does not exist yet. This
@@ -168,11 +168,11 @@ class DatabaseClient(object):
                 'project': project_id,
                 'name': database
             })
-        response = request.execute()
+        response = request.execute(num_retries=5)
         while response['status'] in ['PENDING']:
             request = self._sqladmin_service.databases().get(
                 project=project_id, instance=instance, database=database)
-            response = request.execute()
+            response = request.execute(num_retries=5)
             time.sleep(2)
 
         if response['status'] not in ['DONE', 'RUNNING']:
@@ -202,7 +202,7 @@ class DatabaseClient(object):
             host='no-host',
             name=user,
             body={'password': password})
-        response = request.execute()
+        response = request.execute(num_retries=5)
         if response['status'] not in ['DONE', 'RUNNING']:
             raise DatabaseError(
                 'unexpected database status after creation: {!r} [{!r}]'.format(

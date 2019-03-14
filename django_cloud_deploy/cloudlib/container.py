@@ -115,7 +115,7 @@ class ContainerClient(object):
         name = 'projects/{}/locations/{}'.format(project_id, zone)
         request = self._container_service.projects().locations(
         ).getServerConfig(name=name)
-        response = request.execute()
+        response = request.execute(num_retries=5)
         if 'defaultClusterVersion' not in response:
             raise ContainerCreationError('')
         return response['defaultClusterVersion']
@@ -158,7 +158,7 @@ class ContainerClient(object):
         request = self._container_service.projects().zones().clusters().create(
             projectId=project_id, zone=zone, body=body)
         try:
-            request.execute()
+            request.execute(num_retries=5)
         except errors.HttpError as e:
             if e.resp.status == 403:
                 raise ContainerCreationError(
@@ -176,7 +176,7 @@ class ContainerClient(object):
         while True:
             request = self._container_service.projects().zones().clusters().get(
                 projectId=project_id, zone=zone, clusterId=cluster_name)
-            response = request.execute()
+            response = request.execute(num_retries=5)
 
             # Possible status:
             # https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.zones.clusters#Status
@@ -226,7 +226,7 @@ class ContainerClient(object):
 
         request = self._container_service.projects().zones().clusters().get(
             projectId=project_id, zone=zone, clusterId=cluster_name)
-        response = request.execute()
+        response = request.execute(num_retries=5)
         if ('masterAuth' not in response or
                 'clusterCaCertificate' not in response['masterAuth']):
             raise ClusterGetInfoError(

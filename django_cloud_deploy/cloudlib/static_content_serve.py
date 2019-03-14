@@ -64,7 +64,7 @@ class StaticContentServeClient(object):
                 given project.
         """
         request = self._storage_service.buckets().list(project=project_id)
-        response = request.execute()
+        response = request.execute(num_retries=5)
         if 'items' not in response:
             raise StaticContentServeError(
                 'Unexpected response listing buckets in project "{}"'
@@ -125,7 +125,7 @@ class StaticContentServeClient(object):
         request = self._storage_service.buckets().insert(
             project=project_id, body=bucket_body)
         try:
-            response = request.execute()
+            response = request.execute(num_retries=5)
             # When the api call succeed, the response is a Bucket Resource
             # object. See
             # https://cloud.google.com/storage/docs/json_api/v1/buckets#resource
@@ -169,7 +169,7 @@ class StaticContentServeClient(object):
         request = self._storage_service.buckets().getIamPolicy(
             bucket=bucket_name)
         try:
-            response = request.execute()
+            response = request.execute(num_retries=5)
             if 'bindings' not in response:
                 raise StaticContentServeError(
                     'Unexpected responses getting iam policy of bucket "{}"'.
@@ -193,7 +193,7 @@ class StaticContentServeClient(object):
         request = self._storage_service.buckets().setIamPolicy(
             bucket=bucket_name, body=new_policy)
         try:
-            response = request.execute()
+            response = request.execute(num_retries=5)
             if 'bindings' not in response:
                 raise StaticContentServeError(
                     'Unexpected responses setting iam policy of bucket "{}"'.
@@ -219,7 +219,7 @@ class StaticContentServeClient(object):
         request = self._storage_service.objects().insert(
             bucket=bucket_name, body=body, media_body=media_body)
         try:
-            response = request.execute()
+            response = request.execute(num_retries=5)
             if 'name' not in response:
                 raise StaticContentServeError(
                     'Unexpected responses when uploading file "{}" to '
