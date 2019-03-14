@@ -25,7 +25,6 @@ def open_url(url: str):
     In attempts to improve UX when using the CLI, we are surpressing that
     error with the following utility. For more information refer to:
     http://man7.org/linux/man-pages/man2/dup.2.html
-
     """
     with open(os.devnull, 'wb') as f:
         os.dup2(f.fileno(), 2)
