@@ -16,6 +16,7 @@
 import os
 import webbrowser
 
+
 def open_url(url: str):
     """Filter ugly terminal output when using webbrowser.
 
