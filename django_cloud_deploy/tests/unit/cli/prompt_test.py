@@ -39,6 +39,16 @@ _FAKE_PROJECT_RESPONSE = {
     }
 }
 
+_FAKE_PERMISSIONS_RESPONSE_OWNER = [{
+    'role': 'roles/owner',
+    'members': ['user:email@email.com']
+}]
+
+_FAKE_PERMISSIONS_RESPONSE_EDITOR = [{
+    'role': 'roles/editor',
+    'members': ['user:email@email.com']
+}]
+
 
 class GoogleCloudProjectNamePromptTest(absltest.TestCase):
     """Tests for prompt.GoogleCloudProjectNamePrompt."""
@@ -245,7 +255,9 @@ class ProjectIdPromptTest(parameterized.TestCase):
     def setUpClass(cls):
         creds = mock.Mock(credentials.Credentials, authSpec=True)
         project_client = project.ProjectClient.from_credentials(creds)
-        cls.project_id_prompt = prompt.GoogleProjectId(project_client)
+        active_account = 'email@email.com'
+        cls.project_id_prompt = prompt.GoogleProjectId(project_client,
+                                                       active_account)
 
     def test_new_prompt(self):
         test_io = io.TestIO()
@@ -273,11 +285,16 @@ class ProjectIdPromptTest(parameterized.TestCase):
     @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
                 'project_exists',
                 return_value=True)
-    def test_existing_prompt(self, unused_mock):
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'get_project_permissions',
+                return_value=_FAKE_PERMISSIONS_RESPONSE_OWNER)
+    def test_existing_prompt(self, *unused_mock):
         test_io = io.TestIO()
         args = {
+            'backend': 'gae',
             'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
-            'project_id': 'projectid-123'
+            'project_id': 'projectid-123',
+            'use_existing_project': True
         }
         test_io.answers.append('projectid-123')
         args = self.project_id_prompt.prompt(test_io, '[1/2]', args)
@@ -285,6 +302,51 @@ class ProjectIdPromptTest(parameterized.TestCase):
 
         self.assertEqual(project_id, 'projectid-123')
         self.assertEqual(len(test_io.answers), 1)  # Answer is not used.
+
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'project_exists',
+                return_value=True)
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'get_project_permissions',
+                return_value=_FAKE_PERMISSIONS_RESPONSE_EDITOR)
+    def test_existing_prompt_incorrect_permission_flag(self, *unused_mock):
+        test_io = io.TestIO()
+        args = {
+            'backend': 'gae',
+            'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
+            'project_id': 'projectid-123',
+            'use_existing_project': True
+        }
+        test_io.answers.append('projectid-123')
+
+        # When passed as a flag, if the validation fails we expect the
+        # command to exit out.
+        with self.assertRaises(SystemExit):
+            self.project_id_prompt.prompt(test_io, '[1/2]', args)
+
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'project_exists',
+                return_value=True)
+    @mock.patch('django_cloud_deploy.cloudlib.project.ProjectClient.'
+                'get_project_permissions',
+                side_effect=[
+                    _FAKE_PERMISSIONS_RESPONSE_EDITOR,
+                    _FAKE_PERMISSIONS_RESPONSE_OWNER
+                ])
+    def test_existing_prompt_incorrect_permission_cli(self, *unused_mock):
+        test_io = io.TestIO()
+        args = {
+            'backend': 'gae',
+            'project_creation_mode': workflow.ProjectCreationMode.MUST_EXIST,
+            'use_existing_project': True
+        }
+        test_io.answers.append('projectid-wrong')
+        test_io.answers.append('projectid-123')
+        args = self.project_id_prompt.prompt(test_io, '[1/2]', args)
+        project_id = args['project_id']
+
+        self.assertEqual(len(test_io.answers), 0)
+        self.assertEqual(project_id, 'projectid-123')
 
     def test_prompt_default_project_name(self):
         test_io = io.TestIO()

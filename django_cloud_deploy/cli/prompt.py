@@ -14,7 +14,6 @@
 """Prompts the user for information e.g. project name."""
 
 import abc
-import copy
 import enum
 import functools
 import os.path
@@ -347,7 +346,7 @@ class StringTemplatePrompt(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step,
                                      args.get(self.PARAMETER, None),
                                      self._validate):
@@ -429,7 +428,7 @@ class GoogleProjectName(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
 
         project_id = args.get('project_id', None)
         mode = args.get('project_creation_mode', None)
@@ -490,7 +489,7 @@ class GoogleNewProjectId(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step,
                                      args.get(self.PARAMETER, None),
                                      self._validate):
@@ -513,8 +512,10 @@ class GoogleProjectId(TemplatePrompt):
 
     PARAMETER = 'project_id'
 
-    def __init__(self, project_client: project.ProjectClient):
+    def __init__(self, project_client: project.ProjectClient,
+                 active_account: str):
         self.project_client = project_client
+        self.active_account = active_account
 
     def prompt(self, console: io.IO, step: str,
                args: Dict[str, Any]) -> Dict[str, Any]:
@@ -531,7 +532,8 @@ class GoogleProjectId(TemplatePrompt):
         prompter = GoogleNewProjectId()
 
         if args.get('use_existing_project', False):
-            prompter = GoogleExistingProjectId(self.project_client)
+            prompter = GoogleExistingProjectId(self.project_client,
+                                               self.active_account)
 
         return prompter.prompt(console, step, args)
 
@@ -541,50 +543,106 @@ class GoogleExistingProjectId(TemplatePrompt):
 
     PARAMETER = 'project_id'
 
-    def __init__(self, project_client: project.ProjectClient):
+    def __init__(self, project_client: project.ProjectClient,
+                 active_account: str):
         self.project_client = project_client
+        self.active_account = active_account
 
     def prompt(self, console: io.IO, step: str,
                args: Dict[str, Any]) -> Dict[str, Any]:
-        """Extracts user arguments through the command-line.
+        """Prompt the user to a Google Cloud Platform project id.
 
-        Args:
-            console: Object to use for user I/O.
-            step: Message to present to user regarding what step they are on.
-            args: Dictionary holding prompts answered by user and set up
-                command-line arguments.
+        If the user supplies the project_id as a flag we want to validate that
+        it exists. We tell the user to supply a new one if it does not.
 
         Returns: A Copy of args + the new parameter collected.
         """
 
-        new_args = copy.deepcopy(args)
-        if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
-                                     self._validate):
+        new_args = dict(args)
+        backend = args.get('backend')
+        validate = functools.partial(self._validate, backend,
+                                     self.active_account)
+        if self._is_valid_passed_arg(console, step,
+                                     args.get(self.PARAMETER, None), validate):
             return new_args
 
         msg = ('{} Enter the <b>existing</b> Google Cloud Platform Project ID '
-               'to use.').format(step)
-        answer = _ask_prompt(msg, console, self._validate)
+               'to use: ').format(step)
+        answer = _ask_prompt(msg, console, validate)
         new_args[self.PARAMETER] = answer
         return new_args
 
-    def _validate(self, s: str):
+    def _validate(self, backend: str, active_account: str, project_id: str):
         """Validates that a string is a valid project id.
 
         Args:
-            s: The string to validate.
+            backend: The backend that will be used to host the app.
+            active_account: Account that is logged in on gcloud cli.
+            project_id: Id of the Google Project.
 
         Raises:
             ValueError: if the input string is not valid.
         """
 
-        if not re.match(r'[a-z][a-z0-9\-]{5,29}', s):
-            raise ValueError(('Invalid Google Cloud Platform Project ID "{}": '
-                              'must be between 6 and 30 characters and contain '
-                              'lowercase letters, digits or hyphens').format(s))
+        if not re.match(r'[a-z][a-z0-9\-]{5,29}', project_id):
+            raise ValueError(
+                ('Invalid Google Cloud Platform Project ID "{}": '
+                 'must be between 6 and 30 characters and contain '
+                 'lowercase letters, digits or hyphens').format(project_id))
 
-        if not self.project_client.project_exists(s):
-            raise ValueError('Project {} does not exist'.format(s))
+        if not self.project_client.project_exists(project_id):
+            raise ValueError('Project {} does not exist'.format(project_id))
+
+        if not self._has_correct_permissions(backend, project_id,
+                                             active_account):
+            msg = 'User has incorrect permissions to deploy.'
+            if backend == 'gae':
+                msg = 'User must be a Project Owner to deploy on GAE'
+            elif backend == 'gke':
+                msg = ('User does not have correct permissions'
+                       'to deploy on GKE')
+            raise ValueError(msg)
+
+    def _has_correct_permissions(self, backend: str, project_id: str,
+                                 active_account: str):
+        """Validates that the user has the permissions to deploy onto project.
+
+        Args:
+            project_id: Id of the existing project.
+            backend: The backend that will be used to host the app.
+            active_account: Account that is logged in on gcloud cli.
+        """
+        # The user must have logged in
+        assert active_account not in ['', None], "User must log in via gcloud"
+
+        permissions = self.project_client.get_project_permissions(project_id)
+        owner_permission = list(
+            filter(lambda d: d.get('role') == 'roles/owner', permissions))
+        editor_permission = list(
+            filter(lambda d: d.get('role') == 'roles/editor', permissions))
+
+        owners = []
+        editors = []
+        if owner_permission:
+            owners = owner_permission[0].get('members', [])
+        if editor_permission:
+            editors = editor_permission[0].get('members', [])
+
+        # Regex will catch user:email@email.com
+        # and serviceAccount:email@email.com
+        # which are currently the only cases
+        active_account = re.escape(active_account)
+        active_account = r'\w+:{}'.format(active_account)
+        if re.search(active_account, ' '.join(owners)):
+            return True
+
+        if backend == 'gae':  # User needs to be in owner to deploy in GAE.
+            return False
+
+        if re.search(active_account, ' '.join(editors)):
+            return True
+
+        return False
 
 
 class CredentialsPrompt(TemplatePrompt):
@@ -606,7 +664,7 @@ class CredentialsPrompt(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step,
                                      args.get(self.PARAMETER), lambda x: x):
             return new_args
@@ -717,7 +775,7 @@ class BillingPrompt(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
                                      self._validate):
             return new_args
@@ -786,7 +844,7 @@ class PostgresPasswordPrompt(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
                                      self._validate):
             return new_args
@@ -839,7 +897,7 @@ class DjangoFilesystemPath(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
 
         if self._is_valid_passed_arg(console, step,
                                      args.get(self.PARAMETER), lambda x: x):
@@ -890,7 +948,7 @@ class DjangoFilesystemPathUpdate(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
                                      self._validate):
             return new_args
@@ -1037,7 +1095,7 @@ class DjangoSuperuserPasswordPrompt(TemplatePrompt):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
                                      self._validate):
             return new_args
@@ -1107,17 +1165,18 @@ class RootPrompt(object):
         'django_superuser_email',
     ]
 
-    def _get_creds(self, console: io.IO, first_step: str, args: Dict[str, Any]):
-        auth_client = auth.AuthClient()
+    def _get_creds(self, console: io.IO, first_step: str, args: Dict[str, Any],
+                   auth_client: auth.AuthClient):
         return CredentialsPrompt(auth_client).prompt(console, first_step,
                                                      args)['credentials']
 
-    def _setup_prompts(self, creds) -> Dict[str, TemplatePrompt]:
+    def _setup_prompts(self, creds,
+                       active_account: str) -> Dict[str, TemplatePrompt]:
         project_client = project.ProjectClient.from_credentials(creds)
         billing_client = billing.BillingClient.from_credentials(creds)
 
         return {
-            'project_id': GoogleProjectId(project_client),
+            'project_id': GoogleProjectId(project_client, active_account),
             'project_name': GoogleProjectName(project_client),
             'billing_account_name': BillingPrompt(billing_client),
             'database_password': PostgresPasswordPrompt(),
@@ -1143,7 +1202,7 @@ class RootPrompt(object):
 
         Returns: A Copy of args + the new parameter collected.
         """
-        new_args = copy.deepcopy(args)
+        new_args = dict(args)
         if new_args.get('use_existing_project', False):
             new_args['project_creation_mode'] = (
                 workflow.ProjectCreationMode.MUST_EXIST)
@@ -1160,9 +1219,12 @@ class RootPrompt(object):
         step_template = '<b>[{}/{}]</b>'
         first_step = step_template.format(1, total_steps)
 
-        creds = self._get_creds(console, first_step, args)
+        auth_client = auth.AuthClient()
+        creds = self._get_creds(console, first_step, args, auth_client)
+        active_account = auth_client.get_active_account()
         new_args['credentials'] = creds
-        required_parameters_to_prompt = self._setup_prompts(creds)
+        required_parameters_to_prompt = self._setup_prompts(
+            creds, active_account)
         for i, prompt in enumerate(prompt_order, 2):
             step = step_template.format(i, total_steps)
             new_args = required_parameters_to_prompt[prompt].prompt(
