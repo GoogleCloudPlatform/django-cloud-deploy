@@ -76,7 +76,7 @@ class ProjectClient(object):
         request = self._cloudresourcemanager_service.projects().get(
             projectId=project_id)
         try:
-            return request.execute()
+            return request.execute(num_retries=5)
         except errors.HttpError as e:
             raise e
 
@@ -85,7 +85,7 @@ class ProjectClient(object):
         request = self._cloudresourcemanager_service.projects().getIamPolicy(
             resource=project_id, body={})
         try:
-            response = request.execute()
+            response = request.execute(num_retries=5)
             return response.get('bindings', [])
         except errors.HttpError as e:
             if e.resp.status in [403, 404]:
@@ -96,7 +96,7 @@ class ProjectClient(object):
         body = {'filter': 'domain:google.com'}
         request = self._cloudresourcemanager_service.organizations().search(
             body=body)
-        response = request.execute()
+        response = request.execute(num_retries=5)
 
         # If we have non-empty result, then we are sure the user has access to
         # 'google.com' organization
@@ -115,7 +115,7 @@ class ProjectClient(object):
         request = self._cloudresourcemanager_service.projects().create(
             body=body)
         try:
-            response = request.execute()
+            response = request.execute(num_retries=5)
         except errors.HttpError as e:
             if e.resp.status == 409:
                 raise ProjectExistsError(

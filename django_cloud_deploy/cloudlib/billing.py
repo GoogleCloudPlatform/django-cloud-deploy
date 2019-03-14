@@ -70,7 +70,7 @@ class BillingClient(object):
         project_name = 'projects/{}'.format(project_id)
         request = self._billing_service.projects().getBillingInfo(
             name=project_name)
-        response = request.execute()
+        response = request.execute(num_retries=5)
         return response
 
     def list_billing_accounts(
@@ -105,7 +105,7 @@ class BillingClient(object):
         request = self._billing_service.billingAccounts().list()
         all_billing_accounts = []
         while True:
-            response = request.execute()
+            response = request.execute(num_retries=5)
             all_billing_accounts += response.get('billingAccounts', [])
             if 'nextPageToken' in response:
                 request = self._billing_service.billingAccounts().list(
@@ -138,7 +138,7 @@ class BillingClient(object):
         }
         request = self._billing_service.projects().updateBillingInfo(
             name=project_name, body=body)
-        response = request.execute()
+        response = request.execute(num_retries=5)
 
         if 'billingEnabled' not in response:
             raise BillingError(

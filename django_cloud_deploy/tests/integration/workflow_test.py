@@ -52,7 +52,7 @@ class EnableServiceWorkflowIntegrationTest(test_base.ResourceCleanUpTest):
         parent = '/'.join(['projects', self.project_id])
         request = self.service_usage_service.services().list(
             parent=parent, filter='state:ENABLED')
-        response = request.execute()
+        response = request.execute(num_retries=5)
         return [service['config']['name'] for service in response['services']]
 
     def test_enable_services(self):
@@ -94,7 +94,7 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
         resource_name = '/'.join(['projects', self.project_id])
         request = self.iam_service.projects().serviceAccounts().list(
             name=resource_name)
-        response = request.execute()
+        response = request.execute(num_retries=5)
         accounts = []
         while True:
             # Sometimes the response does not contain any accounts object, but
@@ -106,7 +106,7 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
             if 'nextPageToken' in response:
                 request = self.iam_service.projects().serviceAccounts().list(
                     name=resource_name, pageToken=response.get('nextPageToken'))
-                response = request.execute()
+                response = request.execute(num_retries=5)
             else:
                 break
         return accounts
@@ -114,7 +114,7 @@ class ServiceAccountKeyGenerationWorkflowIntegrationTest(
     def _get_iam_policy(self):
         request = self.cloudresourcemanager_service.projects().getIamPolicy(
             resource=self.project_id)
-        return request.execute()
+        return request.execute(num_retries=5)
 
     def assert_valid_service_account_key(self, key):
         for attributes in self.KEY_EXPECTED_ATTRIBUTES:
@@ -273,14 +273,14 @@ class DatabaseWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest,
     def _list_instances(self):
         request = self.sqladmin_service.instances().list(
             project=self.project_id)
-        response = request.execute()
+        response = request.execute(num_retries=5)
         instances = [item['name'] for item in response['items']]
         return instances
 
     def _list_databases(self, instance_name):
         request = self.sqladmin_service.databases().list(
             project=self.project_id, instance=instance_name)
-        response = request.execute()
+        response = request.execute(num_retries=5)
         databases = [item['name'] for item in response['items']]
         return databases
 

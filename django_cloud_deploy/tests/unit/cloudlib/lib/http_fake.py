@@ -22,7 +22,7 @@ class HttpRequestFake(object):
     def __init__(self, response):
         self.response = response
 
-    def execute(self):
+    def execute(self, num_retries=0):
         if isinstance(self.response, errors.HttpError):
             raise self.response
         return self.response
@@ -38,7 +38,7 @@ class HttpRequestFakeMultiple(object):
         self.responses = responses
         self.call_count = 0
 
-    def execute(self):
+    def execute(self, num_retries=0):
         if self.call_count >= len(self.responses):
             return None
         response = self.responses[self.call_count]

@@ -52,7 +52,7 @@ class EnableServiceClient(object):
         service_name = '/'.join(['projects', project_id, 'services', service])
         request = self._service_usage_service.services().enable(
             name=service_name)
-        response = request.execute()
+        response = request.execute(num_retries=5)
 
         # When the api call succeed, the response is a Service object.
         # See
@@ -65,7 +65,7 @@ class EnableServiceClient(object):
         while True:
             request = self._service_usage_service.services().get(
                 name=service_name)
-            response = request.execute()
+            response = request.execute(num_retries=5)
             # Response format:
             # https://cloud.google.com/service-usage/docs/reference/rest/v1/Service
             if response['state'] == 'ENABLED':
