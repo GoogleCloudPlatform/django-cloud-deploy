@@ -15,10 +15,10 @@
 
 import json
 import os
+import portpicker
 import shutil
 import socket
 from typing import Any, Dict, List, Optional, Tuple
-import webbrowser
 
 from django_cloud_deploy import config
 from django_cloud_deploy.cli import io
@@ -30,7 +30,7 @@ from django_cloud_deploy.workflow import deploy_workflow
 from django_cloud_deploy.workflow import _project
 from django_cloud_deploy.workflow import _service_account
 from django_cloud_deploy.workflow import _static_content_serve
-import portpicker
+from django_cloud_deploy.utils import webbrowser
 
 from google.auth import credentials
 

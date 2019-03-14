@@ -23,7 +23,6 @@ import re
 import string
 import time
 from typing import Any, Callable, Dict, List, Optional
-import webbrowser
 
 from django_cloud_deploy import workflow
 from django_cloud_deploy.cli import io
@@ -31,6 +30,7 @@ from django_cloud_deploy.cloudlib import auth
 from django_cloud_deploy.cloudlib import billing
 from django_cloud_deploy.cloudlib import project
 from django_cloud_deploy.skeleton import utils
+from django_cloud_deploy.utils import webbrowser
 
 
 class Command(enum.Enum):
