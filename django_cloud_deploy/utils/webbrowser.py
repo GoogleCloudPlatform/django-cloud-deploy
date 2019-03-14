@@ -1,4 +1,4 @@
-# Copyright 2018 Google LLC
+# Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,16 @@ import os
 import webbrowser
 
 def open_url(url: str):
-    """Filter ugly terminal output with webbrowser"""
+    """Filter ugly terminal output when using webbrowser.
+
+    When using webbrowser.open the follow error is shown:
+    [20451:20471:0313/132752.481635:ERROR:browser_process_sub_thread.cc(209)]
+    Waited 3 ms for network service.
+    In attempts to improve UX when using the CLI, we are surpressing that
+    error with the following utility. For more information refer to:
+    http://man7.org/linux/man-pages/man2/dup.2.html
+
+    """
     with open(os.devnull, 'wb') as f:
         os.dup2(f.fileno(), 2)
         webbrowser.open(url)

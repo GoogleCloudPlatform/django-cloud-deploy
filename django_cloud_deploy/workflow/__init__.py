@@ -15,7 +15,6 @@
 
 import json
 import os
-import portpicker
 import shutil
 import socket
 from typing import Any, Dict, List, Optional, Tuple
@@ -33,6 +32,7 @@ from django_cloud_deploy.workflow import _static_content_serve
 from django_cloud_deploy.utils import webbrowser
 
 from google.auth import credentials
+import portpicker
 
 ProjectCreationMode = _project.CreationMode
 ProjectExistsError = _project.ProjectExistsError
