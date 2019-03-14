@@ -78,12 +78,12 @@ class WorkflowManager(object):
             project_creation_mode: ProjectCreationMode.CREATE,
             billing_account_name: str,
             django_project_name: str,
-            django_app_name: str,
             django_superuser_name: str,
             django_superuser_email: str,
             django_superuser_password: str,
             django_directory_path: str,
             database_password: str,
+            django_app_name: Optional[str] = None,
             required_services: Optional[List[Dict[str, str]]] = None,
             required_service_accounts: Optional[
                 Dict[str, List[Dict[str, Any]]]] = None,
@@ -92,7 +92,8 @@ class WorkflowManager(object):
             region: str = 'us-west1',
             cloud_sql_proxy_path: str = 'cloud_sql_proxy',
             backend: str = 'gke',
-            open_browser: bool = True):
+            open_browser: bool = True,
+            deploy_existing_django_project: bool = False):
         """Workflow of deploying a newly generated Django app to GKE.
 
         Args:
@@ -105,7 +106,6 @@ class WorkflowManager(object):
                 for their Google Cloud Platform project. Should look like
                 "billingAccounts/12345-678901-234567"
             django_project_name: The name of the Django project e.g. "mysite".
-            django_app_name: The name of the Django app e.g. "poll".
             django_superuser_name: The login name of the Django superuser e.g.
                 "admin".
             django_superuser_email: The e-mail address of the Django superuser.
@@ -113,6 +113,9 @@ class WorkflowManager(object):
             django_directory_path: The location where the generated Django
                 project code should be stored.
             database_password: The password for the default database user.
+            django_app_name: The name of the Django app e.g. "poll". This is not
+                needed in deploying existing projects because the projects
+                already contain apps.
             required_services: The services needed to be enabled for deployment.
             required_service_accounts: Service accounts needed to be created for
                 deployment. It should have the following format:
@@ -137,6 +140,8 @@ class WorkflowManager(object):
             backend: The desired backend to deploy the Django App on.
             open_browser: Whether we open the browser to show the deployed app
                 at the end.
+            deploy_existing_django_project: Whether this method is used to
+                deploy an existing django project or not.
 
         Returns:
             The url of the deployed Django app.
@@ -178,21 +183,37 @@ class WorkflowManager(object):
             self._service_account_workflow.load_service_accounts())
         cloud_sql_secrets, django_secrets = self._load_secret_names(
             required_service_accounts)
-        self._source_generator.generate_new(
-            project_id=project_id,
-            project_name=django_project_name,
-            app_name=django_app_name,
-            project_dir=django_directory_path,
-            database_user=database_username,
-            database_password=database_password,
-            instance_name=database_instance_name,
-            database_name=database_name,
-            cloud_sql_proxy_port=cloud_sql_proxy_port,
-            cloud_storage_bucket_name=cloud_storage_bucket_name,
-            cloudsql_secrets=cloud_sql_secrets,
-            django_secrets=django_secrets,
-            service_name=appengine_service_name,
-            image_tag=image_name)
+        if deploy_existing_django_project:
+            self._source_generator.generate_from_existing(
+                project_id=project_id,
+                project_name=django_project_name,
+                project_dir=django_directory_path,
+                database_user=database_username,
+                database_password=database_password,
+                instance_name=database_instance_name,
+                database_name=database_name,
+                cloud_sql_proxy_port=cloud_sql_proxy_port,
+                cloud_storage_bucket_name=cloud_storage_bucket_name,
+                cloudsql_secrets=cloud_sql_secrets,
+                django_secrets=django_secrets,
+                service_name=appengine_service_name,
+                image_tag=image_name)
+        else:
+            self._source_generator.generate_new(
+                project_id=project_id,
+                project_name=django_project_name,
+                app_name=django_app_name,
+                project_dir=django_directory_path,
+                database_user=database_username,
+                database_password=database_password,
+                instance_name=database_instance_name,
+                database_name=database_name,
+                cloud_sql_proxy_port=cloud_sql_proxy_port,
+                cloud_storage_bucket_name=cloud_storage_bucket_name,
+                cloudsql_secrets=cloud_sql_secrets,
+                django_secrets=django_secrets,
+                service_name=appengine_service_name,
+                image_tag=image_name)
 
         with self._console_io.progressbar(
                 300, '[4/{}]: Database Set Up'.format(self._TOTAL_NEW_STEPS)):
