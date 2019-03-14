@@ -15,6 +15,7 @@
 
 import os
 import shutil
+import subprocess
 import tempfile
 import types
 import unittest
@@ -56,6 +57,23 @@ class GAEDeployAndUpdateE2ETest(test_base.ResourceCleanUpTest):
         backoff.expo, requests.exceptions.ConnectionError, max_tries=3)
     def _get_with_retry(url: str) -> requests.models.Response:
         return requests.get(url)
+
+    @backoff.on_predicate(backoff.expo, logger=None, max_tries=5)
+    def _wait_for_appengine_update_ready(self) -> bool:
+        """Returns when 100% traffic is put to the latest app.
+
+        Otherwise retries for at most 5 times and returns.
+        """
+        command = [
+            'gcloud', '--project=' + self.project_id, 'app', 'versions', 'list',
+            '--sort-by=LAST_DEPLOYED', '--format=csv[no-heading](TRAFFIC_SPLIT)'
+        ]
+        result = subprocess.check_output(
+            command, universal_newlines=True).rstrip().splitlines()
+        if len(result) <= 1:
+            return False
+        traffic = float(result[-1])
+        return traffic == 1.0
 
     @unittest.mock.patch('portpicker.pick_unused_port', return_value=5432)
     def test_deploy_and_update_new_project(self, unused_mock):
@@ -173,7 +191,6 @@ class GAEDeployAndUpdateE2ETest(test_base.ResourceCleanUpTest):
             self.assertEqual(len(test_io.answers), 0)
             self.assertEqual(len(test_io.password_answers), 0)
 
-            # This call is flaky without retry. Sometimes this call is made
-            # after the pod is ready but before the http server is ready.
+            self._wait_for_appengine_update_ready()
             response = self._get_with_retry(url)
             self.assertIn('Hello1 from the Cloud!', response.text)
