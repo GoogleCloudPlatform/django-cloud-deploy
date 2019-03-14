@@ -21,13 +21,12 @@ import sys
 import tempfile
 import traceback
 import urllib.parse
-import webbrowser
 
 import jinja2
 
-import django_cloud_deploy
-from django_cloud_deploy.cli import io
 from django_cloud_deploy import __version__
+from django_cloud_deploy.cli import io
+from django_cloud_deploy.utils import webbrowser
 
 
 class UserError(Exception):
@@ -111,7 +110,7 @@ def _create_issue(issue_title: str, issue_content: str):
     params = urllib.parse.urlencode(
         {'title': issue_title, 'body': issue_content, 'labels': _ISSUE_LABEL})
     url = request_url.format(params)
-    webbrowser.open(url)
+    webbrowser.open_url(url)
 
 
 def _create_issue_title(err: Exception, command: str) -> str:

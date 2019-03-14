@@ -18,7 +18,6 @@ import os
 import shutil
 import socket
 from typing import Any, Dict, List, Optional, Tuple
-import webbrowser
 
 from django_cloud_deploy import config
 from django_cloud_deploy.cli import io
@@ -30,9 +29,10 @@ from django_cloud_deploy.workflow import deploy_workflow
 from django_cloud_deploy.workflow import _project
 from django_cloud_deploy.workflow import _service_account
 from django_cloud_deploy.workflow import _static_content_serve
-import portpicker
+from django_cloud_deploy.utils import webbrowser
 
 from google.auth import credentials
+import portpicker
 
 ProjectCreationMode = _project.CreationMode
 ProjectExistsError = _project.ProjectExistsError
@@ -280,7 +280,7 @@ class WorkflowManager(object):
         self._console_io.tell('Your app is running at {}.'.format(app_url))
 
         if open_browser:
-            webbrowser.open(app_url)
+            webbrowser.open_url(app_url)
         return app_url
 
     def update_project(self,
@@ -357,7 +357,7 @@ class WorkflowManager(object):
                     project_id, django_directory_path, is_new=False)
         self._console_io.tell('Your app is running at {}.'.format(app_url))
         if open_browser:
-            webbrowser.open(app_url)
+            webbrowser.open_url(app_url)
 
     @staticmethod
     def _sanitize_name(name: str) -> str:

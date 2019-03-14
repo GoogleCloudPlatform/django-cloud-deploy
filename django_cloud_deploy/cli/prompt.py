@@ -22,7 +22,6 @@ import re
 import string
 import time
 from typing import Any, Callable, Dict, List, Optional
-import webbrowser
 
 from django_cloud_deploy import workflow
 from django_cloud_deploy.cli import io
@@ -30,6 +29,7 @@ from django_cloud_deploy.cloudlib import auth
 from django_cloud_deploy.cloudlib import billing
 from django_cloud_deploy.cloudlib import project
 from django_cloud_deploy.skeleton import utils
+from django_cloud_deploy.utils import webbrowser
 
 
 class Command(enum.Enum):
@@ -710,7 +710,7 @@ class BillingPrompt(TemplatePrompt):
         Returns:
             Name of the user's newly created billing account.
         """
-        webbrowser.open('https://console.cloud.google.com/billing/create')
+        webbrowser.open_url('https://console.cloud.google.com/billing/create')
         existing_billing_account_names = [
             account['name'] for account in existing_billing_accounts
         ]
