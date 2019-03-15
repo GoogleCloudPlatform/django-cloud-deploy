@@ -15,7 +15,10 @@
 import time
 
 from googleapiclient import discovery
+from googleapiclient import errors
 from google.auth import credentials
+
+from django_cloud_deploy import crash_handling
 
 
 class EnableServiceError(Exception):
@@ -52,7 +55,18 @@ class EnableServiceClient(object):
         service_name = '/'.join(['projects', project_id, 'services', service])
         request = self._service_usage_service.services().enable(
             name=service_name)
-        response = request.execute(num_retries=5)
+        try:
+            response = request.execute(num_retries=5)
+        except errors.HttpError as e:
+            if e.resp.status == 400:
+                tos = 'terms of service'
+                if tos in str(e):
+                    url = 'https://console.developers.google.com/terms/cloud'
+                    msg = ('Please accept the terms of service in the Google'
+                           'Cloud Console @ {}'.format(url))
+                    raise crash_handling.UserError(msg)
+            # For all errors that are not related to ToS we want to raise
+            raise e
 
         # When the api call succeed, the response is a Service object.
         # See
