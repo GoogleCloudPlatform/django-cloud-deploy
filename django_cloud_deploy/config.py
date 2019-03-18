@@ -48,7 +48,7 @@ class Configuration(object):
                                          '.config.yaml')
         if os.path.exists(self._config_path):
             with open(self._config_path) as config_file:
-                self._data = yaml.load(config_file)
+                self._data = yaml.load(config_file, Loader=yaml.FullLoader)
         else:
             self._data = {}
 

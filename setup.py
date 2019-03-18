@@ -46,6 +46,7 @@ install_requires = [
     'google-cloud-logging>=1.8.0',
     'progressbar2>=3.38.0',
     'portpicker>=1.2.0',
+    'PyYAML>=5.1',
 ]
 
 

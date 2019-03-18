@@ -40,7 +40,7 @@ def _load_test_config():
                                'integration_test_config.yaml')
     with open(config_path) as config_file:
         config_file_content = config_file.read()
-    return yaml.load(config_file_content)
+    return yaml.load(config_file_content, Loader=yaml.FullLoader)
 
 
 _TEST_CONFIG = _load_test_config()

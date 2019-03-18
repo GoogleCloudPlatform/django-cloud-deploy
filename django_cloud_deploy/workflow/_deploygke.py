@@ -74,7 +74,7 @@ class DeploygkeWorkflow(object):
         self._container_client.push_docker_image(image_name)
         yaml_file_path = os.path.join(app_directory, app_name + '.yaml')
         with open(yaml_file_path) as yaml_file:
-            for data in yaml.load_all(yaml_file):
+            for data in yaml.load_all(yaml_file, Loader=yaml.FullLoader):
                 if data['kind'] == 'Deployment':
                     deployment_data = data
                 elif data['kind'] == 'Service':
@@ -136,7 +136,7 @@ class DeploygkeWorkflow(object):
         self._container_client.push_docker_image(image_name)
         yaml_file_path = os.path.join(app_directory, app_name + '.yaml')
         with open(yaml_file_path) as yaml_file:
-            for data in yaml.load_all(yaml_file):
+            for data in yaml.load_all(yaml_file, Loader=yaml.FullLoader):
                 if data['kind'] == 'Deployment':
                     deployment_data = data
 

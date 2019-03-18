@@ -101,7 +101,7 @@ class DeploygaeWorkflow(object):
             raise DeployNewAppError(gcloud_result.stderr)
 
         with open(app_yaml_path) as yaml_file:
-            attributes = yaml.load(yaml_file.read())
+            attributes = yaml.load(yaml_file.read(), Loader=yaml.FullLoader)
         service_name = attributes.get('service')
 
         # This is the name of the default service. This case happens in real
