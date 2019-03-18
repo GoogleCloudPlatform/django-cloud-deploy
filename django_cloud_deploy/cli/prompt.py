@@ -353,8 +353,11 @@ class StringTemplatePrompt(TemplatePrompt):
             return new_args
 
         base_message = self.MESSAGE.format(step)
-        default_message = '[{}]: '.format(self.DEFAULT_VALUE)
-        msg = '\n'.join([base_message, default_message])
+        if self.DEFAULT_VALUE:
+            default_message = '[{}]: '.format(self.DEFAULT_VALUE)
+            msg = '\n'.join([base_message, default_message])
+        else:
+            msg = base_message
         answer = _ask_prompt(
             msg, console, self._validate, default=self.DEFAULT_VALUE)
         new_args[self.PARAMETER] = answer
