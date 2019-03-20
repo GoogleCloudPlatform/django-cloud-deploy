@@ -100,6 +100,8 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUp):
             test_io.password_answers.append(fake_password)
             test_io.answers.append('')  # django_superuser_email
 
+            test_io.answers.append('N')  # Do not do survey at the end
+
             fake_service_accounts = {
                 'cloud_sql': [self._FAKE_CLOUDSQL_SERVICE_ACCOUNT]
             }

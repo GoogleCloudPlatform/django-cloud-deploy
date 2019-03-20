@@ -142,9 +142,8 @@ def _multiple_choice_validate(s: str, len_options: int):
             1, len_options + 1))
 
 
-def _binary_prompt(question: str,
-                   console: io.IO,
-                   default: Optional[bool] = None) -> bool:
+def binary_prompt(question: str, console: io.IO,
+                  default: Optional[bool] = None) -> bool:
     """Used to prompt user to choose from a yes or no question.
 
     Args:
@@ -681,7 +680,7 @@ class CredentialsPrompt(TemplatePrompt):
         if active_account:  # The user has already logged in before
             msg = ('You have logged in with account [{}]. Do you want to '
                    'use it? [Y/n]: ').format(active_account)
-            use_active_credentials = _binary_prompt(msg, console, default='Y')
+            use_active_credentials = binary_prompt(msg, console, default='Y')
             create_new_credentials = not use_active_credentials
 
         if create_new_credentials:
