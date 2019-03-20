@@ -49,7 +49,7 @@ class GCPResourceCleanUp(test_base.ResourceCleanUp, test_base.ResourceList):
         Returns:
             Whether this resource should be deleted.
         """
-        if not re.match(r'^[a-z]+-?[0-9]{14}-?[a-z0-9]+', resource_name):
+        if not re.match(r'[a-z\-]+\-?[0-9]{14}\-?[a-z0-9]+', resource_name):
             return False
         now = datetime.datetime.utcnow()
         create_time = utils.parse_creation_time(resource_name)
