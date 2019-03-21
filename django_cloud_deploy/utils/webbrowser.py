@@ -27,6 +27,22 @@ def open_url(url: str):
     error with the following utility. For more information refer to:
     http://man7.org/linux/man-pages/man2/dup.2.html
     """
+
+    # Save previous standard file descriptors
+    prev_stderr_fd = os.dup(2)
+    prev_stdout_fd = os.dup(1)
     with open(os.devnull, 'wb') as f:
+        # redirect stderr and stdout to os.devnull
         os.dup2(f.fileno(), 2)
-        webbrowser.open(url)
+        os.dup2(f.fileno(), 1)
+        try:
+            webbrowser.open(url)
+        except webbrowser.Error:
+            # We are not able to do anything if any internal errors happen
+            # with webbrowser.open()
+            pass
+        finally:
+            # restore stdout and stderr
+            os.dup2(prev_stdout_fd, 1)
+            os.dup2(prev_stderr_fd, 2)
+
