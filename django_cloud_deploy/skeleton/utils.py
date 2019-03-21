@@ -78,6 +78,47 @@ def is_valid_django_project(django_directory_path: str) -> bool:
     return os.path.exists(manage_py_path)
 
 
+def guess_requirements_path(django_directory_path: str,
+                            project_name: str) -> Optional[str]:
+    """Guess the absolute path of requirements.txt.
+
+    The logic is as the follows:
+        1. If "requirements.txt" exists in the given directory, return it.
+        2. If "requirements.txt" exists in django_directory/<project_name>,
+           return it.
+        3. If files like "prod.txt", "deploy.txt" exists in
+           django_directory/requirements, return it.
+        4. If none of the above exists, return None.
+
+    Args:
+        django_directory_path: Absolute path of a Django project.
+        project_name: Name of the Django project. e.g. mysite.
+
+    Returns:
+        Absolute path of requirements.txt of the given Django project. If it
+        cannot be found, return None.
+    """
+
+    if os.path.exists(django_directory_path):
+        files_list = os.listdir(django_directory_path)
+        if 'requirements.txt' in files_list:
+            return os.path.join(django_directory_path, 'requirements.txt')
+
+    project_dir = os.path.join(django_directory_path, project_name)
+    if os.path.exists(project_dir):
+        files_list = os.listdir(project_dir)
+        if 'requirements.txt' in files_list:
+            return os.path.join(project_dir, 'requirements.txt')
+
+    requirements_dir = os.path.join(django_directory_path, 'requirements')
+    if os.path.exists(requirements_dir):
+        files_list = os.listdir(requirements_dir)
+        for file_name in files_list:
+            if 'prod' in file_name or 'deploy' in file_name:
+                return os.path.join(requirements_dir, file_name)
+    return None
+
+
 def guess_settings_path(django_directory_path: str) -> Optional[str]:
     """Guess the absolute path of settings file of the django project.
 
@@ -88,6 +129,7 @@ def guess_settings_path(django_directory_path: str) -> Optional[str]:
            local settings file.
         3. If manage.py does not exist or cannot find local settings file path
            from manage.py, return an empty string.
+
     Args:
         django_directory_path: Absolute path of a Django project.
 

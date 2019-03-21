@@ -53,6 +53,58 @@ class UtilTest(unittest.TestCase):
         shutil.rmtree(project_dir)
 
 
+class GuessRequirementsPathTest(unittest.TestCase):
+    """Unit test for guess_requirements_path."""
+
+    def setUp(self):
+        super().setUp()
+        self.project_dir = tempfile.mkdtemp()
+        self.project_name = 'mysite'
+        management.call_command('startproject', self.project_name,
+                                self.project_dir)
+
+    def tearDown(self):
+        super().tearDown()
+        shutil.rmtree(self.project_dir)
+
+    def test_requirements_txt_exist(self):
+        requirements_file_path = os.path.join(self.project_dir,
+                                              'requirements.txt')
+        with open(requirements_file_path, 'wt') as f:
+            f.write('')
+        self.assertEqual(
+            utils.guess_requirements_path(self.project_dir, self.project_name),
+            requirements_file_path)
+
+    def test_requirements_txt_not_exist(self):
+        self.assertIsNone(
+            utils.guess_requirements_path(self.project_dir, self.project_name))
+
+    def test_django_directory_not_exist(self):
+        self.assertIsNone(
+            utils.guess_requirements_path('directory_not_exist',
+                                          self.project_name))
+
+    def test_requirements_txt_exist_in_django_dir(self):
+        requirements_file_path = os.path.join(
+            self.project_dir, self.project_name, 'requirements.txt')
+        with open(requirements_file_path, 'wt') as f:
+            f.write('')
+        self.assertEqual(
+            utils.guess_requirements_path(self.project_dir, self.project_name),
+            requirements_file_path)
+
+    def test_requirements_txt_exist_in_requirements_dir(self):
+        requirements_dir = os.path.join(self.project_dir, 'requirements')
+        os.mkdir(requirements_dir)
+        requirements_file_path = os.path.join(requirements_dir, 'prod.txt')
+        with open(requirements_file_path, 'wt') as f:
+            f.write('')
+        self.assertEqual(
+            utils.guess_requirements_path(self.project_dir, self.project_name),
+            requirements_file_path)
+
+
 class GuessSettingsPath(unittest.TestCase):
     """Unit test for guess_settings_path of utils.py."""
 

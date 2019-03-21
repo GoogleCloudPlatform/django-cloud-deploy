@@ -11,9 +11,8 @@ RUN virtualenv -p python3 /env
 ENV PATH /env/bin:$PATH
 ENV DJANGO_SETTINGS_MODULE {{ project_name }}.cloud_settings
 
-ADD requirements.txt /app/requirements.txt
-RUN /env/bin/pip install -r /app/requirements.txt
 ADD . /app
+RUN /env/bin/pip install -r /app/requirements.txt
 
 CMD gunicorn -b :$PORT --access-logfile - --error-logfile - {{ project_name }}.wsgi
 # [END docker]

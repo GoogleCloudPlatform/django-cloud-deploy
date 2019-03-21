@@ -17,12 +17,14 @@
 import os
 import shutil
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import django
-from django.core.management import utils
+from django.core.management import utils as django_utils
 from django.utils import version
 from django_cloud_deploy import crash_handling
+from django_cloud_deploy.skeleton import requirements_parser
+from django_cloud_deploy.skeleton import utils
 import jinja2
 
 
@@ -313,7 +315,7 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
             'project_id': project_id,
             'project_name': project_name,
             'docs_version': version.get_docs_version(),
-            'secret_key': utils.get_random_secret_key(),
+            'secret_key': django_utils.get_random_secret_key(),
             'database_name': database_name,
             'bucket_name': cloud_storage_bucket_name,
             'cloud_sql_connection': cloud_sql_connection
@@ -367,7 +369,7 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
             'project_id': project_id,
             'project_name': project_name,
             'docs_version': version.get_docs_version(),
-            'secret_key': utils.get_random_secret_key(),
+            'secret_key': django_utils.get_random_secret_key(),
             'database_name': database_name,
             'bucket_name': cloud_storage_bucket_name,
             'cloud_sql_connection': cloud_sql_connection
@@ -449,7 +451,11 @@ class _AppEngineFileGenerator(_Jinja2FileGenerator):
 class _DependencyFileGenerator(_Jinja2FileGenerator):
     """Generate dependencis needed by Django project."""
 
-    _FILE = 'requirements.txt'
+    _REQUIREMENTS_GOOGLE = 'requirements-google.txt'
+    _REQUIREMENTS = 'requirements.txt'
+
+    # How to rename user's existing requirements.txt
+    _REQUIREMENTS_USER_RENAME = 'requirements-user.txt'
 
     def generate_new(self, project_dir: str):
         """Generate requirements.txt.
@@ -462,14 +468,112 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
 
         # TODO: Find a way to determine the correct package version
         # instead of hardcoding everything.
-        template_path = os.path.join(self._get_template_folder_path(),
-                                     self._FILE)
-        output_path = os.path.join(project_dir, self._FILE)
-        self._render_file(template_path, output_path)
+        self._generate_requirements_google(project_dir)
+        self._generate_requirements(project_dir)
 
-    def generate_from_existing(self, project_dir: str):
-        # TODO: Handle generation based on existing requirements.txt
-        self.generate_new(project_dir)
+    def generate_from_existing(self, project_dir: str, project_name: str):
+        """Generate requirements.txt from user's existing requirements.txt.
+
+        The steps are as the follows:
+            1. Guess the path of requirements.txt given the path of a Django
+               project
+            2. If requirements.txt exist, parse the packages included in it and
+               rename
+            3. Generate "requirements-google.txt" based on existing
+               requirements.txt if it exist.
+            4. Generate "requirements.txt" which recursively install
+               "requirements-google.txt" and "<requirements-user>.txt"
+
+        Args:
+            project_dir: The destination directory path to put requirements.txt.
+            project_name: Name of the Django project. e.g. mysite.
+        """
+
+        # TODO: Move this to a prompt for the path of requirements.txt, which
+        # will guess a path and use it as a default value for the prompt.
+        # Otherwise it cannot handle more customized cases
+        requirements_path = utils.guess_requirements_path(
+            project_dir, project_name)
+        existing_requirements = set()
+        requirements_relative_path = None
+        if requirements_path:
+            absolute_requirements_path = os.path.join(
+                project_dir, requirements_path)
+            existing_requirements = requirements_parser.parse(
+                absolute_requirements_path)
+
+            # Rename user's existing requirements.txt to requirements-user.txt
+            # only when it is <project_dir>/requirements.txt
+            # This is because app engine requires a file named exactly
+            # "requirements.txt" to exist and contain all dependencies.
+            # We want this "requirements.txt" to include both user's
+            # requirements and our requirements
+            if requirements_path == os.path.join(
+                    project_dir, 'requirements.txt'):
+                requirements_output_path = os.path.join(
+                    project_dir, self._REQUIREMENTS_USER_RENAME)
+                os.replace(absolute_requirements_path, requirements_output_path)
+                requirements_path = requirements_output_path
+
+            # In requirements.txt we have "-r <requirements-user.txt>"
+            # Using relative path instead of absolute path in requirements.txt
+            # is more clear and more portable
+            requirements_relative_path = os.path.relpath(
+                requirements_path, project_dir)
+        self._generate_requirements_google(project_dir, existing_requirements)
+        self._generate_requirements(project_dir, requirements_relative_path)
+
+    def _generate_requirements_google(
+            self, project_dir: str,
+            existing_requirements: Optional[Set[str]] = None):
+        """Generate requirements-google.txt.
+
+        This requirements file only contain dependencies required by admin
+        app overwrite.
+
+        Args:
+            project_dir: Absolute path of the directory to put requirements.txt.
+            existing_requirements: A list of existing requirements. The
+                generated requirements-google.txt will not include requirements
+                in this list.
+        """
+        template_path = os.path.join(self._get_template_folder_path(),
+                                     self._REQUIREMENTS_GOOGLE)
+        google_requirements = requirements_parser.parse(template_path)
+
+        # Do not include duplicate requirements
+        if existing_requirements:
+            google_requirements -= existing_requirements
+
+        with open(template_path) as requirements_file:
+            lines = [
+                line for line in requirements_file.read().splitlines()
+                if requirements_parser.parse_line(line) in google_requirements
+            ]
+
+        output_path = os.path.join(project_dir, self._REQUIREMENTS_GOOGLE)
+        with open(output_path, 'wt') as output_file:
+            output_file.write('\n'.join(lines))
+
+    def _generate_requirements(self, project_dir: str,
+                               requirements_path: Optional[str] = None):
+        """Generate requirements.txt.
+
+        If requirements_path is provided, then this requirements file will
+        inherit from the provided requirements.txt.
+
+        Args:
+            project_dir: Absolute path of the directory to put requirements.txt.
+            requirements_path: Relative path of an existing requirements.txt.
+        """
+
+        template_path = os.path.join(self._get_template_folder_path(),
+                                     self._REQUIREMENTS)
+
+        output_path = os.path.join(project_dir, self._REQUIREMENTS)
+        self._render_file(template_path, output_path, options={
+            'requirements_path': requirements_path
+        })
 
 
 class _YAMLFileGenerator(_Jinja2FileGenerator):
@@ -711,7 +815,6 @@ class DjangoSourceFileGenerator(_FileGenerator):
         instance_name = instance_name or project_name + '-instance'
         cloud_sql_connection_string = (
             '{}:{}:{}'.format(project_id, region, instance_name))
-
         # We assume django admin overwrite files never exist in an existing
         # Django project
         self.django_project_generator.generate_from_existing(
@@ -723,7 +826,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
             database_name, cloud_storage_bucket_name)
         self.docker_file_generator.generate_from_existing(
             project_name, project_dir)
-        self.dependency_file_generator.generate_from_existing(project_dir)
+        self.dependency_file_generator.generate_from_existing(
+            project_dir, project_name)
         self.yaml_file_generator.generate_from_existing(
             project_dir, project_name, project_id, instance_name, region,
             image_tag, cloudsql_secrets, django_secrets)
