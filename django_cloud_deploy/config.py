@@ -44,8 +44,7 @@ class Configuration(object):
         if not os.path.isdir(django_directory_path):
             raise ValueError('[{}] is not a valid directory path.'.format(
                 django_directory_path))
-        self._config_path = os.path.join(django_directory_path,
-                                         '.config.yaml')
+        self._config_path = os.path.join(django_directory_path, '.config.yaml')
         if os.path.exists(self._config_path):
             with open(self._config_path) as config_file:
                 self._data = yaml.load(config_file, Loader=yaml.FullLoader)
@@ -63,8 +62,9 @@ class Configuration(object):
 
     def save(self):
         """Generate the configuration file in yaml format."""
-        yaml_text = '\n'.join([self._HEADER,
-                               yaml.dump(self._data, default_flow_style=False)])
+        yaml_text = '\n'.join(
+            [self._HEADER,
+             yaml.dump(self._data, default_flow_style=False)])
         with open(self._config_path, 'w') as config_file:
             config_file.write(yaml_text)
 

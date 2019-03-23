@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Generate source files of a django app ready to be deployed to GKE."""
 
 import os
@@ -63,7 +62,8 @@ class _Jinja2FileGenerator(_FileGenerator):
         # Allow shipping invalid .py files without byte-compilation.
         ('.py-tpl', '.py'),
         ('.html-tpl', '.html'),
-        ('.css-tpl', '.css'),)
+        ('.css-tpl', '.css'),
+    )
 
     def __init__(self):
         self._template_env = jinja2.Environment()
@@ -129,8 +129,11 @@ class _Jinja2FileGenerator(_FileGenerator):
                         break  # Only rewrite once
                 self._render_file(old_path, new_path, options)
 
-    def _generate_files(self, folder_name: str, destination: str,
-                        filename_template_replacement=None, options=None):
+    def _generate_files(self,
+                        folder_name: str,
+                        destination: str,
+                        filename_template_replacement=None,
+                        options=None):
         """Consolidates duplicate code that calls render_directory.
 
         Args:
@@ -219,8 +222,8 @@ class _DjangoAppFileGenerator(_Jinja2FileGenerator):
             'app_name': app_name,
             'camel_case_app_name': camel_case_value
         }
-        self._generate_files(self.APP_TEMPLATE_FOLDER,
-                             app_destination, options=options)
+        self._generate_files(
+            self.APP_TEMPLATE_FOLDER, app_destination, options=options)
 
 
 class _DjangoAdminOverwriteGenerator(_Jinja2FileGenerator):
@@ -237,9 +240,7 @@ class _DjangoAdminOverwriteGenerator(_Jinja2FileGenerator):
         self._generate_templates_files(project_dir)
         self._generate_static_files(project_dir)
 
-    def _generate_admin_files(self,
-                              project_id: str,
-                              project_name: str,
+    def _generate_admin_files(self, project_id: str, project_name: str,
                               project_dir: str):
         """Create the django admin using our template.
 
@@ -248,15 +249,11 @@ class _DjangoAdminOverwriteGenerator(_Jinja2FileGenerator):
             project_name: Name of the project to be created.
             project_dir: Destination path to hold files.
         """
-        options = {
-            'project_id': project_id,
-            'project_name': project_name
-        }
+        options = {'project_id': project_id, 'project_name': project_name}
         admin_destination = os.path.join(project_dir,
                                          self.ADMIN_OVERWRITE_APP_NAME)
-        self._generate_files(self.ADMIN_TEMPLATE_FOLDER,
-                             admin_destination,
-                             options=options)
+        self._generate_files(
+            self.ADMIN_TEMPLATE_FOLDER, admin_destination, options=options)
 
     def _generate_templates_files(self, project_dir: str):
         """Create the django templates using our template.
@@ -275,8 +272,7 @@ class _DjangoAdminOverwriteGenerator(_Jinja2FileGenerator):
             project_dir: Destination path to hold files.
         """
         static_destination = os.path.join(project_dir, 'staticfiles')
-        self._generate_files(self.STATIC_TEMPLATE_FOLDER,
-                             static_destination)
+        self._generate_files(self.STATIC_TEMPLATE_FOLDER, static_destination)
 
 
 class _SettingsFileGenerator(_Jinja2FileGenerator):
@@ -320,8 +316,8 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
             'bucket_name': cloud_storage_bucket_name,
             'cloud_sql_connection': cloud_sql_connection
         }
-        self._render_directory(settings_templates_dir, destination,
-                               options=options)
+        self._render_directory(
+            settings_templates_dir, destination, options=options)
 
     def generate_from_existing(self,
                                project_id: str,
@@ -329,8 +325,7 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
                                project_dir: str,
                                cloud_sql_connection: str,
                                database_name: Optional[str] = None,
-                               cloud_storage_bucket_name:
-                               Optional[str] = None):
+                               cloud_storage_bucket_name: Optional[str] = None):
         """Create Django settings file from an existing settings file.
 
         We made several assumptions:
@@ -374,8 +369,8 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
             'bucket_name': cloud_storage_bucket_name,
             'cloud_sql_connection': cloud_sql_connection
         }
-        self._render_directory(settings_templates_dir, django_dir,
-                               options=options)
+        self._render_directory(
+            settings_templates_dir, django_dir, options=options)
         os.replace(settings_file_path, base_settings_path)
 
 
@@ -409,7 +404,9 @@ class _AppEngineFileGenerator(_Jinja2FileGenerator):
 
     _FILES = ('.gcloudignore', 'app.yaml')
 
-    def generate_new(self, project_name: str, project_dir: str,
+    def generate_new(self,
+                     project_name: str,
+                     project_dir: str,
                      service_name: Optional[str] = 'default'):
         """Generate app.yaml and .gcloudignore.
 
@@ -422,7 +419,9 @@ class _AppEngineFileGenerator(_Jinja2FileGenerator):
         self._generate_ignore(project_dir)
         self._generate_yaml(project_dir, project_name, service_name)
 
-    def generate_from_existing(self, project_name: str, project_dir: str,
+    def generate_from_existing(self,
+                               project_name: str,
+                               project_dir: str,
                                service_name: Optional[str] = 'default'):
         # TODO: Handle generation based on existing app.yaml
         self.generate_new(project_name, project_dir, service_name)
@@ -438,10 +437,7 @@ class _AppEngineFileGenerator(_Jinja2FileGenerator):
                        service_name: str):
         """Generate a yaml file to define how to deploy a Django app to GAE."""
         file_name = 'app.yaml'
-        options = {
-            'project_name': project_name,
-            'service_name': service_name
-        }
+        options = {'project_name': project_name, 'service_name': service_name}
         template_path = os.path.join(self._get_template_folder_path(),
                                      file_name)
         output_path = os.path.join(project_dir, file_name)
@@ -497,8 +493,8 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
         existing_requirements = set()
         requirements_relative_path = None
         if requirements_path:
-            absolute_requirements_path = os.path.join(
-                project_dir, requirements_path)
+            absolute_requirements_path = os.path.join(project_dir,
+                                                      requirements_path)
             existing_requirements = requirements_parser.parse(
                 absolute_requirements_path)
 
@@ -508,8 +504,8 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
             # "requirements.txt" to exist and contain all dependencies.
             # We want this "requirements.txt" to include both user's
             # requirements and our requirements
-            if requirements_path == os.path.join(
-                    project_dir, 'requirements.txt'):
+            if requirements_path == os.path.join(project_dir,
+                                                 'requirements.txt'):
                 requirements_output_path = os.path.join(
                     project_dir, self._REQUIREMENTS_USER_RENAME)
                 os.replace(absolute_requirements_path, requirements_output_path)
@@ -524,7 +520,8 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
         self._generate_requirements(project_dir, requirements_relative_path)
 
     def _generate_requirements_google(
-            self, project_dir: str,
+            self,
+            project_dir: str,
             existing_requirements: Optional[Set[str]] = None):
         """Generate requirements-google.txt.
 
@@ -555,7 +552,8 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
         with open(output_path, 'wt') as output_file:
             output_file.write('\n'.join(lines))
 
-    def _generate_requirements(self, project_dir: str,
+    def _generate_requirements(self,
+                               project_dir: str,
                                requirements_path: Optional[str] = None):
         """Generate requirements.txt.
 
@@ -571,9 +569,10 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
                                      self._REQUIREMENTS)
 
         output_path = os.path.join(project_dir, self._REQUIREMENTS)
-        self._render_file(template_path, output_path, options={
-            'requirements_path': requirements_path
-        })
+        self._render_file(
+            template_path,
+            output_path,
+            options={'requirements_path': requirements_path})
 
 
 class _YAMLFileGenerator(_Jinja2FileGenerator):
@@ -640,9 +639,8 @@ class _YAMLFileGenerator(_Jinja2FileGenerator):
                                cloudsql_secrets: Optional[List[str]] = None,
                                django_secrets: Optional[List[str]] = None):
         # Handle generation based on existing yaml files
-        self.generate_new(project_dir, project_name, project_id,
-                          instance_name, region, image_tag,
-                          cloudsql_secrets, django_secrets)
+        self.generate_new(project_dir, project_name, project_id, instance_name,
+                          region, image_tag, cloudsql_secrets, django_secrets)
 
 
 class DjangoSourceFileGenerator(_FileGenerator):
@@ -698,8 +696,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
                      database_user: str,
                      database_password: str,
                      cloud_sql_proxy_port: Optional[int] = None,
-                     cloud_storage_bucket_name:
-                     Optional[str] = None,
+                     cloud_storage_bucket_name: Optional[str] = None,
                      cloudsql_secrets: Optional[List[str]] = None,
                      django_secrets: Optional[List[str]] = None,
                      instance_name: Optional[str] = None,
@@ -744,10 +741,10 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self._delete_all_files(project_dir)
 
         instance_name = instance_name or project_name + '-instance'
-        cloud_sql_connection_string = (
-            '{}:{}:{}'.format(project_id, region, instance_name))
-        self.django_project_generator.generate_new(
-            project_name, project_dir, app_name)
+        cloud_sql_connection_string = ('{}:{}:{}'.format(
+            project_id, region, instance_name))
+        self.django_project_generator.generate_new(project_name, project_dir,
+                                                   app_name)
         self.django_admin_overwrite_generator.generate_new(
             project_id, project_name, project_dir)
         self.django_app_generator.generate_new(app_name, project_dir)
@@ -759,8 +756,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.yaml_file_generator.generate_new(
             project_dir, project_name, project_id, instance_name, region,
             image_tag, cloudsql_secrets, django_secrets)
-        self.app_engine_file_generator.generate_new(
-            project_name, project_dir, service_name)
+        self.app_engine_file_generator.generate_new(project_name, project_dir,
+                                                    service_name)
         self.setup_django_environment(
             project_dir=project_dir,
             project_name=project_name,
@@ -775,8 +772,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
                                database_user: str,
                                database_password: str,
                                cloud_sql_proxy_port: Optional[int] = None,
-                               cloud_storage_bucket_name:
-                               Optional[str] = None,
+                               cloud_storage_bucket_name: Optional[str] = None,
                                cloudsql_secrets: Optional[List[str]] = None,
                                django_secrets: Optional[List[str]] = None,
                                instance_name: Optional[str] = None,
@@ -813,8 +809,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
         """
         project_dir = os.path.abspath(os.path.expanduser(project_dir))
         instance_name = instance_name or project_name + '-instance'
-        cloud_sql_connection_string = (
-            '{}:{}:{}'.format(project_id, region, instance_name))
+        cloud_sql_connection_string = ('{}:{}:{}'.format(
+            project_id, region, instance_name))
         # We assume django admin overwrite files never exist in an existing
         # Django project
         self.django_project_generator.generate_from_existing(

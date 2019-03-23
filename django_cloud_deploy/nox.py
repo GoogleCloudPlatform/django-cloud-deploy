@@ -58,7 +58,7 @@ def lint(session):
     """Run linters."""
     session.interpreter = 'python3.5'
     session.install('yapf')
-    session.run('yapf', '--diff', '-r', 'cli', 'cloudlib', 'tests', 'workflow')
+    session.run('yapf', '--diff', '-r', '.')
 
 
 @nox.session
@@ -66,13 +66,17 @@ def type_check(session):
     """Run type checking using pytype."""
     session.interpreter = 'python3.5'
     session.install('..', 'pytype')
-    session.run('pytype', '--python-version=3.5',
-                '--exclude', 'tests', 'nox.py',
-                '--disable=pyi-error',
-                '../django_cloud_deploy',
-                # TODO: When pytype passes cleanly, remove allowing
-                # all success codes.
-                success_codes=range(256))
+    session.run(
+        'pytype',
+        '--python-version=3.5',
+        '--exclude',
+        'tests',
+        'nox.py',
+        '--disable=pyi-error',
+        '../django_cloud_deploy',
+        # TODO: When pytype passes cleanly, remove allowing
+        # all success codes.
+        success_codes=range(256))
 
 
 @nox.session

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 r"""Create a django app ready to be deployed to gke.
 
 Example: python -m django_cloud_deploy.skeleton --project_name <project_name>
@@ -32,9 +31,7 @@ def add_arguments(parser):
         default='mysite',
         help='The name of your Django project.')
     parser.add_argument(
-        '--app_name',
-        default='home',
-        help='The name of the app to create')
+        '--app_name', default='home', help='The name of the app to create')
     parser.add_argument(
         '--project_dir',
         default='~/django_cloud_project',

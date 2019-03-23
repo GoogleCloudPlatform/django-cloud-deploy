@@ -11,13 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Functions for asking users to take a survey at the end of deployment."""
 
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import prompt
 from django_cloud_deploy.utils import webbrowser
-
 
 _SURVEY_LINK = 'https://google.qualtrics.com/jfe/form/SV_3wwUubKBJnC7Fxr'
 

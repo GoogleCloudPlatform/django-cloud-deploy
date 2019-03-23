@@ -45,4 +45,3 @@ def open_url(url: str):
             # restore stdout and stderr
             os.dup2(prev_stdout_fd, 1)
             os.dup2(prev_stderr_fd, 2)
-

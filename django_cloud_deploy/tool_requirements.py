@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Checks the user has the necessary requirements to run the tool."""
 
 import getpass
@@ -27,6 +26,7 @@ from django_cloud_deploy.cli import io
 
 class UnableToAutomaticallyInstallError(Exception):
     """Thrown when the handle function is unable to install the requirement."""
+
     def __init__(self, name: str, how_to_install_message: str):
         """Provides information on how to manually install the requirement.
 
@@ -110,10 +110,9 @@ class Requirement(object):
 class Gcloud(Requirement):
     NAME = 'Gcloud SDK'
 
-    _NOT_INSTALLED = (
-        'The Google Cloud SDK is not installed.\n\n'
-        'You can install it using the instructions at:\n'
-        'https://cloud.google.com/sdk/docs/downloads-interactive')
+    _NOT_INSTALLED = ('The Google Cloud SDK is not installed.\n\n'
+                      'You can install it using the instructions at:\n'
+                      'https://cloud.google.com/sdk/docs/downloads-interactive')
 
     _INSTALLED_BUT_NOT_ON_PATH = (
         'The Google Cloud SDK is installed at "{0}"\n'
@@ -133,9 +132,10 @@ class Gcloud(Requirement):
             return None
 
         # Default paths
-        common_gcloud_paths = [os.path.expanduser('~/.config/gcloud'),
-                               os.path.expanduser('~/google-cloud-sdk/gcloud'),
-                               '/usr/bin/gcloud']
+        common_gcloud_paths = [
+            os.path.expanduser('~/.config/gcloud'),
+            os.path.expanduser('~/google-cloud-sdk/gcloud'), '/usr/bin/gcloud'
+        ]
         gcloud_path = None
         for path in common_gcloud_paths:
             if os.path.exists(path):
@@ -151,10 +151,9 @@ class Gcloud(Requirement):
 class Docker(Requirement):
     NAME = 'Docker'
 
-    _NOT_INSTALLED = (
-        'Docker is not installed.\n\n'
-        'You can install it using the instructions at:\n'
-        'https://store.docker.com/')
+    _NOT_INSTALLED = ('Docker is not installed.\n\n'
+                      'You can install it using the instructions at:\n'
+                      'https://store.docker.com/')
 
     _LINUX_NOT_IN_GROUP_MESSAGE = (
         'Docker is installed but not useable.\n\n'
@@ -187,9 +186,8 @@ class Docker(Requirement):
         """Return True if Docker is useable, False otherwise."""
 
         command = ['docker', 'image', 'ls']
-        return subprocess.call(command,
-                               stdout=subprocess.DEVNULL,
-                               stderr=subprocess.DEVNULL) == 0
+        return subprocess.call(
+            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
     @staticmethod
     def _is_missing_group_membership():
@@ -226,21 +224,16 @@ class Docker(Requirement):
                     # By default, the user has to either run docker as root
                     # or be a member of that group.
                     raise MissingRequirementError(
-                        cls.NAME,
-                        cls._LINUX_NOT_IN_GROUP_MESSAGE)
+                        cls.NAME, cls._LINUX_NOT_IN_GROUP_MESSAGE)
                 else:
                     raise MissingRequirementError(
-                        cls.NAME,
-                        cls._LINUX_GENERIC_NOT_USABLE_MESSAGE)
+                        cls.NAME, cls._LINUX_GENERIC_NOT_USABLE_MESSAGE)
             elif sys.platform.startswith('darwin'):
                 raise MissingRequirementError(
-                    cls.NAME,
-                    cls._MAC_GENERIC_NOT_USABLE_MESSAGE)
+                    cls.NAME, cls._MAC_GENERIC_NOT_USABLE_MESSAGE)
             elif sys.platform.startswith('win32'):
                 raise MissingRequirementError(
-                    cls.NAME,
-                    cls._WINDOWS_GENERIC_NOT_USABLE_MESSAGE)
-
+                    cls.NAME, cls._WINDOWS_GENERIC_NOT_USABLE_MESSAGE)
 
 
 class CloudSqlProxy(Requirement):
@@ -305,15 +298,18 @@ class CloudSqlProxy(Requirement):
             elif answer in ['y', '']:
                 break
 
-        command = [gcloud_path, '-q', 'components', 'install', 'cloud_sql_proxy']
-        install_result = subprocess.run(command,
-                                        stdout=subprocess.DEVNULL,
-                                        stderr=subprocess.PIPE,
-                                        universal_newlines=True)
+        command = [
+            gcloud_path, '-q', 'components', 'install', 'cloud_sql_proxy'
+        ]
+        install_result = subprocess.run(
+            command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            universal_newlines=True)
         if install_result.returncode != 0:
             if 'gcloud components update' in install_result.stderr:
-                raise UnableToAutomaticallyInstallError(
-                    cls.NAME, cls._OLD_GCLOUD_VERSION)
+                raise UnableToAutomaticallyInstallError(cls.NAME,
+                                                        cls._OLD_GCLOUD_VERSION)
             elif 'non-interactive mode' in install_result.stderr:
                 raise UnableToAutomaticallyInstallError(
                     cls.NAME, cls._MUST_INSTALL_INTERACTIVE)
@@ -323,15 +319,8 @@ class CloudSqlProxy(Requirement):
 
 
 _REQUIREMENTS = {
-    'gke': [
-        Gcloud,
-        Docker,
-        CloudSqlProxy
-    ],
-    'gae': [
-        Gcloud,
-        CloudSqlProxy
-    ]
+    'gke': [Gcloud, Docker, CloudSqlProxy],
+    'gae': [Gcloud, CloudSqlProxy]
 }
 
 

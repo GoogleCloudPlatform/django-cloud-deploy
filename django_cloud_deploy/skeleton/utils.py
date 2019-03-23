@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Utility functions related to Django project source files."""
 
 import os
@@ -157,14 +156,14 @@ def guess_settings_path(django_directory_path: str) -> Optional[str]:
         # The matching result will be like
         # "os.environ.setdefault('DJANGO_SETTINGS_MODULE', \n'mysite.settings')"
         # Find strings between "" or ''
-        raw_settings_module = re.findall(
-            r'[\"\'][\w+\.]+[\"\']', settings_module_line.group(0))
+        raw_settings_module = re.findall(r'[\"\'][\w+\.]+[\"\']',
+                                         settings_module_line.group(0))
         # Remove empty spaces and delete quotation marks at the start and end
         settings_module = raw_settings_module[-1].strip()[1:-1]
 
     relative_settings_path = settings_module.replace('.', '/') + '.py'
-    absolute_settings_path = os.path.join(
-        django_directory_path, relative_settings_path)
+    absolute_settings_path = os.path.join(django_directory_path,
+                                          relative_settings_path)
     if not os.path.exists(absolute_settings_path):
         return None
     settings_dir = os.path.dirname(absolute_settings_path)
