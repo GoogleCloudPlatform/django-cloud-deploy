@@ -738,6 +738,117 @@ class BillingPromptTest(absltest.TestCase):
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
 
+class DjangoSettingsPathPromptTest(absltest.TestCase):
+    """Tests for prompt.DjangoSettingsPathPrompt."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.django_settings_path_prompt = prompt.DjangoSettingsPathPrompt()
+
+    def setUp(self):
+        super().setUp()
+        self.project_name = 'mysite'
+        self.project_dir = tempfile.mkdtemp()
+        management.call_command('startproject', self.project_name,
+                                self.project_dir)
+
+    def tearDown(self):
+        super().tearDown()
+        shutil.rmtree(self.project_dir)
+
+    def test_prompt(self):
+        test_io = io.TestIO()
+
+        expected_settings_path = os.path.join(self.project_dir,
+                                              self.project_name, 'settings.py')
+        test_io.answers.append(expected_settings_path)
+        before_sys_path = sys.path
+        args = self.django_settings_path_prompt.prompt(
+            test_io,
+            '[2/2]',
+            {'django_directory_path_cloudify': self.project_dir},
+        )
+        django_settings_path = args.get('django_settings_path', None)
+        self.assertEqual(django_settings_path, expected_settings_path)
+        self.assertEmpty(test_io.answers)  # All answers used.
+
+        # Assert sys.path is not changed by the prompt
+        self.assertCountEqual(before_sys_path, sys.path)
+
+    def test_settings_file_not_found(self):
+        test_io = io.TestIO()
+
+        expected_settings_path = os.path.join(self.project_dir,
+                                              self.project_name, 'settings.py')
+        test_io.answers.append('<invalid_path>')
+        test_io.answers.append(expected_settings_path)
+        before_sys_path = sys.path
+        args = self.django_settings_path_prompt.prompt(
+            test_io,
+            '[2/2]',
+            {'django_directory_path_cloudify': self.project_dir},
+        )
+        django_settings_path = args.get('django_settings_path', None)
+        self.assertEqual(django_settings_path, expected_settings_path)
+        self.assertEmpty(test_io.answers)  # All answers used.
+
+        # Assert sys.path is not changed by the prompt
+        self.assertCountEqual(before_sys_path, sys.path)
+
+    def test_settings_file_not_a_python_file(self):
+        test_io = io.TestIO()
+
+        invalid_settings_path = os.path.join(self.project_dir,
+                                             self.project_name, 'settings')
+        expected_settings_path = os.path.join(self.project_dir,
+                                              self.project_name, 'settings.py')
+        shutil.copyfile(expected_settings_path, invalid_settings_path)
+
+        test_io.answers.append(invalid_settings_path)
+        test_io.answers.append(expected_settings_path)
+        before_sys_path = sys.path
+        args = self.django_settings_path_prompt.prompt(
+            test_io,
+            '[2/2]',
+            {'django_directory_path_cloudify': self.project_dir},
+        )
+        django_settings_path = args.get('django_settings_path', None)
+        self.assertEqual(django_settings_path, expected_settings_path)
+        self.assertEmpty(test_io.answers)  # All answers used.
+
+        # Assert sys.path is not changed by the prompt
+        self.assertCountEqual(before_sys_path, sys.path)
+
+    def test_settings_file_invalid(self):
+        test_io = io.TestIO()
+
+        invalid_settings_path = os.path.join(
+            self.project_dir, self.project_name, 'settings_invalid.py')
+        expected_settings_path = os.path.join(self.project_dir,
+                                              self.project_name, 'settings.py')
+        shutil.copyfile(expected_settings_path, invalid_settings_path)
+        with open(invalid_settings_path) as f:
+            file_content = f.read()
+        with open(invalid_settings_path, 'wt') as f:
+            file_content = file_content + '\nprint("12345"  # Invalid print'
+            f.write(file_content)
+        test_io.answers.append(invalid_settings_path)
+        test_io.answers.append(expected_settings_path)
+        before_sys_path = sys.path
+        args = self.django_settings_path_prompt.prompt(
+            test_io,
+            '[2/2]',
+            {'django_directory_path_cloudify': self.project_dir},
+        )
+        django_settings_path = args.get('django_settings_path', None)
+        self.assertEqual(django_settings_path, expected_settings_path)
+        self.assertEmpty(test_io.answers)  # All answers used.
+
+        # Assert sys.path is not changed by the prompt
+        self.assertCountEqual(before_sys_path, sys.path)
+
+
 class DjangoRequirementsPathPromptTest(absltest.TestCase):
     """Tests for prompt.DjangoRequirementsPathPrompt."""
 

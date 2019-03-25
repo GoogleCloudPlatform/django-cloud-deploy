@@ -16,10 +16,12 @@
 import abc
 import enum
 import functools
+import importlib
 import os.path
 import random
 import re
 import string
+import sys
 import time
 from typing import Any, Callable, Dict, List, Optional
 
@@ -1134,6 +1136,89 @@ class DjangoSuperuserEmailPrompt(StringTemplatePrompt):
             raise ValueError(('Invalid Django superuser email address "{}": '
                               'the format should be like '
                               '"test@example.com"').format(s))
+
+
+class DjangoSettingsPathPrompt(StringTemplatePrompt):
+    """Allow the user to enter the settings file path of a Django project.
+
+    When deploying existing Django projects, sometimes settings file of the
+    Django project is not at the default location. For example, by default a
+    settings file should be at <project_name>/settings.py, but actually the
+    Django project is using <project_name>/settings/prod.py. It is hard to
+    automatically detect the location of settings file. We need to ask user to
+    provide the accurate settings file path.
+    """
+
+    PARAMETER = 'django_settings_path'
+    MESSAGE = ('{} Enter the path of the Django settings file that should be '
+               'used for deployment')
+
+    def prompt(self, console: io.IO, step: str,
+               args: Dict[str, Any]) -> Dict[str, Any]:
+        """Extracts user arguments through the command-line.
+
+        Args:
+            console: Object to use for user I/O.
+            step: Message to present to user regarding what step they are on.
+            args: Dictionary holding prompts answered by user and set up
+                command-line arguments.
+
+        Returns:
+            A Copy of args + the new parameter collected.
+        """
+        new_args = dict(args)
+
+        django_directory_path = args.get('django_directory_path_cloudify', None)
+        validate = functools.partial(self._validate, django_directory_path)
+        if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
+                                     validate):
+            return new_args
+
+        base_message = self.MESSAGE.format(step)
+        default_settings_path = utils.guess_settings_path(django_directory_path)
+        if default_settings_path:
+            default_message = '[{}]: '.format(default_settings_path)
+            msg = '\n'.join([base_message, default_message])
+        else:
+            msg = base_message
+        answer = _ask_prompt(
+            msg, console, validate, default=default_settings_path)
+        new_args[self.PARAMETER] = answer
+        return new_args
+
+    def _validate(self, project_dir: str, django_settings_path: str):
+        """Validates that a string is a valid Django settings file path.
+
+        Args:
+            project_dir: Absolute path of the existing Django project.
+            django_settings_path: The string to validate.
+
+        Raises:
+            ValueError: if the input string is not a valid settings file path.
+        """
+        if not os.path.exists(django_settings_path):
+            raise ValueError(
+                'Path ["{}"] does not exist.'.format(django_settings_path))
+
+        root, ext = os.path.splitext(django_settings_path)
+        if ext != '.py':
+            raise ValueError(
+                '["{}"] is not a .py file.'.format(django_settings_path))
+
+        module_relative_path = os.path.relpath(root, project_dir)
+
+        module_name = module_relative_path.replace('/', '.')
+        sys.path.append(project_dir)
+        spec = importlib.util.spec_from_file_location(module_name,
+                                                      django_settings_path)
+        module = importlib.util.module_from_spec(spec)
+        try:
+            spec.loader.exec_module(module)
+        except Exception as e:
+            raise ValueError(('Not able to load Django project settings module '
+                              'on {}'.format(django_settings_path))) from e
+        finally:
+            sys.path.pop()
 
 
 class DjangoRequirementsPathPrompt(StringTemplatePrompt):

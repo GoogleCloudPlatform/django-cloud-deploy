@@ -702,7 +702,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
         try:
             subprocess.check_call(
                 ['python3', '-m', 'pip', 'install', '-r', requirements_path],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL)
         except (SystemExit, subprocess.CalledProcessError) as e:
             raise crash_handling.UserError(
                 'Not able to install Django project dependencies.') from e

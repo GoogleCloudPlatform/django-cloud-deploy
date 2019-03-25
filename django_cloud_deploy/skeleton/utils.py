@@ -166,6 +166,7 @@ def guess_settings_path(django_directory_path: str) -> Optional[str]:
                                           relative_settings_path)
     if not os.path.exists(absolute_settings_path):
         return None
+
     settings_dir = os.path.dirname(absolute_settings_path)
     files_list = os.listdir(settings_dir)
     for file in files_list:
