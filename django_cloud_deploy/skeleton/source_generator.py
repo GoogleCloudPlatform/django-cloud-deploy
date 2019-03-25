@@ -15,6 +15,7 @@
 
 import os
 import shutil
+import subprocess
 import sys
 from typing import Any, Dict, List, Optional, Set
 
@@ -688,6 +689,24 @@ class DjangoSourceFileGenerator(_FileGenerator):
             raise crash_handling.UserError(
                 'Not able to import Django settings file.') from e
 
+    def install_requirements(self, project_dir: str):
+        """Install packages to the current environment.
+
+        This function assumes a 'requirements.txt' exist in the given project
+        directory.
+
+        Args:
+            project_dir: Absolute directory path to put your Django project.
+        """
+        requirements_path = os.path.join(project_dir, 'requirements.txt')
+        try:
+            subprocess.check_call(
+                ['python3', '-m', 'pip', 'install', '-r', requirements_path],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except (SystemExit, subprocess.CalledProcessError) as e:
+            raise crash_handling.UserError(
+                'Not able to install Django project dependencies.') from e
+
     def generate_new(self,
                      project_id: str,
                      project_name: str,
@@ -829,6 +848,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
             image_tag, cloudsql_secrets, django_secrets)
         self.app_engine_file_generator.generate_from_existing(
             project_name, project_dir, service_name)
+        self.install_requirements(project_dir)
         self.setup_django_environment(
             project_dir=project_dir,
             project_name=project_name,

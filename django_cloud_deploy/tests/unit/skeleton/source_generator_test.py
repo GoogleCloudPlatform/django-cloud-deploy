@@ -17,6 +17,7 @@ import os
 import shutil
 import sys
 import tempfile
+import unittest
 
 from absl.testing import absltest
 from django.core import management
@@ -635,7 +636,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
                                      'fake_db_password')
         self._test_project_structure(project_name, app_name, project_dir)
 
-    def test_generate_missing_source_files(self):
+    @unittest.mock.patch('subprocess.check_call')
+    def test_generate_missing_source_files(self, unused_mock):
         project_id = project_name = 'test_generate_missing_source_files'
         app_name = 'existing_app'
         management.call_command('startproject', project_name, self._project_dir)
