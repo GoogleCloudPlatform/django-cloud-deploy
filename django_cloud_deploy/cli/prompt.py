@@ -29,6 +29,7 @@ from django_cloud_deploy.cloudlib import auth
 from django_cloud_deploy.cloudlib import billing
 from django_cloud_deploy.cloudlib import project
 from django_cloud_deploy.skeleton import utils
+from django_cloud_deploy.skeleton import requirements_parser
 from django_cloud_deploy.utils import webbrowser
 
 
@@ -1133,6 +1134,67 @@ class DjangoSuperuserEmailPrompt(StringTemplatePrompt):
             raise ValueError(('Invalid Django superuser email address "{}": '
                               'the format should be like '
                               '"test@example.com"').format(s))
+
+
+class DjangoRequirementsPathPrompt(StringTemplatePrompt):
+    """Allow the user to enter the path of requirements.txt of Django project."""
+
+    PARAMETER = 'django_requirements_path'
+    MESSAGE = ('{} Enter the path of the requirements.txt that should be used '
+               'for deployment: ')
+
+    def prompt(self, console: io.IO, step: str,
+               args: Dict[str, Any]) -> Dict[str, Any]:
+        """Extracts user arguments through the command-line.
+
+        Args:
+            console: Object to use for user I/O.
+            step: Message to present to user regarding what step they are on.
+            args: Dictionary holding prompts answered by user and set up
+                command-line arguments.
+
+        Returns:
+            A Copy of args + the new parameter collected.
+        """
+        new_args = dict(args)
+
+        if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
+                                     self._validate):
+            return new_args
+
+        base_message = self.MESSAGE.format(step)
+        django_directory_path = args.get('django_directory_path_cloudify', None)
+        django_project_name = utils.get_django_project_name(
+            django_directory_path)
+        default_requirements_path = utils.guess_requirements_path(
+            django_directory_path, django_project_name)
+        new_args[self.PARAMETER] = default_requirements_path
+        if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
+                                     self._validate):
+            return new_args
+        if default_requirements_path:
+            default_message = '[{}]: '.format(default_requirements_path)
+            msg = '\n'.join([base_message, default_message])
+        else:
+            msg = base_message
+        answer = _ask_prompt(
+            msg, console, self._validate, default=default_requirements_path)
+        new_args[self.PARAMETER] = answer
+        return new_args
+
+    def _validate(self, django_requirements_path: str):
+        """Validates that a string is a valid path of requirements.txt.
+
+        Args:
+            django_requirements_path: The string to validate.
+
+        Raises:
+            ValueError: if the input string is not a valid requirements.txt file
+                path.
+        """
+        if not os.path.exists(django_requirements_path):
+            raise ValueError(
+                'File ["{}"] does not exist.'.format(django_requirements_path))
 
 
 class RootPrompt(object):

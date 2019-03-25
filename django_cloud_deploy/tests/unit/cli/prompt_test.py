@@ -13,17 +13,22 @@
 # limitations under the License.
 """Tests for django_cloud_deploy.cli.prompt."""
 
+import os
+import shutil
+import sys
 import tempfile
 from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
 
+from django.core import management
+
 from django_cloud_deploy import workflow
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import prompt
-from django_cloud_deploy.cloudlib import project
 from django_cloud_deploy.cloudlib import billing
+from django_cloud_deploy.cloudlib import project
 
 from google.auth import credentials
 
@@ -731,6 +736,75 @@ class BillingPromptTest(absltest.TestCase):
         billing_name = args['billing_account_name']
         self.assertEqual(billing_name, _SINGLE_FAKE_ACCOUNT[0]['name'])
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
+
+class DjangoRequirementsPathPromptTest(absltest.TestCase):
+    """Tests for prompt.DjangoRequirementsPathPrompt."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.requirements_prompt = prompt.DjangoRequirementsPathPrompt()
+
+    def setUp(self):
+        super().setUp()
+        self.project_name = 'mysite'
+        self.project_dir = tempfile.mkdtemp()
+        management.call_command('startproject', self.project_name,
+                                self.project_dir)
+        requirements_path = os.path.join(self.project_dir, 'requirements.txt')
+        with open(requirements_path, 'wt') as f:
+            f.write('six')
+
+    def tearDown(self):
+        super().tearDown()
+        shutil.rmtree(self.project_dir)
+
+    def test_prompt(self):
+        test_io = io.TestIO()
+
+        expected_requirements_path = os.path.join(self.project_dir,
+                                                  'requirements.txt')
+        test_io.answers.append(expected_requirements_path)
+        args = self.requirements_prompt.prompt(
+            test_io,
+            '[2/2]',
+            {'django_directory_path_cloudify': self.project_dir},
+        )
+        requirements_path = args.get('django_requirements_path', None)
+        self.assertEqual(requirements_path, expected_requirements_path)
+        self.assertEmpty(test_io.answers)  # All answers used.
+
+    def test_default_value(self):
+        test_io = io.TestIO()
+
+        expected_requirements_path = os.path.join(self.project_dir,
+                                                  'requirements.txt')
+        test_io.answers.append('')
+        args = self.requirements_prompt.prompt(
+            test_io,
+            '[2/2]',
+            {'django_directory_path_cloudify': self.project_dir},
+        )
+        requirements_path = args.get('django_requirements_path', None)
+        self.assertEqual(requirements_path, expected_requirements_path)
+        self.assertEmpty(test_io.answers)  # All answers used.
+
+    def test_requirements_file_not_found(self):
+        test_io = io.TestIO()
+
+        expected_requirements_path = os.path.join(self.project_dir,
+                                                  'requirements.txt')
+        test_io.answers.append('<invalid_path>')
+        test_io.answers.append(expected_requirements_path)
+        args = self.requirements_prompt.prompt(
+            test_io,
+            '[2/2]',
+            {'django_directory_path_cloudify': self.project_dir},
+        )
+        requirements_path = args.get('django_requirements_path', None)
+        self.assertEqual(requirements_path, expected_requirements_path)
+        self.assertEmpty(test_io.answers)  # All answers used.
 
 
 if __name__ == '__main__':
