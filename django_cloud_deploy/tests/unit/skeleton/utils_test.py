@@ -23,13 +23,27 @@ from django.core import management
 from django_cloud_deploy.skeleton import utils
 
 
-class UtilTest(unittest.TestCase):
-    """Unit test for django_cloud_deploy/config.py."""
+class GetDjangoProjectNameTest(unittest.TestCase):
+    """Unit test for get_django_project_name."""
 
     def test_get_project_name(self):
         # Create a temporary directory to put Django project files
         project_dir = tempfile.mkdtemp()
         management.call_command('startproject', 'mysite', project_dir)
+        self.assertEqual(utils.get_django_project_name(project_dir), 'mysite')
+        shutil.rmtree(project_dir)
+
+    def test_get_project_name_not_default_settings_module(self):
+        # Create a temporary directory to put Django project files
+        project_dir = tempfile.mkdtemp()
+        management.call_command('startproject', 'mysite', project_dir)
+        manage_py_path = os.path.join(project_dir, 'manage.py')
+        with open(manage_py_path) as f:
+            file_content = f.read()
+            file_content = file_content.replace('mysite.settings',
+                                                'mysite.settings.dev')
+        with open(manage_py_path, 'wt') as f:
+            f.write(file_content)
         self.assertEqual(utils.get_django_project_name(project_dir), 'mysite')
         shutil.rmtree(project_dir)
 
@@ -50,6 +64,23 @@ class UtilTest(unittest.TestCase):
             f.write('12345')
         with self.assertRaises(utils.ProjectContentError):
             utils.get_django_project_name(project_dir)
+        shutil.rmtree(project_dir)
+
+
+class IsValidDjangoProjectTest(unittest.TestCase):
+    """Unit test for is_valid_django_project."""
+
+    def test_valid_django_project(self):
+        # Create a temporary directory to put Django project files
+        project_dir = tempfile.mkdtemp()
+        management.call_command('startproject', 'mysite', project_dir)
+        self.assertTrue(utils.is_valid_django_project(project_dir))
+        shutil.rmtree(project_dir)
+
+    def test_invalid_django_project(self):
+        # Create a temporary directory to put Django project files
+        project_dir = tempfile.mkdtemp()
+        self.assertFalse(utils.is_valid_django_project(project_dir))
         shutil.rmtree(project_dir)
 
 

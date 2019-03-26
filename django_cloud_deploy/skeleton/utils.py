@@ -22,6 +22,63 @@ class ProjectContentError(Exception):
     """An error thrown when Django project name cannot be determined."""
 
 
+def parse_settings_module(file_path: str) -> Optional[str]:
+    """Parse the Django settings module from the given file.
+
+    The function expects there is code like the following in the given file:
+        "os.environ.setdefault('DJANGO_SETTINGS_MODULE',
+                               '{{ settings_module }}')"
+    {{ settings_module }} is like "mysite.settings.dev"
+
+    Args:
+        file_path: Absolute path of the file to parse.
+
+    Returns:
+        The settings module. For example, "mysite.settings.dev". If the given
+            file does not exist or the content of it does not contain the
+            settings module, return None.
+    """
+    if not os.path.exists(file_path):
+        return None
+
+    with open(file_path) as f:
+        file_content = f.read()
+
+        settings_module_line = re.search(
+            r'os\.environ\.setdefault\([^\)]+,[^\)]+\)', file_content)
+        if not settings_module_line:
+            return None
+
+        # The matching result will be like
+        # "os.environ.setdefault('DJANGO_SETTINGS_MODULE', \n'mysite.settings')"
+        # Find strings between "" or ''
+        raw_settings_module = re.findall(r'[\"\'][\w+\.]+[\"\']',
+                                         settings_module_line.group(0))
+        # Remove empty spaces and delete quotation marks at the start and end
+        settings_module = raw_settings_module[-1].strip()[1:-1]
+        return settings_module
+
+
+def get_local_settings_module(django_directory_path: str) -> Optional[str]:
+    """Returns the local settings module of a Django project.
+
+    In manage.py, there is a line as the follows:
+        "os.environ.setdefault('DJANGO_SETTINGS_MODULE',
+                               '{{ local_settings_module }}')"
+    {{ local_settings_module }} is like "mysite.settings.dev"
+
+    Args:
+        django_directory_path: Absolute path of django project directory.
+
+    Returns:
+        The settings module used for local development. For example,
+            "mysite.settings.dev". If manage.py does not exist or the content
+            of it does not contain the local settings module, return None.
+    """
+    manage_py_path = os.path.join(django_directory_path, 'manage.py')
+    return parse_settings_module(manage_py_path)
+
+
 def get_django_project_name(django_directory_path: str):
     """Returns Django project name given a Django project directory.
 
@@ -37,29 +94,15 @@ def get_django_project_name(django_directory_path: str):
     Raises:
         ProjectContentError: When the function cannot find Django project name.
     """
-    manage_py_path = os.path.join(django_directory_path, 'manage.py')
-    if not os.path.exists(manage_py_path):
+
+    settings_module = get_local_settings_module(django_directory_path)
+    if not settings_module:
         raise ProjectContentError(
-            ('manage.py does not exist under Django project directory. The '
-             'project name cannot be determined.'))
+            ('manage.py does not exist under Django project directory or it '
+             'exists but does not contain the settings module. '
+             'e.g. "mysite.settings". The project name cannot be determined.'))
 
-    # TODO: This does not handle line continuation. Fix it.
-    with open(manage_py_path) as f:
-        lines = f.readlines()
-        target = ''
-        for line in lines:
-            if 'DJANGO_SETTINGS_MODULE' in line:
-                target = line
-                break
-        # Find strings between "" or ''
-        strings = re.findall(r'[\"\'][\w+\.]+[\"\']', target)
-        for string in strings:
-
-            # Delete quotation marks at the start and end
-            string = string[1:-1]
-            if '.' in string:
-                return string[:string.find('.')]
-    raise ProjectContentError('Django project name cannot be determined.')
+    return settings_module.split('.')[0]
 
 
 def is_valid_django_project(django_directory_path: str) -> bool:
@@ -73,8 +116,8 @@ def is_valid_django_project(django_directory_path: str) -> bool:
     """
 
     # TODO: handle more complex cases.
-    manage_py_path = os.path.join(django_directory_path, 'manage.py')
-    return os.path.exists(manage_py_path)
+    local_settings_module = get_local_settings_module(django_directory_path)
+    return bool(local_settings_module)
 
 
 def guess_requirements_path(django_directory_path: str,
@@ -137,30 +180,9 @@ def guess_settings_path(django_directory_path: str) -> Optional[str]:
         be found, return None.
     """
 
-    manage_py_path = os.path.join(django_directory_path, 'manage.py')
-    if not os.path.exists(manage_py_path):
+    settings_module = get_local_settings_module(django_directory_path)
+    if not settings_module:
         return None
-
-    with open(manage_py_path) as f:
-        file_content = f.read()
-
-        # In manage.py, there is a line as the follows:
-        # "os.environ.setdefault('DJANGO_SETTINGS_MODULE',
-        #                        '{{ project_name }}.settings')"
-        # It is possible that this statement is write in multiple lines
-        settings_module_line = re.search(
-            r'os\.environ\.setdefault\([^\)]+,[^\)]+\)', file_content)
-        if not settings_module_line:
-            return None
-
-        # The matching result will be like
-        # "os.environ.setdefault('DJANGO_SETTINGS_MODULE', \n'mysite.settings')"
-        # Find strings between "" or ''
-        raw_settings_module = re.findall(r'[\"\'][\w+\.]+[\"\']',
-                                         settings_module_line.group(0))
-        # Remove empty spaces and delete quotation marks at the start and end
-        settings_module = raw_settings_module[-1].strip()[1:-1]
-
     relative_settings_path = settings_module.replace('.', '/') + '.py'
     absolute_settings_path = os.path.join(django_directory_path,
                                           relative_settings_path)
