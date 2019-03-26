@@ -413,7 +413,8 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
                                               self._generator._REQUIREMENTS)
         with open(requirements_file_path, 'wt') as f:
             f.write('\n'.join(packages))
-        self._generator.generate_from_existing(self._project_dir, project_name)
+        self._generator.generate_from_existing(self._project_dir,
+                                               requirements_file_path)
         requirements_file_path = os.path.join(self._project_dir,
                                               self._generator._REQUIREMENTS)
         with open(requirements_file_path) as f:
@@ -428,7 +429,8 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
         # Create a Django project to make the directory looks similar with an
         # existing Django project
         management.call_command('startproject', project_name, self._project_dir)
-        self._generator.generate_from_existing(self._project_dir, project_name)
+        self._generator.generate_from_existing(self._project_dir,
+                                               '<path_not_exist>')
         requirements_file_path = os.path.join(self._project_dir,
                                               self._generator._REQUIREMENTS)
         with open(requirements_file_path) as f:
@@ -452,7 +454,8 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
                                               self._generator._REQUIREMENTS)
         with open(requirements_file_path, 'wt') as f:
             f.write('\n'.join(packages))
-        self._generator.generate_from_existing(self._project_dir, project_name)
+        self._generator.generate_from_existing(self._project_dir,
+                                               requirements_file_path)
         requirements_file_path = os.path.join(
             self._project_dir, self._generator._REQUIREMENTS_GOOGLE)
         with open(requirements_file_path) as f:
@@ -470,7 +473,8 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
         user_requirements_file_path = os.path.join(requirements_dir, 'prod.txt')
         with open(user_requirements_file_path, 'wt') as f:
             f.write('\n'.join(packages))
-        self._generator.generate_from_existing(self._project_dir, project_name)
+        self._generator.generate_from_existing(self._project_dir,
+                                               user_requirements_file_path)
         requirements_file_path = os.path.join(self._project_dir,
                                               self._generator._REQUIREMENTS)
         with open(requirements_file_path) as f:

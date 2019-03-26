@@ -468,7 +468,8 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
         self._generate_requirements_google(project_dir)
         self._generate_requirements(project_dir)
 
-    def generate_from_existing(self, project_dir: str, project_name: str):
+    def generate_from_existing(self, project_dir: str,
+                               requirements_path: Optional[str]):
         """Generate requirements.txt from user's existing requirements.txt.
 
         The steps are as the follows:
@@ -483,21 +484,14 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
 
         Args:
             project_dir: The destination directory path to put requirements.txt.
-            project_name: Name of the Django project. e.g. mysite.
+            requirements_path: Absolute path of requirements.txt of the
+                existing Django project.
         """
 
-        # TODO: Move this to a prompt for the path of requirements.txt, which
-        # will guess a path and use it as a default value for the prompt.
-        # Otherwise it cannot handle more customized cases
-        requirements_path = utils.guess_requirements_path(
-            project_dir, project_name)
         existing_requirements = set()
         requirements_relative_path = None
         if requirements_path:
-            absolute_requirements_path = os.path.join(project_dir,
-                                                      requirements_path)
-            existing_requirements = requirements_parser.parse(
-                absolute_requirements_path)
+            existing_requirements = requirements_parser.parse(requirements_path)
 
             # Rename user's existing requirements.txt to requirements-user.txt
             # only when it is <project_dir>/requirements.txt
@@ -509,7 +503,7 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
                                                  'requirements.txt'):
                 requirements_output_path = os.path.join(
                     project_dir, self._REQUIREMENTS_USER_RENAME)
-                os.replace(absolute_requirements_path, requirements_output_path)
+                os.replace(requirements_path, requirements_output_path)
                 requirements_path = requirements_output_path
 
             # In requirements.txt we have "-r <requirements-user.txt>"
@@ -791,6 +785,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
                                project_dir: str,
                                database_user: str,
                                database_password: str,
+                               django_requirements_path: Optional[str] = None,
                                cloud_sql_proxy_port: Optional[int] = None,
                                cloud_storage_bucket_name: Optional[str] = None,
                                cloudsql_secrets: Optional[List[str]] = None,
@@ -843,7 +838,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.docker_file_generator.generate_from_existing(
             project_name, project_dir)
         self.dependency_file_generator.generate_from_existing(
-            project_dir, project_name)
+            project_dir, django_requirements_path)
         self.yaml_file_generator.generate_from_existing(
             project_dir, project_name, project_id, instance_name, region,
             image_tag, cloudsql_secrets, django_secrets)

@@ -84,6 +84,7 @@ class WorkflowManager(object):
             django_directory_path: str,
             database_password: str,
             django_app_name: Optional[str] = None,
+            django_requirements_path: Optional[str] = None,
             required_services: Optional[List[Dict[str, str]]] = None,
             required_service_accounts: Optional[
                 Dict[str, List[Dict[str, Any]]]] = None,
@@ -116,6 +117,8 @@ class WorkflowManager(object):
             django_app_name: The name of the Django app e.g. "poll". This is not
                 needed in deploying existing projects because the projects
                 already contain apps.
+            django_requirements_path: Absolute path of requirements.txt of the
+                existing Django project.
             required_services: The services needed to be enabled for deployment.
             required_service_accounts: Service accounts needed to be created for
                 deployment. It should have the following format:
@@ -190,6 +193,7 @@ class WorkflowManager(object):
                 project_dir=django_directory_path,
                 database_user=database_username,
                 database_password=database_password,
+                django_requirements_path=django_requirements_path,
                 instance_name=database_instance_name,
                 database_name=database_name,
                 cloud_sql_proxy_port=cloud_sql_proxy_port,
