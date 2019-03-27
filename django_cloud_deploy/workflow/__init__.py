@@ -93,6 +93,7 @@ class WorkflowManager(object):
                 Dict[str, List[Dict[str, Any]]]] = None,
             appengine_service_name: Optional[str] = None,
             cloud_storage_bucket_name: str = None,
+            file_storage_bucket_name: str = None,
             region: str = 'us-west1',
             cloud_sql_proxy_path: str = 'cloud_sql_proxy',
             backend: str = 'gke',
@@ -141,6 +142,9 @@ class WorkflowManager(object):
             cloud_storage_bucket_name: Name of the Google Cloud Storage Bucket
                 we use to serve static content. By default it is equal to
                 project id.
+            file_storage_bucket_name: Name of the Google Cloud Storage Bucket
+                used to store files by the Django app. By default it is equal to
+                files-project id.
             region: Where the service is hosted.
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             backend: The desired backend to deploy the Django App on.
@@ -157,6 +161,8 @@ class WorkflowManager(object):
 
         database_username = 'postgres'
         cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
+        file_storage_bucket_name = (file_storage_bucket_name or
+                                    'files-{}'.format(project_id))
 
         sanitized_django_project_name = self._sanitize_name(django_project_name)
         cluster_name = sanitized_django_project_name
@@ -253,7 +259,8 @@ class WorkflowManager(object):
 
         self._console_io.tell('[7/{}]: File Bucket Creation'.format(
             self._TOTAL_NEW_STEPS))
-        self._file_bucket_workflow.create_file_bucket(project_id)
+        self._file_bucket_workflow.create_file_bucket(project_id,
+                                                      file_storage_bucket_name)
 
         self._console_io.tell(
             '[8/{}]: Create Service Account Necessary For Deployment'.format(

@@ -1,4 +1,4 @@
-# Copyright 2018 Google LLC
+# Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,16 +26,18 @@ class FileBucketCreationWorkflow(object):
             static_content_serve.StaticContentServeClient.from_credentials(
                 credentials))
 
-    def create_file_bucket(self, project_id: str):
-        """Create bucket and assign correct permissions
+    def create_file_bucket(self, project_id: str,
+                           bucket_name: str):
+        """Create bucket and assign correct permissions.
 
         The public Google Cloud Storage Bucket will hold files uploaded to the
         Django app.
 
         Args:
             project_id: Id of GCP project.
+            bucket_name: Name of the Google Cloud Storage Bucket
+                used to store files by the Django app. By default it is equal to
+                files-project id.
         """
 
-        bucket_name = 'files-{}'.format(project_id)
         self._static_content_serve_client.create_bucket(project_id, bucket_name)
-        self._static_content_serve_client.make_bucket_public(bucket_name)
