@@ -29,6 +29,7 @@ from django_cloud_deploy.workflow import deploy_workflow
 from django_cloud_deploy.workflow import _project
 from django_cloud_deploy.workflow import _service_account
 from django_cloud_deploy.workflow import _static_content_serve
+from django_cloud_deploy.workflow import _file_bucket
 from django_cloud_deploy.utils import webbrowser
 
 from google.auth import credentials
@@ -51,7 +52,7 @@ class InvalidConfigError(Exception):
 class WorkflowManager(object):
     """A class to control workflow for deploying Django apps on GKE."""
 
-    _TOTAL_NEW_STEPS = 8
+    _TOTAL_NEW_STEPS = 9
     _TOTAL_UPDATE_STEPS = 3
 
     DEFAULT_GAE_SERVICE_NAME = 'default'
@@ -69,6 +70,8 @@ class WorkflowManager(object):
             _service_account.ServiceAccountKeyGenerationWorkflow(credentials))
         self._static_content_workflow = (
             _static_content_serve.StaticContentServeWorkflow(credentials))
+        self._file_bucket_workflow = (
+            _file_bucket.FileBucketCreationWorkflow(credentials))
         self._console_io = io.ConsoleIO()
 
     def create_and_deploy_new_project(
@@ -248,8 +251,12 @@ class WorkflowManager(object):
             self._static_content_workflow.serve_static_content(
                 project_id, cloud_storage_bucket_name, static_content_dir)
 
+        self._console_io.tell('[7/{}]: File Bucket Creation'.format(
+            self._TOTAL_NEW_STEPS))
+        self._file_bucket_workflow.create_file_bucket(project_id)
+
         self._console_io.tell(
-            '[7/{}]: Create Service Account Necessary For Deployment'.format(
+            '[8/{}]: Create Service Account Necessary For Deployment'.format(
                 self._TOTAL_NEW_STEPS))
         secrets = self._generate_secrets(project_id, database_username,
                                          database_password,
@@ -257,7 +264,7 @@ class WorkflowManager(object):
 
         if backend == 'gke':
             with self._console_io.progressbar(
-                    1200, '[8/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
+                    1200, '[9/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
                 app_url = self.deploy_workflow.deploy_gke_app(
                     project_id, cluster_name, django_directory_path,
                     django_project_name, image_name, secrets)
@@ -269,7 +276,7 @@ class WorkflowManager(object):
             # already created.
             is_new = appengine_service_name == self.DEFAULT_GAE_SERVICE_NAME
             with self._console_io.progressbar(
-                    300, '[8/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
+                    300, '[9/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
                 app_url = self.deploy_workflow.deploy_gae_app(
                     project_id, django_directory_path, is_new=is_new)
 
