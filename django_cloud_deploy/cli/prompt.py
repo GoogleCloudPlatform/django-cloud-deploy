@@ -912,7 +912,7 @@ class DjangoFilesystemPath(TemplatePrompt):
             directory = self._ask_for_directory(console, step, args)
             if os.path.exists(directory):
                 replace = self._ask_to_replace(console, directory)
-                if replace.lower() == 'n':
+                if not replace:
                     continue
             break
 
