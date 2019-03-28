@@ -385,7 +385,8 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
         # check for exact dependencies.
         packages = ('Django', 'mysqlclient', 'wheel', 'gunicorn',
                     'psycopg2-binary', 'google-cloud-logging',
-                    'google-cloud-storage', 'google-api-python-client')
+                    'google-cloud-storage', 'google-api-python-client',
+                    'django-storages')
         self._generator.generate_new(self._project_dir)
         requirements_file_path = os.path.join(
             self._project_dir, self._generator._REQUIREMENTS_GOOGLE)
