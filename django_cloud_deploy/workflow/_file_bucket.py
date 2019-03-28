@@ -26,8 +26,7 @@ class FileBucketCreationWorkflow(object):
             static_content_serve.StaticContentServeClient.from_credentials(
                 credentials))
 
-    def create_file_bucket(self, project_id: str,
-                           bucket_name: str):
+    def create_file_bucket(self, project_id: str, bucket_name: str):
         """Create bucket and assign correct permissions.
 
         The public Google Cloud Storage Bucket will hold files uploaded to the
