@@ -7,4 +7,3 @@ google-cloud-logging==1.8.0
 google-cloud-storage==1.13.0
 google-api-python-client==1.7.4
 django-storages==1.7.1
-
