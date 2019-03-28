@@ -48,3 +48,6 @@ else:
 	}
 
 STATIC_URL = 'https://storage.googleapis.com/{{ bucket_name }}/static/'
+
+DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+GS_BUCKET_NAME = '{{ file_bucket_name }}'
