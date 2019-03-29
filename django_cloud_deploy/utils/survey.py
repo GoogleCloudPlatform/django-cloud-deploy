@@ -32,6 +32,6 @@ def prompt_for_survey(console: io.IO):
     msg = ('Would you like to take a survey to provide your feedback for '
            'the deployment process? [y/N]')
 
-    do_survey = prompt.binary_prompt(msg, console, default='N')
+    do_survey = prompt.binary_prompt(msg, console, default=False)
     if do_survey:
         webbrowser.open_url(_SURVEY_LINK)

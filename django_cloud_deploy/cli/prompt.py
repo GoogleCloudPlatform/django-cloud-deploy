@@ -683,7 +683,7 @@ class CredentialsPrompt(TemplatePrompt):
         if active_account:  # The user has already logged in before
             msg = ('You have logged in with account [{}]. Do you want to '
                    'use it? [Y/n]: ').format(active_account)
-            use_active_credentials = binary_prompt(msg, console, default='Y')
+            use_active_credentials = binary_prompt(msg, console, default=True)
             create_new_credentials = not use_active_credentials
 
         if create_new_credentials:
@@ -872,7 +872,7 @@ class DjangoFilesystemPath(TemplatePrompt):
     def _ask_to_replace(self, console, directory):
         msg = (('The directory \'{}\' already exists, '
                 'replace it\'s contents [y/N]: ').format(directory))
-        return _ask_prompt(msg, console, default='n')
+        return binary_prompt(msg, console, default=False)
 
     def _ask_for_directory(self, console, step, args) -> str:
         base_msg = ('{} Enter a new directory path to store project source, '
@@ -912,7 +912,7 @@ class DjangoFilesystemPath(TemplatePrompt):
             directory = self._ask_for_directory(console, step, args)
             if os.path.exists(directory):
                 replace = self._ask_to_replace(console, directory)
-                if replace.lower() == 'n':
+                if not replace:
                     continue
             break
 
