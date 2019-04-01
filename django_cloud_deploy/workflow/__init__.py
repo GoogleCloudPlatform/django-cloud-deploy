@@ -233,6 +233,7 @@ class WorkflowManager(object):
         with self._console_io.progressbar(
                 300, '[4/{}]: Database Set Up'.format(self._TOTAL_NEW_STEPS)):
             self._database_workflow.create_and_setup_database(
+                project_dir=django_directory_path,
                 project_id=project_id,
                 instance_name=database_instance_name,
                 database_name=database_name,
@@ -353,6 +354,7 @@ class WorkflowManager(object):
                 120,
                 '[1/{}]: Database Migration'.format(self._TOTAL_UPDATE_STEPS)):
             self._database_workflow.migrate_database(
+                project_dir=django_directory_path,
                 project_id=project_id,
                 instance_name=database_instance_name,
                 cloud_sql_proxy_path=cloud_sql_proxy_path,

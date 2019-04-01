@@ -17,8 +17,10 @@ See https://cloud.google.com/sql/docs/
 """
 
 import contextlib
+import os
 import signal
 import shutil
+import subprocess
 import time
 from typing import Optional
 
@@ -262,6 +264,7 @@ class DatabaseClient(object):
             process.kill(signal.SIGTERM)
 
     def migrate_database(self,
+                         project_dir: str,
                          project_id: str,
                          instance_name: str,
                          cloud_sql_proxy_path: str = 'cloud_sql_proxy',
@@ -276,6 +279,7 @@ class DatabaseClient(object):
             3. Created the Cloud SQL instance and database user.
 
         Args:
+            project_dir: Absolute path of the Django project directory.
             project_id: GCP project id.
             instance_name: Name of the Cloud SQL instance where the database you
                 want to migrate is in.
@@ -286,14 +290,31 @@ class DatabaseClient(object):
         with self.with_cloud_sql_proxy(project_id, instance_name,
                                        cloud_sql_proxy_path, region, port):
             try:
+                # The environment variable must exist. This is the prerequisite
+                # of calling this function
+                settings_module = os.environ['DJANGO_SETTINGS_MODULE']
+
                 # "makemigrations" will generate migration files based on
                 # definitions in models.py.
-                management.call_command(
-                    'makemigrations', verbosity=0, interactive=False)
-
+                makemigrations_args = [
+                    'django-admin', 'makemigrations',
+                    '='.join(['--pythonpath', project_dir]), '='.join(
+                        ['--settings', settings_module])
+                ]
+                subprocess.check_call(
+                    makemigrations_args,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL)
                 # "migrate" will modify cloud sql database.
-                management.call_command(
-                    'migrate', verbosity=0, interactive=False)
+                migrate_args = [
+                    'django-admin', 'migrate',
+                    '='.join(['--pythonpath', project_dir]), '='.join(
+                        ['--settings', settings_module])
+                ]
+                subprocess.check_call(
+                    migrate_args,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL)
             except Exception as e:
                 raise crash_handling.UserError(
                     'Not able to migrate database.') from e
