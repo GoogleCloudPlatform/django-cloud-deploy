@@ -33,21 +33,28 @@ install_requires = [
     'django>=2.1.5,<2.2',
     'backoff>=1.8.0',
     'jinja2>=2.10',
-    'google-cloud-resource-manager>=0.28.1',
     'docker>=3.4.1',
     'kubernetes>=6.0.0',
-    'google-cloud-container>=0.1.1',
     'grpcio>=1.14.1',
-    'google-cloud-storage>=1.10.0',
     'pexpect>=4.6.0',
-    'psycopg2-binary>=2.7.5',
     'google-api-python-client>=1.7.4',
     'google-auth-httplib2>=0.0.3',
-    'google-cloud-logging>=1.8.0',
     'progressbar2>=3.38.0',
     'portpicker>=1.2.0',
     'PyYAML>=5.1',
 ]
+
+
+test_requires = [
+    'absl-py>=0.7.1',
+    'nox',
+    'nox-automation>=0.19.1',
+]
+
+
+extras = {
+    'test': test_requires
+}
 
 
 setuptools.setup(
@@ -66,6 +73,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=install_requires,
+    extras_require=extras,
     python_requires='>=3.5',
 
     license='Apache 2.0',

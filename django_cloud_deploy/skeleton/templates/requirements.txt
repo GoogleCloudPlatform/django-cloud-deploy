@@ -1,7 +1,7 @@
-# Requirements for Django Cloud Deploy
--r requirements-google.txt
-
 {% if requirements_path %}
 # User's requirements.txt
 -r {{ requirements_path }}
 {% endif %}
+
+# Requirements for Django Cloud Deploy
+-r requirements-google.txt

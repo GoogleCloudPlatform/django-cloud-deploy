@@ -385,8 +385,7 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
         # check for exact dependencies.
         packages = ('Django', 'mysqlclient', 'wheel', 'gunicorn',
                     'psycopg2-binary', 'google-cloud-logging',
-                    'google-cloud-storage', 'google-api-python-client',
-                    'django-storages')
+                    'google-cloud-storage', 'django-storages')
         self._generator.generate_new(self._project_dir)
         requirements_file_path = os.path.join(
             self._project_dir, self._generator._REQUIREMENTS_GOOGLE)
@@ -597,7 +596,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         files_list = os.listdir(os.path.join(project_dir, project_name))
         self.assertContainsSubset(self.SETTINGS_FILES, files_list)
 
-    def test_generate_all_source_files(self):
+    @unittest.mock.patch('subprocess.call')
+    def test_generate_all_source_files(self, ununsed_mock):
         project_id = project_name = 'test_generate_all_source_file'
         app_name = 'polls'
         self._generator.generate_new(project_id, project_name, app_name,
@@ -605,7 +605,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
                                      'fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)
 
-    def test_delete_existing_files(self):
+    @unittest.mock.patch('subprocess.call')
+    def test_delete_existing_files(self, ununsed_mock):
         project_id = project_name = 'test_delete_existing_files1'
         app_name = 'polls1'
         self._generator.generate_new(project_id, project_name, app_name,
@@ -619,7 +620,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         files_list = os.listdir(os.path.join(self._project_dir, project_name))
         self.assertNotIn(project_name, files_list)
 
-    def test_file_generation_same_place(self):
+    @unittest.mock.patch('subprocess.call')
+    def test_file_generation_same_place(self, ununsed_mock):
         project_id = project_name = 'test_file_generation_same_place'
         app_name = 'polls'
 
@@ -631,7 +633,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
                                          'fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)
 
-    def test_file_generation_directory_not_exist(self):
+    @unittest.mock.patch('subprocess.call')
+    def test_file_generation_directory_not_exist(self, ununsed_mock):
         project_id = project_name = 'test_file_generation_same_place'
         app_name = 'polls'
 
@@ -641,7 +644,7 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
                                      'fake_db_password')
         self._test_project_structure(project_name, app_name, project_dir)
 
-    @unittest.mock.patch('subprocess.check_call')
+    @unittest.mock.patch('subprocess.call')
     def test_generate_missing_source_files(self, unused_mock):
         project_id = project_name = 'test_generate_missing_source_files'
         app_name = 'existing_app'

@@ -702,13 +702,15 @@ class DjangoSourceFileGenerator(_FileGenerator):
         """
         requirements_path = os.path.join(project_dir, 'requirements.txt')
         try:
-            subprocess.check_call(
+            subprocess.call(
                 ['python3', '-m', 'pip', 'install', '-r', requirements_path],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL)
-        except (SystemExit, subprocess.CalledProcessError) as e:
-            raise crash_handling.UserError(
-                'Not able to install Django project dependencies.') from e
+        except (SystemExit, subprocess.CalledProcessError):
+            print(('Failed to install some packages listed in {}. This may or '
+                   'may not cause failures in deployment. If deployment fails, '
+                   'please try running "python3 -m pip install -r {}" and fix '
+                   'any errors.'.format(requirements_path, requirements_path)))
 
     def generate_new(self,
                      project_id: str,
@@ -783,6 +785,7 @@ class DjangoSourceFileGenerator(_FileGenerator):
             image_tag, cloudsql_secrets, django_secrets)
         self.app_engine_file_generator.generate_new(project_name, project_dir,
                                                     service_name)
+        self.install_requirements(project_dir)
         self.setup_django_environment(
             project_dir=project_dir,
             project_name=project_name,
