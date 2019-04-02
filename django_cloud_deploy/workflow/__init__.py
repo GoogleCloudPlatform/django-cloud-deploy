@@ -494,8 +494,6 @@ class WorkflowManager(object):
     def _create_files_for_secrets(path: str, secrets: Dict[str, Any]):
         """Create secret files for GAE that will be uploaded to GCS buckets.
 
-        Currently, only needed for database password.
-
         Generates JSON files that will be used by the django on GAE.
 
         Args:
@@ -503,10 +501,11 @@ class WorkflowManager(object):
               secrets: Contains the information regarding the credentials.
         """
         os.makedirs(path)
-        secret_name = 'cloudsql'
-        content = secrets['cloudsql']
-        filename = '{}.json'.format(secret_name)
-        file_path = os.path.join(path, filename)
-        with open(file_path, 'w') as file:
-            if secret_name == 'cloudsql':
+        secret_names = ['cloudsql', 'files-storage']
+        for secret in secret_names:
+            content = secrets[secret]
+            filename = '{}.json'.format(secret)
+            file_path = os.path.join(path, filename)
+            with open(file_path, 'w') as file:
                 json.dump(content, file)
+

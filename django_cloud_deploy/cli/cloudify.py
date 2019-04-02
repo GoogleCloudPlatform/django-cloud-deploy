@@ -37,9 +37,20 @@ def add_arguments(parser):
 
     parser.add_argument(
         '--project-path',
-        dest='django_directory_path',
+        dest='django_directory_path_cloudify',
         help='The location where the generated Django project code should be '
         'stored.')
+
+    parser.add_argument(
+        '--django_requirements_path',
+        dest='django_requirements_path',
+        help='The location of the Django project requirements.txt.')
+
+    parser.add_argument(
+        '--billing_account_name',
+        dest='billing_account_name',
+        help='Name of the GCP Billing account name to be associated with the '
+        'project.')
 
     parser.add_argument(
         '--database-password',
