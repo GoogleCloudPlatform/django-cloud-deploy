@@ -34,7 +34,7 @@ class RequirementsParserTest(unittest.TestCase):
 
     def test_parse_single_line(self):
         requirements = [
-            'six', 'urllib3', 'Django', 'backoff', 'mysqlclient', 'gunicorn',
+            'six', 'urllib3', 'django', 'backoff', 'mysqlclient', 'gunicorn',
             'wheel', 'google-cloud-logging'
         ]
         lines = [
@@ -47,7 +47,7 @@ class RequirementsParserTest(unittest.TestCase):
                 requirements_parser.parse_line(lines[i]), requirements[i])
 
     def test_parse_requirements(self):
-        requirements = ['six', 'urllib3', 'Django', 'backoff']
+        requirements = ['six', 'urllib3', 'django', 'backoff']
         lines = ['six==1.2', 'urllib3>=4.5.6', 'Django<=7.8', 'backoff']
         requirements_file_path = os.path.join(self._project_dir,
                                               'requirements.txt')
@@ -58,7 +58,7 @@ class RequirementsParserTest(unittest.TestCase):
             self.assertIn(requirement, results)
 
     def test_parse_requirements_with_comments(self):
-        requirements = ['six', 'urllib3', 'Django', 'backoff']
+        requirements = ['six', 'urllib3', 'django', 'backoff']
         lines = [
             'six==1.2', '# Comment', 'urllib3>=4.5.6', 'Django<=7.8', 'backoff'
         ]
@@ -72,7 +72,7 @@ class RequirementsParserTest(unittest.TestCase):
         self.assertEqual(len(requirements), len(results))
 
     def test_parse_requirements_with_empty_lines(self):
-        requirements = ['six', 'urllib3', 'Django', 'backoff']
+        requirements = ['six', 'urllib3', 'django', 'backoff']
         lines = ['six==1.2', '    ', 'urllib3>=4.5.6', 'Django<=7.8', 'backoff']
         requirements_file_path = os.path.join(self._project_dir,
                                               'requirements.txt')
@@ -84,7 +84,7 @@ class RequirementsParserTest(unittest.TestCase):
         self.assertEqual(len(requirements), len(results))
 
     def test_parse_requirements_recursively(self):
-        requirements = ['six', 'urllib3', 'Django', 'backoff']
+        requirements = ['six', 'urllib3', 'django', 'backoff']
         lines1 = ['six==1.2', 'urllib3>=4.5.6']
         lines2 = ['-r requirements1.txt', 'Django<=7.8', 'backoff']
         requirements_file_path1 = os.path.join(self._project_dir,

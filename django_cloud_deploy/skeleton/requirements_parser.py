@@ -35,7 +35,7 @@ def parse_line(line: str) -> str:
 
     # See
     # https://pip.pypa.io/en/stable/reference/pip_install/#requirement-specifiers
-    return re.split(r'[;\[~>=<]', line)[0].strip()
+    return re.split(r'[;\[~>=<]', line)[0].strip().lower()
 
 
 def parse(path: str) -> Set[str]:

@@ -462,6 +462,25 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
             file_content = f.read()
             self.assertNotIn('Django', file_content)
 
+    def test_generate_cloud_dependencies_lower_case(self):
+        project_name = 'test_cloud_dependencies_from_existing'
+
+        # "Django" is also a package required by us. We want to make sure
+        # requirements-google.txt does not include this package
+        packages = ['django']
+        management.call_command('startproject', project_name, self._project_dir)
+        requirements_file_path = os.path.join(self._project_dir,
+                                              self._generator._REQUIREMENTS)
+        with open(requirements_file_path, 'wt') as f:
+            f.write('\n'.join(packages))
+        self._generator.generate_from_existing(self._project_dir,
+                                               requirements_file_path)
+        requirements_file_path = os.path.join(
+            self._project_dir, self._generator._REQUIREMENTS_GOOGLE)
+        with open(requirements_file_path) as f:
+            file_content = f.read()
+            self.assertNotIn('Django', file_content)
+
     def test_generate_requirements_in_subdirectory(self):
         # <django_directory>/requirements/prod.txt exist.
         # generate_from_existing should not rename this file
