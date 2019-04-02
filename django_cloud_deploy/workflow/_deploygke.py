@@ -96,7 +96,6 @@ class DeploygkeWorkflow(object):
                 # Kubernetes api only accepts base64 encoded strings.
                 # See https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1Secret.md  # noqa: E501
                 secret[key] = base64.standard_b64encode(value).decode('utf-8')
-            print(secret)
             secret_data = kubernetes.client.V1Secret(
                 api_version='v1',
                 data=secret,
