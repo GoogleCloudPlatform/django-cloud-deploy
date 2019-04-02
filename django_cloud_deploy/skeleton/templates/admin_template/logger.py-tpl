@@ -12,7 +12,7 @@ def generate_logging_client():
     try:  # Kubernetes Engine
         credentials = (
             service_account.Credentials.from_service_account_file(
-                '/secrets/django_app/logging-credentials.json',
+                '/secrets/django_app/django-app-credentials.json',
                 scopes=['https://www.googleapis.com/auth/logging.read']))
 
         return logging.Client(credentials=credentials)

@@ -15,14 +15,14 @@ def get_gs_credentials():
     if os.getenv('GAE_APPLICATION', None):
         client = storage.Client()
         bucket = client.get_bucket('secrets-{{ project_id }}')
-        blob = bucket.get_blob('secrets/files-storage.json')
+        blob = bucket.get_blob('secrets/django-app-credentials.json')
         key_data = json.loads(blob.download_as_string().decode('utf-8'))
-        info = json.loads(key_data['files-storage.json'])
+        info = json.loads(key_data['django-app-credentials.json'])
         return service_account.Credentials.from_service_account_info(info)
 
     try:  # Kubernetes Engine
         return service_account.Credentials.from_service_account_file(
-            '/secrets/django_app/logging-credentials.json')
+            '/secrets/django_app/django-app-credentials.json')
     except:
         # When generating the files we need to run the set up code, but
         # this should not be reached when running on the platform
