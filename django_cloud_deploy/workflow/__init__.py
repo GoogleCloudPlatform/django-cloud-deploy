@@ -521,11 +521,8 @@ class WorkflowManager(object):
               secrets: Contains the information regarding the credentials.
         """
         os.makedirs(path)
-        secret_names = ['cloudsql', 'django-app-credentials']
-        for secret in secret_names:
-            content = secrets[secret]
+        for secret, content in secrets.items():
             filename = '{}.json'.format(secret)
             file_path = os.path.join(path, filename)
             with open(file_path, 'w') as file:
                 json.dump(content, file)
-
