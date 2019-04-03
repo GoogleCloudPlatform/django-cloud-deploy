@@ -1151,7 +1151,7 @@ class DjangoSettingsPathPrompt(StringTemplatePrompt):
 
     PARAMETER = 'django_settings_path'
     MESSAGE = ('{} Enter the path of the Django settings file that should be '
-               'used for deployment')
+               'used for deployment: ')
 
     def prompt(self, console: io.IO, step: str,
                args: Dict[str, Any]) -> Dict[str, Any]:
