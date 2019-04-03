@@ -278,6 +278,7 @@ class TemplatePrompt(Prompt):
 
     # Parameter must be set for dictionary key
     PARAMETER = None
+    MESSAGE = ''
 
     def prompt(self, console: io.IO, step: str,
                args: Dict[str, Any]) -> Dict[str, Any]:
@@ -315,7 +316,7 @@ class TemplatePrompt(Prompt):
             console.error(e)
             quit()
 
-        msg = '{} {}: {}'.format(step, self.PARAMETER, value)
+        msg = '{}{}'.format(self.MESSAGE.format(step), value)
         console.tell(msg)
         return True
 
