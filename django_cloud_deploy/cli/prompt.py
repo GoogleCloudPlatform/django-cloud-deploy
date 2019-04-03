@@ -1310,6 +1310,7 @@ class RootPrompt(object):
         'database_password',
         'django_directory_path_cloudify',
         'django_requirements_path',
+        'django_settings_path',
         'django_superuser_login',
         'django_superuser_password',
         'django_superuser_email',
@@ -1336,6 +1337,7 @@ class RootPrompt(object):
             'django_project_name': DjangoProjectNamePrompt(),
             'django_app_name': DjangoAppNamePrompt(),
             'django_requirements_path': DjangoRequirementsPathPrompt(),
+            'django_settings_path': DjangoSettingsPathPrompt(),
             'django_superuser_login': DjangoSuperuserLoginPrompt(),
             'django_superuser_password': DjangoSuperuserPasswordPrompt(),
             'django_superuser_email': DjangoSuperuserEmailPrompt()

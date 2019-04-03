@@ -258,6 +258,7 @@ class DatabaseWorkflowIntegrationTest(test_base.DjangoFileGeneratorTest,
                 superuser_password = 'fake_superuser_password'
 
                 self.database_workflow.create_and_setup_database(
+                    project_dir=self.project_dir,
                     project_id=self.project_id,
                     instance_name=self.instance_name,
                     database_name=self.database_name,

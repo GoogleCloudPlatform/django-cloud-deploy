@@ -88,6 +88,7 @@ class WorkflowManager(object):
             database_password: str,
             django_app_name: Optional[str] = None,
             django_requirements_path: Optional[str] = None,
+            django_settings_path: Optional[str] = None,
             required_services: Optional[List[Dict[str, str]]] = None,
             required_service_accounts: Optional[
                 Dict[str, List[Dict[str, Any]]]] = None,
@@ -123,6 +124,8 @@ class WorkflowManager(object):
                 already contain apps.
             django_requirements_path: Absolute path of requirements.txt of the
                 existing Django project.
+            django_settings_path: Absolute path of settings.py of the existing
+                Django project.
             required_services: The services needed to be enabled for deployment.
             required_service_accounts: Service accounts needed to be created for
                 deployment. It should have the following format:
@@ -158,7 +161,6 @@ class WorkflowManager(object):
         """
         # A bunch of variables necessary for deployment we hardcode for user.
         appengine_service_name = appengine_service_name or self.DEFAULT_GAE_SERVICE_NAME
-
         database_username = 'postgres'
         cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
         file_storage_bucket_name = (file_storage_bucket_name or
@@ -168,7 +170,10 @@ class WorkflowManager(object):
         cluster_name = sanitized_django_project_name
         database_name = sanitized_django_project_name + '-db'
         database_instance_name = sanitized_django_project_name + '-instance'
-
+        django_settings_path = django_settings_path or os.path.join(
+            django_directory_path, django_project_name, 'settings.py')
+        django_requirements_path = django_requirements_path or os.path.join(
+            django_directory_path, 'requirements.txt')
         image_name = '/'.join(
             ['gcr.io', project_id, sanitized_django_project_name])
         static_content_dir = os.path.join(django_directory_path, 'static')
@@ -203,6 +208,7 @@ class WorkflowManager(object):
                 database_user=database_username,
                 database_password=database_password,
                 django_requirements_path=django_requirements_path,
+                django_settings_path=django_settings_path,
                 instance_name=database_instance_name,
                 database_name=database_name,
                 cloud_sql_proxy_port=cloud_sql_proxy_port,
@@ -233,6 +239,7 @@ class WorkflowManager(object):
         with self._console_io.progressbar(
                 300, '[4/{}]: Database Set Up'.format(self._TOTAL_NEW_STEPS)):
             self._database_workflow.create_and_setup_database(
+                project_dir=django_directory_path,
                 project_id=project_id,
                 instance_name=database_instance_name,
                 database_name=database_name,
@@ -291,10 +298,15 @@ class WorkflowManager(object):
 
         # Create configuration file to save information needed in "update"
         # command.
+
+        # Avoid showing the absolute path of settings file in configuration.
+        relative_settings_path = os.path.relpath(django_settings_path,
+                                                 django_directory_path)
         attributes = {
             'project_id': project_id,
             'django_project_name': django_project_name,
-            'backend': backend
+            'backend': backend,
+            'django_settings_path': relative_settings_path,
         }
         self._save_config(django_directory_path, attributes)
         self._console_io.tell('Your app is running at {}.'.format(app_url))
@@ -329,6 +341,13 @@ class WorkflowManager(object):
         project_id = config_obj.get('project_id')
         django_project_name = config_obj.get('django_project_name')
         backend = config_obj.get('backend')
+        django_settings_path = config_obj.get('django_settings_path')
+        if django_settings_path:
+            django_settings_path = os.path.join(django_directory_path,
+                                                django_settings_path)
+        else:
+            django_settings_path = os.path.join(
+                django_directory_path, django_project_name, 'settings.py')
         cloud_sql_proxy_port = portpicker.pick_unused_port()
         if not project_id or not backend or not django_project_name:
             raise InvalidConfigError(
@@ -347,12 +366,13 @@ class WorkflowManager(object):
         static_content_dir = os.path.join(django_directory_path, 'static')
 
         self._source_generator.setup_django_environment(
-            django_directory_path, django_project_name, database_username,
-            database_password, cloud_sql_proxy_port)
+            django_directory_path, database_username, database_password,
+            django_settings_path, cloud_sql_proxy_port)
         with self._console_io.progressbar(
                 120,
                 '[1/{}]: Database Migration'.format(self._TOTAL_UPDATE_STEPS)):
             self._database_workflow.migrate_database(
+                project_dir=django_directory_path,
                 project_id=project_id,
                 instance_name=database_instance_name,
                 cloud_sql_proxy_path=cloud_sql_proxy_path,

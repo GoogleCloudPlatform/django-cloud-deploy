@@ -146,7 +146,6 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
 
     django_directory_path = actual_parameters['django_directory_path_cloudify']
     django_project_name = utils.get_django_project_name(django_directory_path)
-
     try:
         admin_url = workflow_manager.create_and_deploy_new_project(
             project_name=actual_parameters['project_name'],
@@ -159,8 +158,9 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
             django_superuser_password=actual_parameters[
                 'django_superuser_password'],
             django_directory_path=django_directory_path,
-            django_requirements_path=actual_parameters[
-                'django_requirements_path'],
+            django_requirements_path=actual_parameters.get(
+                'django_requirements_path'),
+            django_settings_path=actual_parameters['django_settings_path'],
             database_password=actual_parameters['database_password'],
             required_services=actual_parameters['services'],
             required_service_accounts=actual_parameters['service_accounts'],

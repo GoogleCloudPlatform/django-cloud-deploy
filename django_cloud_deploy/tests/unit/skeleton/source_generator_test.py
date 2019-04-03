@@ -89,7 +89,10 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
     def test_generate_project_files_from_existing_project(self):
         project_name = 'mysite'
         management.call_command('startproject', project_name, self._project_dir)
-        self._generator.generate_from_existing(project_name, self._project_dir)
+        settings_path = os.path.join(self._project_dir, project_name,
+                                     'settings.py')
+        self._generator.generate_from_existing(project_name, self._project_dir,
+                                               settings_path)
 
         with open(os.path.join(self._project_dir, project_name,
                                'wsgi.py')) as f:
@@ -102,6 +105,31 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
 
             # Test manage.py uses local settings.
             self.assertIn(project_name + '.local_settings', content)
+
+    def test_settings_file_not_in_default_location(self):
+        """Settings file is at <project_dir>/<project_name>/settings/dev.py."""
+        project_name = 'mysite'
+        management.call_command('startproject', project_name, self._project_dir)
+        os.mkdir(os.path.join(self._project_dir, project_name, 'settings'))
+        settings_path = os.path.join(self._project_dir, project_name,
+                                     'settings.py')
+        new_settings_path = os.path.join(self._project_dir, project_name,
+                                         'settings', 'dev.py')
+        shutil.move(settings_path, new_settings_path)
+        self._generator.generate_from_existing(project_name, self._project_dir,
+                                               new_settings_path)
+
+        with open(os.path.join(self._project_dir, project_name,
+                               'wsgi.py')) as f:
+            content = f.read()
+
+            # Test wsgi uses cloud settings.
+            self.assertIn('mysite.settings.cloud_settings', content)
+        with open(os.path.join(self._project_dir, 'manage.py')) as f:
+            content = f.read()
+
+            # Test manage.py uses local settings.
+            self.assertIn('mysite.settings.local_settings', content)
 
 
 class DjangoAppFileGeneratorTest(FileGeneratorTest):
@@ -280,10 +308,11 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
 
         # Generate Django project files
         management.call_command('startproject', project_name, self._project_dir)
-
+        django_settings_path = os.path.join(self._project_dir, project_name,
+                                            'settings.py')
         self._generator.generate_from_existing(project_id, project_name,
-                                               self._project_dir,
-                                               cloud_sql_connection_string)
+                                               cloud_sql_connection_string,
+                                               django_settings_path)
 
         expected_settings_files = ('base_settings.py', 'local_settings.py',
                                    'cloud_settings.py', 'google_settings.py')
@@ -385,8 +414,7 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
         # check for exact dependencies.
         packages = ('Django', 'mysqlclient', 'wheel', 'gunicorn',
                     'psycopg2-binary', 'google-cloud-logging',
-                    'google-cloud-storage', 'google-api-python-client',
-                    'django-storages')
+                    'google-cloud-storage', 'django-storages')
         self._generator.generate_new(self._project_dir)
         requirements_file_path = os.path.join(
             self._project_dir, self._generator._REQUIREMENTS_GOOGLE)
@@ -450,6 +478,25 @@ class DependencyFileGeneratorTest(FileGeneratorTest):
 
         # Create a Django project to make the directory looks similar with an
         # existing Django project
+        management.call_command('startproject', project_name, self._project_dir)
+        requirements_file_path = os.path.join(self._project_dir,
+                                              self._generator._REQUIREMENTS)
+        with open(requirements_file_path, 'wt') as f:
+            f.write('\n'.join(packages))
+        self._generator.generate_from_existing(self._project_dir,
+                                               requirements_file_path)
+        requirements_file_path = os.path.join(
+            self._project_dir, self._generator._REQUIREMENTS_GOOGLE)
+        with open(requirements_file_path) as f:
+            file_content = f.read()
+            self.assertNotIn('Django', file_content)
+
+    def test_generate_cloud_dependencies_lower_case(self):
+        project_name = 'test_cloud_dependencies_from_existing'
+
+        # "Django" is also a package required by us. We want to make sure
+        # requirements-google.txt does not include this package
+        packages = ['django']
         management.call_command('startproject', project_name, self._project_dir)
         requirements_file_path = os.path.join(self._project_dir,
                                               self._generator._REQUIREMENTS)
@@ -597,7 +644,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         files_list = os.listdir(os.path.join(project_dir, project_name))
         self.assertContainsSubset(self.SETTINGS_FILES, files_list)
 
-    def test_generate_all_source_files(self):
+    @unittest.mock.patch('subprocess.call')
+    def test_generate_all_source_files(self, ununsed_mock):
         project_id = project_name = 'test_generate_all_source_file'
         app_name = 'polls'
         self._generator.generate_new(project_id, project_name, app_name,
@@ -605,7 +653,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
                                      'fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)
 
-    def test_delete_existing_files(self):
+    @unittest.mock.patch('subprocess.call')
+    def test_delete_existing_files(self, ununsed_mock):
         project_id = project_name = 'test_delete_existing_files1'
         app_name = 'polls1'
         self._generator.generate_new(project_id, project_name, app_name,
@@ -619,7 +668,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         files_list = os.listdir(os.path.join(self._project_dir, project_name))
         self.assertNotIn(project_name, files_list)
 
-    def test_file_generation_same_place(self):
+    @unittest.mock.patch('subprocess.call')
+    def test_file_generation_same_place(self, ununsed_mock):
         project_id = project_name = 'test_file_generation_same_place'
         app_name = 'polls'
 
@@ -631,7 +681,8 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
                                          'fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)
 
-    def test_file_generation_directory_not_exist(self):
+    @unittest.mock.patch('subprocess.call')
+    def test_file_generation_directory_not_exist(self, ununsed_mock):
         project_id = project_name = 'test_file_generation_same_place'
         app_name = 'polls'
 
@@ -641,7 +692,7 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
                                      'fake_db_password')
         self._test_project_structure(project_name, app_name, project_dir)
 
-    @unittest.mock.patch('subprocess.check_call')
+    @unittest.mock.patch('subprocess.call')
     def test_generate_missing_source_files(self, unused_mock):
         project_id = project_name = 'test_generate_missing_source_files'
         app_name = 'existing_app'
@@ -649,10 +700,13 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         existing_app_path = os.path.join(self._project_dir, 'existing_app')
         os.mkdir(existing_app_path)
         management.call_command('startapp', app_name, existing_app_path)
+        django_settings_path = os.path.join(self._project_dir, project_name,
+                                            'settings.py')
         self._generator.generate_from_existing(
             project_id=project_id,
             project_name=project_name,
             project_dir=self._project_dir,
+            django_settings_path=django_settings_path,
             database_user='fake_db_user',
             database_password='fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)
