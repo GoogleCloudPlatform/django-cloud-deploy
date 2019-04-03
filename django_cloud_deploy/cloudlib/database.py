@@ -354,7 +354,8 @@ class DatabaseClient(object):
                                        cloud_sql_proxy_path, region, port):
             # This can only be imported after django.setup() is called
             try:
-                from django.contrib.auth.models import User
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
 
                 # Check whether the super user we want to create exist or not
                 # If a superuser with the same name already exist, we will skip
