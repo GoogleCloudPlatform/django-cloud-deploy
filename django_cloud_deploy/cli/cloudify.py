@@ -112,6 +112,13 @@ def add_arguments(parser):
         nargs='+',
         help=('App engine service name. Test only, do not use.'))
 
+    parser.add_argument(
+        '--database-instance-name',
+        dest='database_instance_name',
+        nargs='+',
+        help=('Name of the Cloud SQL instance used for deployment. Test only, '
+              'do not use.'))
+
 
 def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
     if not tool_requirements.check_and_handle_requirements(
@@ -123,7 +130,8 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
         'bucket_name': getattr(args, 'bucket_name', None),
         'service_accounts': getattr(args, 'service_accounts', None),
         'services': getattr(args, 'services', None),
-        'appengine_service_name': getattr(args, 'appengine_service_name', None)
+        'appengine_service_name': getattr(args, 'appengine_service_name', None),
+        'database_instance_name': getattr(args, 'database_instance_name', None),
     }
 
     prompt_args = {**vars(args), **actual_parameters}
@@ -151,6 +159,7 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
                 'django_requirements_path'),
             django_settings_path=actual_parameters['django_settings_path'],
             database_password=actual_parameters['database_password'],
+            database_instance_name=actual_parameters['database_instance_name'],
             required_services=actual_parameters['services'],
             required_service_accounts=actual_parameters['service_accounts'],
             appengine_service_name=actual_parameters['appengine_service_name'],

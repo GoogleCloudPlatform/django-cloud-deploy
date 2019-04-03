@@ -45,12 +45,23 @@ def add_arguments(parser):
         help=('The file path of the credentials file to use for update. '
               'Test only, do not use.'))
 
+    parser.add_argument(
+        '--database-instance-name',
+        dest='database_instance_name',
+        nargs='+',
+        help=('Name of the Cloud SQL instance used for deployment. Test only, '
+              'do not use.'))
+
 
 def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
 
+    actual_parameters = {
+        'database_instance_name': getattr(args, 'database_instance_name', None),
+    }
+    prompt_args = {**vars(args), **actual_parameters}
     root_prompt = prompt.RootPrompt()
     actual_parameters = root_prompt.prompt(prompt.Command.UPDATE, console,
-                                           vars(args))
+                                           prompt_args)
 
     # This got moved from the start because we wanted to save the user from
     # giving us another bit of information that we can automatically retrieve
@@ -70,8 +81,9 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
     workflow_manager = workflow.WorkflowManager(
         actual_parameters['credentials'])
     workflow_manager.update_project(
-        actual_parameters['django_directory_path_update'],
-        actual_parameters['database_password'])
+        django_directory_path=actual_parameters['django_directory_path_update'],
+        database_password=actual_parameters['database_password'],
+        database_instance_name=actual_parameters['database_instance_name'])
 
 
 if __name__ == '__main__':

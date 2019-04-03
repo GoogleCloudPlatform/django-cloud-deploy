@@ -86,6 +86,7 @@ class WorkflowManager(object):
             django_superuser_password: str,
             django_directory_path: str,
             database_password: str,
+            database_instance_name: Optional[str] = None,
             django_app_name: Optional[str] = None,
             django_requirements_path: Optional[str] = None,
             django_settings_path: Optional[str] = None,
@@ -119,6 +120,8 @@ class WorkflowManager(object):
             django_directory_path: The location where the generated Django
                 project code should be stored.
             database_password: The password for the default database user.
+            database_instance_name: Name of the Cloud SQL instance to use for
+                deployment
             django_app_name: The name of the Django app e.g. "poll". This is not
                 needed in deploying existing projects because the projects
                 already contain apps.
@@ -169,7 +172,8 @@ class WorkflowManager(object):
         sanitized_django_project_name = self._sanitize_name(django_project_name)
         cluster_name = sanitized_django_project_name
         database_name = sanitized_django_project_name + '-db'
-        database_instance_name = sanitized_django_project_name + '-instance'
+        database_instance_name = (database_instance_name or
+                                  sanitized_django_project_name + '-instance')
         django_settings_path = django_settings_path or os.path.join(
             django_directory_path, django_project_name, 'settings.py')
         django_requirements_path = django_requirements_path or os.path.join(
@@ -318,6 +322,7 @@ class WorkflowManager(object):
     def update_project(self,
                        django_directory_path: str,
                        database_password: str,
+                       database_instance_name: Optional[str] = None,
                        cloud_sql_proxy_path: str = 'cloud_sql_proxy',
                        region: str = 'us-west1',
                        open_browser: bool = True):
@@ -327,6 +332,8 @@ class WorkflowManager(object):
             django_directory_path: The location where the generated Django
                 project code should be stored.
             database_password: The password for the default database user.
+            database_instance_name: Name of the Cloud SQL instance to use for
+                deployment
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
             region: Where the service is hosted.
             open_browser: Whether we open the browser to show the deployed app
@@ -360,7 +367,8 @@ class WorkflowManager(object):
         cloud_storage_bucket_name = project_id
         sanitized_django_project_name = self._sanitize_name(django_project_name)
         cluster_name = sanitized_django_project_name
-        database_instance_name = sanitized_django_project_name + '-instance'
+        database_instance_name = (database_instance_name or
+                                  sanitized_django_project_name + '-instance')
         image_name = '/'.join(
             ['gcr.io', project_id, sanitized_django_project_name])
         static_content_dir = os.path.join(django_directory_path, 'static')

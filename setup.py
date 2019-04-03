@@ -49,6 +49,7 @@ test_requires = [
     'absl-py>=0.7.1',
     'nox',
     'nox-automation>=0.19.1',
+    'selenium>=3.141.0',
 ]
 
 
