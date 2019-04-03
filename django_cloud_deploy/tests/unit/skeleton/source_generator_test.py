@@ -89,7 +89,10 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
     def test_generate_project_files_from_existing_project(self):
         project_name = 'mysite'
         management.call_command('startproject', project_name, self._project_dir)
-        self._generator.generate_from_existing(project_name, self._project_dir)
+        settings_path = os.path.join(self._project_dir, project_name,
+                                     'settings.py')
+        self._generator.generate_from_existing(project_name, self._project_dir,
+                                               settings_path)
 
         with open(os.path.join(self._project_dir, project_name,
                                'wsgi.py')) as f:
@@ -102,6 +105,31 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
 
             # Test manage.py uses local settings.
             self.assertIn(project_name + '.local_settings', content)
+
+    def test_settings_file_not_in_default_location(self):
+        """Settings file is at <project_dir>/<project_name>/settings/dev.py."""
+        project_name = 'mysite'
+        management.call_command('startproject', project_name, self._project_dir)
+        os.mkdir(os.path.join(self._project_dir, project_name, 'settings'))
+        settings_path = os.path.join(self._project_dir, project_name,
+                                     'settings.py')
+        new_settings_path = os.path.join(self._project_dir, project_name,
+                                         'settings', 'dev.py')
+        shutil.move(settings_path, new_settings_path)
+        self._generator.generate_from_existing(project_name, self._project_dir,
+                                               new_settings_path)
+
+        with open(os.path.join(self._project_dir, project_name,
+                               'wsgi.py')) as f:
+            content = f.read()
+
+            # Test wsgi uses cloud settings.
+            self.assertIn('mysite.settings.cloud_settings', content)
+        with open(os.path.join(self._project_dir, 'manage.py')) as f:
+            content = f.read()
+
+            # Test manage.py uses local settings.
+            self.assertIn('mysite.settings.local_settings', content)
 
 
 class DjangoAppFileGeneratorTest(FileGeneratorTest):
@@ -280,10 +308,11 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
 
         # Generate Django project files
         management.call_command('startproject', project_name, self._project_dir)
-
+        django_settings_path = os.path.join(self._project_dir, project_name,
+                                            'settings.py')
         self._generator.generate_from_existing(project_id, project_name,
-                                               self._project_dir,
-                                               cloud_sql_connection_string)
+                                               cloud_sql_connection_string,
+                                               django_settings_path)
 
         expected_settings_files = ('base_settings.py', 'local_settings.py',
                                    'cloud_settings.py', 'google_settings.py')
@@ -671,10 +700,13 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         existing_app_path = os.path.join(self._project_dir, 'existing_app')
         os.mkdir(existing_app_path)
         management.call_command('startapp', app_name, existing_app_path)
+        django_settings_path = os.path.join(self._project_dir, project_name,
+                                            'settings.py')
         self._generator.generate_from_existing(
             project_id=project_id,
             project_name=project_name,
             project_dir=self._project_dir,
+            django_settings_path=django_settings_path,
             database_user='fake_db_user',
             database_password='fake_db_password')
         self._test_project_structure(project_name, app_name, self._project_dir)

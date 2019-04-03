@@ -85,7 +85,6 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUp):
             # database password again
             test_io.password_answers.append(fake_password)
             test_io.answers.append(self.project_dir)  # django_directory_path
-
             # The Django local directory is created with tempfile.mkdtemp().
             # So when we get this prompt, it exists already. We need to
             # overwrite it.
