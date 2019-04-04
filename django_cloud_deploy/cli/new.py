@@ -41,6 +41,12 @@ def add_arguments(parser):
         'stored.')
 
     parser.add_argument(
+        '--billing_account_name',
+        dest='billing_account_name',
+        help='Name of the GCP Billing account name to be associated with the '
+        'project.')
+
+    parser.add_argument(
         '--database-password',
         dest='database_password',
         help='The password for the default database user.')

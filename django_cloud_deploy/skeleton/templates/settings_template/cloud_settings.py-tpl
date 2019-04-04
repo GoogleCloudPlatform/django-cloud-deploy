@@ -1,5 +1,6 @@
 import json
 from google.cloud import storage
+from google.oauth2 import service_account
 
 from .google_settings import *
 
@@ -9,6 +10,23 @@ def get_database_password():
     blob = bucket.get_blob('secrets/cloudsql.json')
     creds = json.loads(blob.download_as_string())
     return creds['password']
+
+def get_gs_credentials():
+    if os.getenv('GAE_APPLICATION', None):
+        client = storage.Client()
+        bucket = client.get_bucket('secrets-{{ project_id }}')
+        blob = bucket.get_blob('secrets/django-app-credentials.json')
+        key_data = json.loads(blob.download_as_string().decode('utf-8'))
+        info = json.loads(key_data['django-app-credentials.json'])
+        return service_account.Credentials.from_service_account_info(info)
+
+    try:  # Kubernetes Engine
+        return service_account.Credentials.from_service_account_file(
+            '/secrets/django_app/django-app-credentials.json')
+    except:
+        # When generating the files we need to run the set up code, but
+        # this should not be reached when running on the platform
+        return None
 
 
 # SECURITY WARNING: If you deploy a Django app to production, make sure to set
@@ -29,26 +47,27 @@ if os.getenv('GAE_APPLICATION', None):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-	        'NAME': '{{ database_name }}',
+            'NAME': '{{ database_name }}',
             'USER': os.environ['DATABASE_USER'],
             'PASSWORD': get_database_password(),
             'HOST': '/cloudsql/{{ cloud_sql_connection }}',
         }
     }
 else:
-	DATABASES = {
-	    'default': {
-	        'ENGINE': 'django.db.backends.postgresql',
-	        'NAME': '{{ database_name }}',
-	        'USER': os.getenv('DATABASE_USER'),
-	        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-	        'HOST': '127.0.0.1',
-	        'PORT': os.environ.get('CLOUD_SQL_PROXY_PORT') or '5432',
-	    }
-	}
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': '{{ database_name }}',
+            'USER': os.getenv('DATABASE_USER'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+            'HOST': '127.0.0.1',
+            'PORT': os.environ.get('CLOUD_SQL_PROXY_PORT') or '5432',
+        }
+    }
 
 STATIC_URL = 'https://storage.googleapis.com/{{ bucket_name }}/static/'
 
 DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
 GS_BUCKET_NAME = '{{ file_bucket_name }}'
 GS_FILE_OVERWRITE = False
+GS_CREDENTIALS = get_gs_credentials()
