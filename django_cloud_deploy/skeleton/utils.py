@@ -54,6 +54,20 @@ def parse_settings_module(file_path: str) -> Optional[str]:
         # Find strings between "" or ''
         raw_settings_module = re.findall(r'[\"\'][\w+\.]+[\"\']',
                                          settings_module_line.group(0))
+
+        # raw_settings_module should be like
+        # ['"DJANGO_SETTINGS_MODULE"', '"mysite.settings"']
+        # If it is not like this, then we are not able to parse the settings
+        # module.
+        if len(raw_settings_module) < 2:
+            return None
+
+        commas = ['\'', '\"']
+        for module in raw_settings_module:
+            # The settings module is not between " or '
+            if (len(module) < 2 or module[0] not in commas or
+                    module[-1] not in commas):
+                return None
         # Remove empty spaces and delete quotation marks at the start and end
         settings_module = raw_settings_module[-1].strip()[1:-1]
         return settings_module

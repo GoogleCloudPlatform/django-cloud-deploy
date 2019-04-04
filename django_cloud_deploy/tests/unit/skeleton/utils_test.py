@@ -54,6 +54,21 @@ class GetDjangoProjectNameTest(unittest.TestCase):
             utils.get_django_project_name(project_dir)
         shutil.rmtree(project_dir)
 
+    def test_manage_py_uses_variable_for_settings_module(self):
+        """Test case for manage.py uses a variable for settings module."""
+        project_dir = tempfile.mkdtemp()
+        management.call_command('startproject', 'mysite', project_dir)
+        manage_py_path = os.path.join(project_dir, 'manage.py')
+        with open(manage_py_path) as f:
+            file_content = f.read()
+            file_content = file_content.replace('\'mysite.settings\'',
+                                                'module_variable')
+        with open(manage_py_path, 'wt') as f:
+            f.write(file_content)
+        with self.assertRaises(utils.ProjectContentError):
+            utils.get_django_project_name(project_dir)
+        shutil.rmtree(project_dir)
+
     def test_get_project_name_invalid_manage_py(self):
         # Create a temporary directory to put Django project files
         project_dir = tempfile.mkdtemp()
