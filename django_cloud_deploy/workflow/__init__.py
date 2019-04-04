@@ -299,7 +299,8 @@ class WorkflowManager(object):
                     300, '[9/{}]: Deployment'.format(self._TOTAL_NEW_STEPS)):
                 app_url = self.deploy_workflow.deploy_gae_app(
                     project_id, django_directory_path, is_new=is_new)
-
+        self._static_content_workflow.set_cors_policy(cloud_storage_bucket_name,
+                                                      app_url)
         # Create configuration file to save information needed in "update"
         # command.
 

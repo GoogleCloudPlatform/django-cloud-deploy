@@ -20,6 +20,8 @@ from django_cloud_deploy.cloudlib import static_content_serve
 from django_cloud_deploy.tests.lib import test_base
 from django_cloud_deploy.tests.lib import utils
 
+from googleapiclient import discovery
+
 
 class StaticContentServeClientIntegrationTest(test_base.DjangoFileGeneratorTest,
                                               test_base.ResourceCleanUp):
@@ -37,6 +39,24 @@ class StaticContentServeClientIntegrationTest(test_base.DjangoFileGeneratorTest,
             for _ in range(3):
                 self._static_content_serve_client.create_bucket(
                     self.project_id, bucket_name)
+
+    def test_set_cors_policy(self):
+        bucket_name = utils.get_resource_name('bucket')
+        with self.clean_up_bucket(bucket_name):
+            self._static_content_serve_client.create_bucket(
+                self.project_id, bucket_name)
+            url = 'http://www.example.com'
+            self._static_content_serve_client.set_cors_policy(bucket_name, url)
+            client = discovery.build(
+                'storage',
+                'v1',
+                credentials=self.credentials,
+                cache_discovery=False)
+            request = client.buckets().get(bucket=bucket_name)
+            bucket_body = request.execute(num_retries=5)
+            cors_policy = bucket_body.get('cors')
+            self.assertNotEmpty(cors_policy)
+            self.assertIn(url, cors_policy[0].get('origin'))
 
 
 class ServiceAccountClientIntegrationTest(test_base.ResourceCleanUp):

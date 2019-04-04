@@ -312,3 +312,28 @@ class StaticContentServeClient(object):
                 'Not able to collect static files.') from e
         finally:
             os.chdir(cwd)
+
+    def set_cors_policy(self, bucket_name: str, origin: str):
+        """Make the given bucket able to serve fonts to the given origins.
+
+        Args:
+            bucket_name: Name of a GCS bucket for static content serving.
+            origin: Url of the website which need fonts in the bucket.
+        """
+        request = self._storage_service.buckets().get(bucket=bucket_name)
+        bucket_body = request.execute(num_retries=5)
+        cors_policy = [{
+            'origin': [origin],
+            'method': ['GET'],
+            'responseHeader': ['Content-Type'],
+            'maxAgeSeconds': 3600,
+        }]
+        bucket_body['cors'] = cors_policy
+        try:
+            request = self._storage_service.buckets().patch(
+                bucket=bucket_name, body=bucket_body)
+            request.execute(num_retries=5)
+        except errors.HttpError as e:
+            raise StaticContentServeError(
+                'Fail to change CORS policy of bucket {}.'.format(
+                    bucket_name)) from e

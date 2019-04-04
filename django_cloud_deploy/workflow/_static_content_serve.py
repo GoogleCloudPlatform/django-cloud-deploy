@@ -45,6 +45,9 @@ class StaticContentServeWorkflow(object):
         self._static_content_serve_client.upload_content(
             bucket_name, static_content_dir)
 
+    def set_cors_policy(self, bucket_name: str, origin: str):
+        self._static_content_serve_client.set_cors_policy(bucket_name, origin)
+
     def serve_secret_content(self, project_id: str, bucket_name: str,
                              secrec_content_dir: str):
         """Do all the work for serving secret content of the provided project.
