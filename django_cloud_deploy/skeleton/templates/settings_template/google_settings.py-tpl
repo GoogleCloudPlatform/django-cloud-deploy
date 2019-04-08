@@ -9,9 +9,13 @@ if 'BASE_DIR' not in locals():
 if 'INSTALLED_APPS' not in locals():
     INSTALLED_APPS = []
 
+# Sometimes INSTALLED_APPS has type tuple
+INSTALLED_APPS = list(INSTALLED_APPS)
+
 # Use admin overwrite instead of the default admin
-if 'django.contrib.admin' in INSTALLED_APPS:
-    INSTALLED_APPS.remove('django.contrib.admin')
+for app_name in INSTALLED_APPS:
+    if app_name.startswith('django.contrib.admin'):
+        INSTALLED_APPS.remove(app_name)
 
 INSTALLED_APPS += [
     'cloud_admin.apps.CloudAdminConfig',
