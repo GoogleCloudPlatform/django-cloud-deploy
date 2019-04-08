@@ -20,10 +20,9 @@ import types
 import unittest
 import urllib.parse
 
-import backoff
-from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import new
 from django_cloud_deploy.cli import update
+from django_cloud_deploy.tests.e2e import e2e_utils
 from django_cloud_deploy.tests.lib import test_base
 from django_cloud_deploy.tests.lib import utils
 import requests
@@ -51,12 +50,6 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUp):
     def tearDown(self):
         shutil.rmtree(self.project_dir)
 
-    @staticmethod
-    @backoff.on_exception(
-        backoff.expo, requests.exceptions.ConnectionError, max_tries=3)
-    def _get_with_retry(url: str) -> requests.models.Response:
-        return requests.get(url)
-
     @unittest.mock.patch('portpicker.pick_unused_port', return_value=5432)
     def test_deploy_and_update_new_project(self, unused_mock):
         # Generate unique resource names
@@ -79,27 +72,8 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUp):
                 self.reset_iam_policy(member, self._CLOUDSQL_ROLES), \
                 self.clean_up_sql_instance(django_project_name + '-instance'):
 
-            test_io = io.TestIO()
-            test_io.answers.append(self.project_id)  # project_id
-            test_io.password_answers.append(fake_password)  # database password
-            # database password again
-            test_io.password_answers.append(fake_password)
-            test_io.answers.append(self.project_dir)  # django_directory_path
-            # The Django local directory is created with tempfile.mkdtemp().
-            # So when we get this prompt, it exists already. We need to
-            # overwrite it.
-            test_io.answers.append('Y')
-            test_io.answers.append(django_project_name)  # django_project_name
-            test_io.answers.append('')  # django_app_name
-            # django_superuser_login
-            test_io.answers.append(fake_superuser_name)
-            # django_superuser_password
-            test_io.password_answers.append(fake_password)
-            # django_superuser_password again
-            test_io.password_answers.append(fake_password)
-            test_io.answers.append('')  # django_superuser_email
-
-            test_io.answers.append('N')  # Do not do survey at the end
+            test_io = e2e_utils.create_new_command_io(
+                self.project_id, self.project_dir, django_project_name)
 
             fake_service_accounts = {
                 'cloud_sql': [self._FAKE_CLOUDSQL_SERVICE_ACCOUNT]
@@ -141,12 +115,11 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUp):
             self.assertEqual(driver.title,
                              'Site administration | Django site admin')
 
+            # Assert the static content is successfully uploaded
             object_path = 'static/admin/css/base.css'
             object_url = 'http://storage.googleapis.com/{}/{}'.format(
                 cloud_storage_bucket_name, object_path)
             response = requests.get(object_url)
-
-            # Assert the static content is successfully uploaded
             self.assertIn('DJANGO', response.text)
 
             # Assert the deployed app is using static content from the GCS
@@ -154,11 +127,7 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUp):
             self.assertIn(cloud_storage_bucket_name, driver.page_source)
 
             # Test update command
-            test_io = io.TestIO()
-            test_io.password_answers.append(fake_password)  # database password
-            test_io.password_answers.append(fake_password)  # Confirm password
-            test_io.answers.append(self.project_dir)  # django_directory_path
-
+            test_io = e2e_utils.create_update_command_io(self.project_dir)
             view_file_path = os.path.join(self.project_dir, 'home', 'views.py')
             with open(view_file_path) as view_file:
                 file_content = view_file.read()
@@ -176,5 +145,5 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUp):
 
             # This call is flaky without retry. Sometimes this call is made
             # after the pod is ready but before the http server is ready.
-            response = self._get_with_retry(url)
+            response = e2e_utils.get_with_retry(url)
             self.assertIn('Hello1 from the Cloud!', response.text)
