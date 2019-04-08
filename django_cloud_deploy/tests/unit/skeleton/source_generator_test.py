@@ -577,6 +577,17 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
             # Assert cloudsql secret is used as default
             self.assertIn('name: cloudsql-oauth-credentials', yaml_file_content)
 
+    def test_lowercase_project_name(self):
+        project_id = 'fake_projectid'
+        project_name = 'DjangoBlog'
+        self._generator.generate_new(self._project_dir, project_name,
+                                     project_id)
+
+        yaml_file_path = os.path.join(self._project_dir, project_name + '.yaml')
+        with open(yaml_file_path) as yaml_file:
+            yaml_file_content = yaml_file.read()
+            self.assertIn(project_name.lower(), yaml_file_content)
+
     def test_customized_yaml_file_content(self):
         project_id = project_name = 'test_customized_yaml_file_content'
         instance_name = 'fake_instance_name'

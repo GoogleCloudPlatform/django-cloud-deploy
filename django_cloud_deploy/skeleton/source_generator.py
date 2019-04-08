@@ -647,7 +647,7 @@ class _YAMLFileGenerator(_Jinja2FileGenerator):
         django_secrets = django_secrets or []
 
         options = {
-            'project_name': project_name,
+            'project_name': project_name.lower(),
             'project_id': project_id,
             'cloud_sql_connection_string': cloud_sql_connection_string,
             'image_tag': image_tag,
