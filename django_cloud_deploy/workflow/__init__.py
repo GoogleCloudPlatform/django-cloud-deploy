@@ -354,8 +354,9 @@ class WorkflowManager(object):
             django_settings_path = os.path.join(django_directory_path,
                                                 django_settings_path)
         else:
-            django_settings_path = os.path.join(
-                django_directory_path, django_project_name, 'settings.py')
+            django_settings_path = os.path.join(django_directory_path,
+                                                django_project_name,
+                                                'settings.py')
         cloud_sql_proxy_port = portpicker.pick_unused_port()
         if not project_id or not backend or not django_project_name:
             raise InvalidConfigError(
@@ -374,9 +375,11 @@ class WorkflowManager(object):
             ['gcr.io', project_id, sanitized_django_project_name])
         static_content_dir = os.path.join(django_directory_path, 'static')
 
-        self._source_generator.setup_django_environment(
-            django_directory_path, database_username, database_password,
-            django_settings_path, cloud_sql_proxy_port)
+        self._source_generator.setup_django_environment(django_directory_path,
+                                                        database_username,
+                                                        database_password,
+                                                        django_settings_path,
+                                                        cloud_sql_proxy_port)
         with self._console_io.progressbar(
                 120,
                 '[1/{}]: Database Migration'.format(self._TOTAL_UPDATE_STEPS)):

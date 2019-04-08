@@ -43,8 +43,8 @@ class RequirementsParserTest(unittest.TestCase):
             'google-cloud-logging; sys_platform == \'win32\''
         ]
         for i in range(len(lines)):
-            self.assertEqual(
-                requirements_parser.parse_line(lines[i]), requirements[i])
+            self.assertEqual(requirements_parser.parse_line(lines[i]),
+                             requirements[i])
 
     def test_parse_requirements(self):
         requirements = ['six', 'urllib3', 'django', 'backoff']

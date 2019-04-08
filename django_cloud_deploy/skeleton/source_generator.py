@@ -253,8 +253,9 @@ class _DjangoAppFileGenerator(_Jinja2FileGenerator):
             'app_name': app_name,
             'camel_case_app_name': camel_case_value
         }
-        self._generate_files(
-            self.APP_TEMPLATE_FOLDER, app_destination, options=options)
+        self._generate_files(self.APP_TEMPLATE_FOLDER,
+                             app_destination,
+                             options=options)
 
 
 class _DjangoAdminOverwriteGenerator(_Jinja2FileGenerator):
@@ -283,8 +284,9 @@ class _DjangoAdminOverwriteGenerator(_Jinja2FileGenerator):
         options = {'project_id': project_id, 'project_name': project_name}
         admin_destination = os.path.join(project_dir,
                                          self.ADMIN_OVERWRITE_APP_NAME)
-        self._generate_files(
-            self.ADMIN_TEMPLATE_FOLDER, admin_destination, options=options)
+        self._generate_files(self.ADMIN_TEMPLATE_FOLDER,
+                             admin_destination,
+                             options=options)
 
     def _generate_templates_files(self, project_dir: str):
         """Create the django templates using our template.
@@ -351,8 +353,9 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
             'file_bucket_name': file_storage_bucket_name,
             'cloud_sql_connection': cloud_sql_connection
         }
-        self._render_directory(
-            settings_templates_dir, destination, options=options)
+        self._render_directory(settings_templates_dir,
+                               destination,
+                               options=options)
 
     def generate_from_existing(self,
                                project_id: str,
@@ -405,8 +408,9 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
             'file_bucket_name': file_storage_bucket_name,
             'cloud_sql_connection': cloud_sql_connection
         }
-        self._render_directory(
-            settings_templates_dir, settings_dir, options=options)
+        self._render_directory(settings_templates_dir,
+                               settings_dir,
+                               options=options)
         os.replace(settings_path, base_settings_path)
 
 
@@ -599,10 +603,9 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
                                      self._REQUIREMENTS)
 
         output_path = os.path.join(project_dir, self._REQUIREMENTS)
-        self._render_file(
-            template_path,
-            output_path,
-            options={'requirements_path': requirements_path})
+        self._render_file(template_path,
+                          output_path,
+                          options={'requirements_path': requirements_path})
 
 
 class _YAMLFileGenerator(_Jinja2FileGenerator):
@@ -811,20 +814,20 @@ class DjangoSourceFileGenerator(_FileGenerator):
             database_name, cloud_storage_bucket_name, file_storage_bucket_name)
         self.docker_file_generator.generate_new(project_name, project_dir)
         self.dependency_file_generator.generate_new(project_dir)
-        self.yaml_file_generator.generate_new(
-            project_dir, project_name, project_id, instance_name, region,
-            image_tag, cloudsql_secrets, django_secrets)
+        self.yaml_file_generator.generate_new(project_dir, project_name,
+                                              project_id, instance_name, region,
+                                              image_tag, cloudsql_secrets,
+                                              django_secrets)
         self.app_engine_file_generator.generate_new(project_name, project_dir,
                                                     service_name)
         django_settings_path = os.path.join(project_dir, project_name,
                                             'cloud_settings.py')
         self.install_requirements(project_dir)
-        self.setup_django_environment(
-            project_dir=project_dir,
-            database_user=database_user,
-            database_password=database_password,
-            django_settings_path=django_settings_path,
-            cloud_sql_proxy_port=cloud_sql_proxy_port)
+        self.setup_django_environment(project_dir=project_dir,
+                                      database_user=database_user,
+                                      database_password=database_password,
+                                      django_settings_path=django_settings_path,
+                                      cloud_sql_proxy_port=cloud_sql_proxy_port)
 
     def generate_from_existing(self,
                                project_id: str,
@@ -899,9 +902,8 @@ class DjangoSourceFileGenerator(_FileGenerator):
         self.app_engine_file_generator.generate_from_existing(
             project_name, project_dir, service_name)
         self.install_requirements(project_dir)
-        self.setup_django_environment(
-            project_dir=project_dir,
-            database_user=database_user,
-            database_password=database_password,
-            django_settings_path=django_settings_path,
-            cloud_sql_proxy_port=cloud_sql_proxy_port)
+        self.setup_django_environment(project_dir=project_dir,
+                                      database_user=database_user,
+                                      database_password=database_password,
+                                      django_settings_path=django_settings_path,
+                                      cloud_sql_proxy_port=cloud_sql_proxy_port)

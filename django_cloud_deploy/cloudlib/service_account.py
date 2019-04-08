@@ -51,13 +51,14 @@ class ServiceAccountClient(object):
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(
-            discovery.build(
-                'iam', 'v1', credentials=credentials, cache_discovery=False),
-            discovery.build(
-                'cloudresourcemanager',
-                'v1',
-                credentials=credentials,
-                cache_discovery=False))
+            discovery.build('iam',
+                            'v1',
+                            credentials=credentials,
+                            cache_discovery=False),
+            discovery.build('cloudresourcemanager',
+                            'v1',
+                            credentials=credentials,
+                            cache_discovery=False))
 
     def _get_iam_policy(self, project_id):
         request = self._cloudresourcemanager_service.projects().getIamPolicy(
@@ -90,8 +91,10 @@ class ServiceAccountClient(object):
         policy['bindings'].append(new_bindings)
         return policy
 
-    @backoff.on_exception(
-        backoff.expo, errors.HttpError, max_tries=5, giveup=_not_conflict_code)
+    @backoff.on_exception(backoff.expo,
+                          errors.HttpError,
+                          max_tries=5,
+                          giveup=_not_conflict_code)
     def _update_iam_policy_with_retry(self, project_id: str, member: str,
                                       roles: List[str]) -> Dict[str, Any]:
         """Try updating iam policy for at most 5 times.

@@ -59,8 +59,8 @@ class ServiceAccoutKeysFake(object):
     def create(self, name, body):
         if 'invalid' in name:
             return http_fake.HttpRequestFake(
-                errors.HttpError(
-                    http_fake.HttpResponseFake(400), b'invalid resource name'))
+                errors.HttpError(http_fake.HttpResponseFake(400),
+                                 b'invalid resource name'))
         else:
             self.key_count += 1
             return http_fake.HttpRequestFake(FAKE_CREATE_KEY_RESPONSE)
@@ -75,13 +75,12 @@ class ServiceAccountsFake(object):
     def create(self, name, body):
         if 'invalid' in body['accountId']:
             return http_fake.HttpRequestFake(
-                errors.HttpError(
-                    http_fake.HttpResponseFake(400), b'invalid account id'))
+                errors.HttpError(http_fake.HttpResponseFake(400),
+                                 b'invalid account id'))
         elif body['accountId'] in self.service_accounts:
             return http_fake.HttpRequestFake(
-                errors.HttpError(
-                    http_fake.HttpResponseFake(409),
-                    b'service account already exists'))
+                errors.HttpError(http_fake.HttpResponseFake(409),
+                                 b'service account already exists'))
         else:
             self.service_accounts.append(body['accountId'])
             return http_fake.HttpRequestFake({'name': name})
@@ -295,8 +294,8 @@ class ServiceAccountClientTestCase(absltest.TestCase):
     def test_request_with_retry_simple_success(self):
         responses = ['valid_value']
         request = http_fake.HttpRequestFakeMultiple(responses)
-        with mock.patch(
-                __name__ + '.ProjectsFake.setIamPolicy', return_value=request):
+        with mock.patch(__name__ + '.ProjectsFake.setIamPolicy',
+                        return_value=request):
             response = (
                 self._service_account_client._update_iam_policy_with_retry(
                     PROJECT_ID, FAKE_SERVICE_ACCOUNT, [FAKE_ROLE]))
@@ -305,13 +304,12 @@ class ServiceAccountClientTestCase(absltest.TestCase):
 
     def test_request_with_retry_success_at_second_time(self):
         responses = [
-            errors.HttpError(
-                http_fake.HttpResponseFake(409),
-                b'service account already exists'), 'valid_value'
+            errors.HttpError(http_fake.HttpResponseFake(409),
+                             b'service account already exists'), 'valid_value'
         ]
         request = http_fake.HttpRequestFakeMultiple(responses)
-        with mock.patch(
-                __name__ + '.ProjectsFake.setIamPolicy', return_value=request):
+        with mock.patch(__name__ + '.ProjectsFake.setIamPolicy',
+                        return_value=request):
             response = (
                 self._service_account_client._update_iam_policy_with_retry(
                     PROJECT_ID, FAKE_SERVICE_ACCOUNT, [FAKE_ROLE]))
@@ -319,25 +317,25 @@ class ServiceAccountClientTestCase(absltest.TestCase):
             self.assertEqual(response, 'valid_value')
 
     def test_request_with_retry_fail(self):
-        err = errors.HttpError(
-            http_fake.HttpResponseFake(409), b'service account already exists')
+        err = errors.HttpError(http_fake.HttpResponseFake(409),
+                               b'service account already exists')
         responses = [err] * 5
         request = http_fake.HttpRequestFakeMultiple(responses)
-        with mock.patch(
-                __name__ + '.ProjectsFake.setIamPolicy', return_value=request):
+        with mock.patch(__name__ + '.ProjectsFake.setIamPolicy',
+                        return_value=request):
             with self.assertRaises(errors.HttpError):
                 self._service_account_client._update_iam_policy_with_retry(
                     PROJECT_ID, FAKE_SERVICE_ACCOUNT, [FAKE_ROLE])
 
     def test_request_with_retry_other_error_code(self):
-        err1 = errors.HttpError(
-            http_fake.HttpResponseFake(409), b'service account already exists')
-        err2 = errors.HttpError(
-            http_fake.HttpResponseFake(400), b'invalid request')
+        err1 = errors.HttpError(http_fake.HttpResponseFake(409),
+                                b'service account already exists')
+        err2 = errors.HttpError(http_fake.HttpResponseFake(400),
+                                b'invalid request')
         responses = [err1, err2, err1]
         request = http_fake.HttpRequestFakeMultiple(responses)
-        with mock.patch(
-                __name__ + '.ProjectsFake.setIamPolicy', return_value=request):
+        with mock.patch(__name__ + '.ProjectsFake.setIamPolicy',
+                        return_value=request):
             with self.assertRaises(errors.HttpError) as cm:
                 self._service_account_client._update_iam_policy_with_retry(
                     PROJECT_ID, FAKE_SERVICE_ACCOUNT, [FAKE_ROLE])

@@ -49,11 +49,10 @@ class DatabaseClient(object):
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(
-            discovery.build(
-                'sqladmin',
-                'v1beta4',
-                credentials=credentials,
-                cache_discovery=False))
+            discovery.build('sqladmin',
+                            'v1beta4',
+                            credentials=credentials,
+                            cache_discovery=False))
 
     def create_instance_sync(self,
                              project_id: str,
@@ -115,8 +114,8 @@ class DatabaseClient(object):
                 return
 
         while True:
-            request = self._sqladmin_service.instances().get(
-                project=project_id, instance=instance)
+            request = self._sqladmin_service.instances().get(project=project_id,
+                                                             instance=instance)
             response = request.execute(num_retries=5)
             # Response format:
             # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/instances#resource
@@ -144,8 +143,9 @@ class DatabaseClient(object):
         """
         # See:
         # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/databases/insert
-        request = self._sqladmin_service.databases().get(
-            project=project_id, instance=instance, database=database)
+        request = self._sqladmin_service.databases().get(project=project_id,
+                                                         instance=instance,
+                                                         database=database)
         response = []
         try:
             response = request.execute(num_retries=5)
@@ -162,18 +162,20 @@ class DatabaseClient(object):
         # to create the same database again.
         if 'name' in response:
             return
-        request = self._sqladmin_service.databases().insert(
-            project=project_id,
-            instance=instance,
-            body={
-                'instance': instance,
-                'project': project_id,
-                'name': database
-            })
+        request = self._sqladmin_service.databases().insert(project=project_id,
+                                                            instance=instance,
+                                                            body={
+                                                                'instance':
+                                                                instance,
+                                                                'project':
+                                                                project_id,
+                                                                'name': database
+                                                            })
         response = request.execute(num_retries=5)
         while response['status'] in ['PENDING']:
-            request = self._sqladmin_service.databases().get(
-                project=project_id, instance=instance, database=database)
+            request = self._sqladmin_service.databases().get(project=project_id,
+                                                             instance=instance,
+                                                             database=database)
             response = request.execute(num_retries=5)
             time.sleep(2)
 
@@ -298,23 +300,21 @@ class DatabaseClient(object):
                 # definitions in models.py.
                 makemigrations_args = [
                     'django-admin', 'makemigrations',
-                    '='.join(['--pythonpath', project_dir]), '='.join(
-                        ['--settings', settings_module])
+                    '='.join(['--pythonpath', project_dir]),
+                    '='.join(['--settings', settings_module])
                 ]
-                subprocess.check_call(
-                    makemigrations_args,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL)
+                subprocess.check_call(makemigrations_args,
+                                      stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL)
                 # "migrate" will modify cloud sql database.
                 migrate_args = [
                     'django-admin', 'migrate',
-                    '='.join(['--pythonpath', project_dir]), '='.join(
-                        ['--settings', settings_module])
+                    '='.join(['--pythonpath', project_dir]),
+                    '='.join(['--settings', settings_module])
                 ]
-                subprocess.check_call(
-                    migrate_args,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL)
+                subprocess.check_call(migrate_args,
+                                      stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL)
             except Exception as e:
                 raise crash_handling.UserError(
                     'Not able to migrate database.') from e
@@ -364,10 +364,9 @@ class DatabaseClient(object):
                 for user in users:
                     if user.is_superuser:
                         return
-                User.objects.create_superuser(
-                    username=superuser_name,
-                    email=superuser_email,
-                    password=superuser_password)
+                User.objects.create_superuser(username=superuser_name,
+                                              email=superuser_email,
+                                              password=superuser_password)
             except Exception as e:
                 raise crash_handling.UserError(
                     'Not able to create super user.') from e

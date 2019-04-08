@@ -52,14 +52,13 @@ class ProjectClient(object):
     def from_credentials(cls, credentials: credentials.Credentials):
         http_client = http.set_user_agent(http.build_http(),
                                           'django-cloud-deploy')
-        auth_http = google_auth_httplib2.AuthorizedHttp(
-            credentials, http=http_client)
+        auth_http = google_auth_httplib2.AuthorizedHttp(credentials,
+                                                        http=http_client)
         return cls(
-            discovery.build(
-                'cloudresourcemanager',
-                'v1',
-                http=auth_http,
-                cache_discovery=False))
+            discovery.build('cloudresourcemanager',
+                            'v1',
+                            http=auth_http,
+                            cache_discovery=False))
 
     def project_exists(self, project_id: str) -> bool:
         """Returns True if the given project id exists."""
@@ -133,7 +132,9 @@ class ProjectClient(object):
 
     # The SLO is 30s at the 90th percentile:
     # https://cloud.google.com/resource-manager/reference/rest/v1/projects/create
-    @backoff.on_predicate(
-        backoff.constant, max_tries=20, interval=3, logger=None)
+    @backoff.on_predicate(backoff.constant,
+                          max_tries=20,
+                          interval=3,
+                          logger=None)
     def _confirm_project_creation(self, project_id: str) -> bool:
         return self.project_exists(project_id)

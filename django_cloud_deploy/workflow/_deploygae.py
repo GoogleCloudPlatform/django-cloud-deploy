@@ -34,8 +34,10 @@ class DeploygaeWorkflow(object):
     """Workflow to deploy Django app on GAE."""
 
     def __init__(self, credentials: credentials.Credentials):
-        self._appengine_service = discovery.build(
-            'appengine', 'v1', credentials=credentials, cache_discovery=False)
+        self._appengine_service = discovery.build('appengine',
+                                                  'v1',
+                                                  credentials=credentials,
+                                                  cache_discovery=False)
 
     def _create_app(self, project_id: str, region: str):
         """Synchronously create an App Engine application in the project."""
@@ -63,9 +65,9 @@ class DeploygaeWorkflow(object):
     @staticmethod
     @backoff.on_predicate(
         backoff.expo, lambda x: x.returncode != 0, max_tries=5)
-    def _app_deploy_with_retry(
-            gcloud_path: str, project: str, app_yaml_path: str,
-            env_vars: Dict[str, Any]) -> subprocess.CompletedProcess:
+    def _app_deploy_with_retry(gcloud_path: str, project: str,
+                               app_yaml_path: str, env_vars: Dict[str, Any]
+                              ) -> subprocess.CompletedProcess:
         """Run 'gcloud app deploy' with retries.
 
         Args:

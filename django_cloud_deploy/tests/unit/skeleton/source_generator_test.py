@@ -275,9 +275,10 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
 
-        self._generator.generate_new(
-            project_id, project_name, self._project_dir,
-            cloud_sql_connection_string, 'customize-db', 'customize-bucket')
+        self._generator.generate_new(project_id, project_name,
+                                     self._project_dir,
+                                     cloud_sql_connection_string,
+                                     'customize-db', 'customize-bucket')
 
         sys.path.append(self._project_dir)
         module = importlib.import_module(project_name + '.cloud_settings')
@@ -595,9 +596,10 @@ class YAMLFileGeneratorTest(FileGeneratorTest):
         image_tag = 'fake_image'
         cloudsql_secrets = ['fakecloudsql_secret1', 'fakecloudsql_secret2']
         django_secrets = ['fakedjango_app_secret1', 'fakedjango_app_secret2']
-        self._generator.generate_new(
-            self._project_dir, project_name, project_id, instance_name, region,
-            image_tag, cloudsql_secrets, django_secrets)
+        self._generator.generate_new(self._project_dir, project_name,
+                                     project_id, instance_name, region,
+                                     image_tag, cloudsql_secrets,
+                                     django_secrets)
 
         yaml_file_path = os.path.join(self._project_dir, project_name + '.yaml')
         with open(yaml_file_path) as yaml_file:

@@ -93,16 +93,15 @@ class DjangoFileGeneratorTest(BaseTest):
         self.database_name = utils.get_resource_name(resource_type='db')
         app_name = 'fake_app'
         generator = source_generator.DjangoSourceFileGenerator()
-        generator.generate_new(
-            project_id=self.project_id,
-            project_name=self.project_name,
-            app_name=app_name,
-            project_dir=self.project_dir,
-            database_user=self.database_user,
-            database_password=self.database_password,
-            instance_name=self.instance_name,
-            database_name=self.database_name,
-            image_tag=self.image_tag)
+        generator.generate_new(project_id=self.project_id,
+                               project_name=self.project_name,
+                               app_name=app_name,
+                               project_dir=self.project_dir,
+                               database_user=self.database_user,
+                               database_password=self.database_password,
+                               instance_name=self.instance_name,
+                               database_name=self.database_name,
+                               image_tag=self.image_tag)
 
     def tearDown(self):
         shutil.rmtree(self.project_dir)
@@ -133,11 +132,10 @@ class ResourceList(BaseTest):
         return accounts
 
     def list_clusters(self, service=None):
-        service = service or discovery.build(
-            'container',
-            'v1',
-            credentials=self.credentials,
-            cache_discovery=False)
+        service = service or discovery.build('container',
+                                             'v1',
+                                             credentials=self.credentials,
+                                             cache_discovery=False)
         request = service.projects().zones().clusters().list(
             projectId=self.project_id, zone=self.zone)
         response = request.execute()
@@ -146,11 +144,10 @@ class ResourceList(BaseTest):
         ]
 
     def list_buckets(self, service=None):
-        service = service or discovery.build(
-            'storage',
-            'v1',
-            credentials=self.credentials,
-            cache_discovery=False)
+        service = service or discovery.build('storage',
+                                             'v1',
+                                             credentials=self.credentials,
+                                             cache_discovery=False)
         request = service.buckets().list(project=self.project_id)
         response = request.execute()
         return [bucket.get('name', '') for bucket in response.get('items', [])]
@@ -162,8 +159,8 @@ class ResourceList(BaseTest):
             credentials=self.credentials,
             cache_discovery=False)
         parent = '/'.join(['projects', self.project_id])
-        request = service_usage_service.services().list(
-            parent=parent, filter='state:ENABLED')
+        request = service_usage_service.services().list(parent=parent,
+                                                        filter='state:ENABLED')
         response = request.execute()
         return [
             service['config']['name']
@@ -171,24 +168,22 @@ class ResourceList(BaseTest):
         ]
 
     def list_instances(self, service=None):
-        service = service or discovery.build(
-            'sqladmin',
-            'v1beta4',
-            cache_discovery=False,
-            credentials=self.credentials)
+        service = service or discovery.build('sqladmin',
+                                             'v1beta4',
+                                             cache_discovery=False,
+                                             credentials=self.credentials)
         request = service.instances().list(project=self.project_id)
         response = request.execute()
         instances = [item['name'] for item in response.get('items', [])]
         return instances
 
     def list_databases(self, instance_name, service=None):
-        service = service or discovery.build(
-            'sqladmin',
-            'v1beta4',
-            cache_discovery=False,
-            credentials=self.credentials)
-        request = service.databases().list(
-            project=self.project_id, instance=instance_name)
+        service = service or discovery.build('sqladmin',
+                                             'v1beta4',
+                                             cache_discovery=False,
+                                             credentials=self.credentials)
+        request = service.databases().list(project=self.project_id,
+                                           instance=instance_name)
         response = request.execute()
         databases = [item['name'] for item in response.get('items', [])]
         return databases
@@ -232,11 +227,10 @@ class ResourceCleanUp(BaseTest):
         try:
             yield
         finally:
-            appengine_service = discovery.build(
-                'appengine',
-                'v1',
-                credentials=self.credentials,
-                cache_discovery=False)
+            appengine_service = discovery.build('appengine',
+                                                'v1',
+                                                credentials=self.credentials,
+                                                cache_discovery=False)
             request = appengine_service.apps().services().delete(
                 appsId=self.project_id, servicesId=service_id)
             try:
@@ -265,8 +259,8 @@ class ResourceCleanUp(BaseTest):
         if 'items' in response:  # This bucket might be empty
             object_names = [item['name'] for item in response['items']]
             for object_name in object_names:
-                request = storage_service.objects().delete(
-                    bucket=bucket_name, object=object_name)
+                request = storage_service.objects().delete(bucket=bucket_name,
+                                                           object=object_name)
                 try:
                     request.execute(num_retries=5)
                 except errors.HttpError:
@@ -366,8 +360,8 @@ class ResourceCleanUp(BaseTest):
             'v1beta4',
             credentials=self.credentials,
             cache_discovery=False)
-        request = sqladmin_service.instances().delete(
-            instance=instance_name, project=self.project_id)
+        request = sqladmin_service.instances().delete(instance=instance_name,
+                                                      project=self.project_id)
         try:
             request.execute(num_retries=5)
         except errors.HttpError:
@@ -389,10 +383,9 @@ class ResourceCleanUp(BaseTest):
             'v1beta4',
             credentials=self.credentials,
             cache_discovery=False)
-        request = sqladmin_service.databases().delete(
-            database=database_name,
-            instance=instance_name,
-            project=self.project_id)
+        request = sqladmin_service.databases().delete(database=database_name,
+                                                      instance=instance_name,
+                                                      project=self.project_id)
         try:
             request.execute(num_retries=5)
         except errors.HttpError:

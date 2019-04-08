@@ -49,9 +49,8 @@ class ProjectsFake(object):
         for p in self.projects:
             if p['projectId'] == body['projectId']:
                 return http_fake.HttpRequestFake(
-                    errors.HttpError(
-                        http_fake.HttpResponseFake(409),
-                        b'Requested entity already exists'))
+                    errors.HttpError(http_fake.HttpResponseFake(409),
+                                     b'Requested entity already exists'))
         self.projects.append(body)
         return http_fake.HttpRequestFake(
             {'name': 'operations/cp.7730969938063130608'})
@@ -61,8 +60,8 @@ class ProjectsFake(object):
             if p['projectId'] == projectId:
                 return http_fake.HttpRequestFake(p)
         return http_fake.HttpRequestFake(
-            errors.HttpError(
-                http_fake.HttpResponseFake(403), b'permission denied'))
+            errors.HttpError(http_fake.HttpResponseFake(403),
+                             b'permission denied'))
 
 
 class ServiceFake:

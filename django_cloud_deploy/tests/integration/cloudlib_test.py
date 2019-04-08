@@ -47,11 +47,10 @@ class StaticContentServeClientIntegrationTest(test_base.DjangoFileGeneratorTest,
                 self.project_id, bucket_name)
             url = 'http://www.example.com'
             self._static_content_serve_client.set_cors_policy(bucket_name, url)
-            client = discovery.build(
-                'storage',
-                'v1',
-                credentials=self.credentials,
-                cache_discovery=False)
+            client = discovery.build('storage',
+                                     'v1',
+                                     credentials=self.credentials,
+                                     cache_discovery=False)
             request = client.buckets().get(bucket=bucket_name)
             bucket_body = request.execute(num_retries=5)
             cors_policy = bucket_body.get('cors')

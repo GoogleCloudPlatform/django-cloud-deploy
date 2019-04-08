@@ -82,19 +82,17 @@ class ContainerClient(object):
 
         # See https://cloud.google.com/container-registry/docs/advanced-authentication
         self._docker_client = docker.DockerClient()
-        self._docker_client.login(
-            username='oauth2accesstoken',
-            password=credentials.token,
-            registry='https://gcr.io')
+        self._docker_client.login(username='oauth2accesstoken',
+                                  password=credentials.token,
+                                  registry='https://gcr.io')
 
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(
-            discovery.build(
-                'container',
-                'v1',
-                credentials=credentials,
-                cache_discovery=False), credentials)
+            discovery.build('container',
+                            'v1',
+                            credentials=credentials,
+                            cache_discovery=False), credentials)
 
     @staticmethod
     def _load_cluster_definition_template():
@@ -190,12 +188,12 @@ class ContainerClient(object):
                     'Unexpected cluster status after creation: {!r}'.format(
                         response['status']))
 
-    def create_kubernetes_configuration(
-            self,
-            credentials: credentials.Credentials,
-            project_id: str,
-            cluster_name: str,
-            zone: str = 'us-west1-a') -> kubernetes.client.Configuration:
+    def create_kubernetes_configuration(self,
+                                        credentials: credentials.Credentials,
+                                        project_id: str,
+                                        cluster_name: str,
+                                        zone: str = 'us-west1-a'
+                                       ) -> kubernetes.client.Configuration:
         """Create a kubernetes config which has access to the given cluster.
 
         Args:
@@ -289,8 +287,8 @@ class ContainerClient(object):
         """
         api_client = kubernetes.client.ApiClient(configuration)
         api_instance = kubernetes.client.ExtensionsV1beta1Api(api_client)
-        api_instance.create_namespaced_deployment(
-            namespace=namespace, body=deployment_data)
+        api_instance.create_namespaced_deployment(namespace=namespace,
+                                                  body=deployment_data)
 
     def update_deployment(
             self,
@@ -322,11 +320,13 @@ class ContainerClient(object):
         # will trigger an image update.
         replicas = deployment_data['spec']['replicas']
         deployment_data['spec']['replicas'] = 0
-        api_instance.patch_namespaced_deployment(
-            name=deployment_name, namespace=namespace, body=deployment_data)
+        api_instance.patch_namespaced_deployment(name=deployment_name,
+                                                 namespace=namespace,
+                                                 body=deployment_data)
         deployment_data['spec']['replicas'] = replicas
-        api_instance.patch_namespaced_deployment(
-            name=deployment_name, namespace=namespace, body=deployment_data)
+        api_instance.patch_namespaced_deployment(name=deployment_name,
+                                                 namespace=namespace,
+                                                 body=deployment_data)
 
     def create_service(
             self,
@@ -348,8 +348,8 @@ class ContainerClient(object):
         """
         api_client = kubernetes.client.ApiClient(configuration)
         api_instance = kubernetes.client.CoreV1Api(api_client)
-        api_instance.create_namespaced_service(
-            namespace=namespace, body=service_data)
+        api_instance.create_namespaced_service(namespace=namespace,
+                                               body=service_data)
 
     def create_secret(self,
                       secret_data: kubernetes.client.V1Secret,
@@ -370,5 +370,5 @@ class ContainerClient(object):
         """
         api_client = kubernetes.client.ApiClient(configuration)
         api_instance = kubernetes.client.CoreV1Api(api_client)
-        api_instance.create_namespaced_secret(
-            namespace=namespace, body=secret_data)
+        api_instance.create_namespaced_secret(namespace=namespace,
+                                              body=secret_data)

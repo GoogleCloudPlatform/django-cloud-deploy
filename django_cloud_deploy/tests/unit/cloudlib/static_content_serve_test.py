@@ -68,14 +68,14 @@ class BucketsFake(object):
         bucket_name = body['name']
         if project != PROJECT_ID:
             return http_fake.HttpRequestFake(
-                errors.HttpError(
-                    http_fake.HttpResponseFake(403), b'permission denied'))
+                errors.HttpError(http_fake.HttpResponseFake(403),
+                                 b'permission denied'))
         elif 'invalid' in bucket_name:
             return http_fake.HttpRequestFake({'invalid': 'response'})
         elif bucket_name == EXISTING_BUCKET_NAME:
             return http_fake.HttpRequestFake(
-                errors.HttpError(
-                    http_fake.HttpResponseFake(409), b'permission denied'))
+                errors.HttpError(http_fake.HttpResponseFake(409),
+                                 b'permission denied'))
         else:
             self.buckets.append(bucket_name)
             return http_fake.HttpRequestFake(body)
@@ -89,8 +89,8 @@ class BucketsFake(object):
             return http_fake.HttpRequestFake(INVALID_IAM_POLICY)
         elif 'no_permission' in bucket:
             return http_fake.HttpRequestFake(
-                errors.HttpError(
-                    http_fake.HttpResponseFake(403), b'permission denied'))
+                errors.HttpError(http_fake.HttpResponseFake(403),
+                                 b'permission denied'))
         else:
             return http_fake.HttpRequestFake(self.iam_policy)
 

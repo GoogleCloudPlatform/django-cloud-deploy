@@ -29,9 +29,10 @@ class ServiceAccountKeyGenerationWorkflow(object):
         self._service_account_client = (
             service_account.ServiceAccountClient.from_credentials(credentials))
 
-    def create_service_account_and_key(
-            self, project_id: str, service_account_id: str,
-            service_account_name: str, roles: List[str]) -> str:
+    def create_service_account_and_key(self, project_id: str,
+                                       service_account_id: str,
+                                       service_account_name: str,
+                                       roles: List[str]) -> str:
         """Aggregate function to create service accounts and get their keys.
 
         Args:

@@ -73,11 +73,10 @@ class _ProgressBar(object):
             # The bar will tick every 0.5 seconds.
             # term_width define width of the whole progress bar, including the
             # prefix and suffix.
-            self._bar = progressbar.ProgressBar(
-                widgets=widgets,
-                max_value=expect_time * 2,
-                term_width=width,
-                fd=self._fd)
+            self._bar = progressbar.ProgressBar(widgets=widgets,
+                                                max_value=expect_time * 2,
+                                                term_width=width,
+                                                fd=self._fd)
 
             self._thread = threading.Thread(target=self._run)
             self._bar_lock = threading.Lock()
@@ -180,9 +179,8 @@ class ConsoleIO(IO):
         print(*(self._replace_html_tags(a, sys.stdout.fileno()) for a in args))
 
     def error(self, *args):
-        print(
-            *(self._replace_html_tags(a, sys.stdout.fileno()) for a in args),
-            file=sys.stderr)
+        print(*(self._replace_html_tags(a, sys.stdout.fileno()) for a in args),
+              file=sys.stderr)
 
     def ask(self, prompt=None):
         return input(self._replace_html_tags(prompt, sys.stdout.fileno()))
@@ -211,8 +209,10 @@ class ConsoleIO(IO):
         """
 
         is_tty = os.isatty(sys.stderr.fileno())
-        progress_bar = _ProgressBar(
-            expect_time, message, sys.stderr, tty=is_tty)
+        progress_bar = _ProgressBar(expect_time,
+                                    message,
+                                    sys.stderr,
+                                    tty=is_tty)
         try:
             progress_bar.start()
             yield

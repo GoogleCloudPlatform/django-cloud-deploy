@@ -132,8 +132,9 @@ class GuessRequirementsPathTest(unittest.TestCase):
                                           self.project_name))
 
     def test_requirements_txt_exist_in_django_dir(self):
-        requirements_file_path = os.path.join(
-            self.project_dir, self.project_name, 'requirements.txt')
+        requirements_file_path = os.path.join(self.project_dir,
+                                              self.project_name,
+                                              'requirements.txt')
         with open(requirements_file_path, 'wt') as f:
             f.write('')
         self.assertEqual(
@@ -177,8 +178,8 @@ class GuessSettingsPath(unittest.TestCase):
         prod_settings_path = os.path.join(self.project_dir, self.project_name,
                                           'settings_prod.py')
         shutil.copyfile(settings_path, prod_settings_path)
-        self.assertEqual(
-            utils.guess_settings_path(self.project_dir), prod_settings_path)
+        self.assertEqual(utils.guess_settings_path(self.project_dir),
+                         prod_settings_path)
 
     def test_manage_py_not_found(self):
         os.remove(os.path.join(self.project_dir, 'manage.py'))

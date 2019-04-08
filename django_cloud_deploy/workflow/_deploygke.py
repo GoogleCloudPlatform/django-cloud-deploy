@@ -183,8 +183,9 @@ class DeploygkeWorkflow(object):
         # service is not ready yet.
         return ''
 
-    def _wait_for_deployment_ready(
-            self, kube_config: kubernetes.client.Configuration, app_name: str):
+    def _wait_for_deployment_ready(self,
+                                   kube_config: kubernetes.client.Configuration,
+                                   app_name: str):
         """Wait for the deployment of Django app to get ready.
 
         Args:

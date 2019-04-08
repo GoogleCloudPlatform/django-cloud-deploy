@@ -45,9 +45,10 @@ class StaticContentServeClient(object):
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(
-            discovery.build(
-                'storage', 'v1', credentials=credentials,
-                cache_discovery=False))
+            discovery.build('storage',
+                            'v1',
+                            credentials=credentials,
+                            cache_discovery=False))
 
     def _bucket_exist(self, project_id: str, bucket_name: str) -> bool:
         """Returns whether the given bucket exists under the given project.
@@ -122,8 +123,8 @@ class StaticContentServeClient(object):
             StaticContentServeError: When it fails to create the bucket.
         """
         bucket_body = {'name': bucket_name}
-        request = self._storage_service.buckets().insert(
-            project=project_id, body=bucket_body)
+        request = self._storage_service.buckets().insert(project=project_id,
+                                                         body=bucket_body)
         try:
             response = request.execute(num_retries=5)
             # When the api call succeed, the response is a Bucket Resource
@@ -216,8 +217,9 @@ class StaticContentServeClient(object):
         """Upload the contents of a local file to an object in a GCS bucket."""
         media_body = http.MediaFileUpload(local_file_path)
         body = {'name': object_name}
-        request = self._storage_service.objects().insert(
-            bucket=bucket_name, body=body, media_body=media_body)
+        request = self._storage_service.objects().insert(bucket=bucket_name,
+                                                         body=body,
+                                                         media_body=media_body)
         try:
             response = request.execute(num_retries=5)
             if 'name' not in response:
@@ -275,9 +277,9 @@ class StaticContentServeClient(object):
                 # to avoid backslashes in names when running on Windows.
                 gcs_relative_path = pathlib.PurePosixPath(
                     directory_relative_path.replace('\\', '/'))
-                gcs_object_path = (
-                    pathlib.PurePosixPath(gcs_folder_root) / gcs_relative_path /
-                    pathlib.PurePosixPath(filename))
+                gcs_object_path = (pathlib.PurePosixPath(gcs_folder_root) /
+                                   gcs_relative_path /
+                                   pathlib.PurePosixPath(filename))
 
                 # Local absolute path of the file
                 local_file_path = os.path.join(directory_absolute_path,
@@ -305,8 +307,9 @@ class StaticContentServeClient(object):
         # This is not expected.
         os.chdir(settings.BASE_DIR)
         try:
-            management.call_command(
-                'collectstatic', verbosity=0, interactive=False)
+            management.call_command('collectstatic',
+                                    verbosity=0,
+                                    interactive=False)
         except Exception as e:
             raise crash_handling.UserError(
                 'Not able to collect static files.') from e
@@ -330,8 +333,8 @@ class StaticContentServeClient(object):
         }]
         bucket_body['cors'] = cors_policy
         try:
-            request = self._storage_service.buckets().patch(
-                bucket=bucket_name, body=bucket_body)
+            request = self._storage_service.buckets().patch(bucket=bucket_name,
+                                                            body=bucket_body)
             request.execute(num_retries=5)
         except errors.HttpError as e:
             raise StaticContentServeError(

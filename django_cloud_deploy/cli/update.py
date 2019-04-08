@@ -34,10 +34,9 @@ def add_arguments(parser):
         help='The location where the generated Django project code should be '
         'stored.')
 
-    parser.add_argument(
-        '--database-password',
-        dest='database_password',
-        help='The password for the default database user.')
+    parser.add_argument('--database-password',
+                        dest='database_password',
+                        help='The password for the default database user.')
 
     parser.add_argument(
         '--credentials',

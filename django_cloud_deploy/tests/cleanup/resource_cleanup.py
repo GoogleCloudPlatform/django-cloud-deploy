@@ -57,38 +57,37 @@ class GCPResourceCleanUp(test_base.ResourceCleanUp, test_base.ResourceList):
         return diff > self.MAX_DIFF
 
     def delete_expired_clusters(self):
-        container_service = discovery.build(
-            'container',
-            'v1',
-            credentials=self.credentials,
-            cache_discovery=False)
+        container_service = discovery.build('container',
+                                            'v1',
+                                            credentials=self.credentials,
+                                            cache_discovery=False)
         for cluster_name in self.list_clusters(container_service):
             if self._should_delete(cluster_name):
                 self._delete_cluster(cluster_name, container_service)
 
     def delete_expired_buckets(self):
-        storage_service = discovery.build(
-            'storage',
-            'v1',
-            credentials=self.credentials,
-            cache_discovery=False)
+        storage_service = discovery.build('storage',
+                                          'v1',
+                                          credentials=self.credentials,
+                                          cache_discovery=False)
         for bucket_name in self.list_buckets(storage_service):
             if self._should_delete(bucket_name):
                 self._delete_bucket(bucket_name, storage_service)
 
     def delete_expired_sql_instances(self):
-        sqladmin_service = discovery.build(
-            'sqladmin',
-            'v1beta4',
-            credentials=self.credentials,
-            cache_discovery=False)
+        sqladmin_service = discovery.build('sqladmin',
+                                           'v1beta4',
+                                           credentials=self.credentials,
+                                           cache_discovery=False)
         for instance_name in self.list_instances(sqladmin_service):
             if self._should_delete(instance_name):
                 self._clean_up_sql_instance(instance_name, sqladmin_service)
 
     def delete_expired_service_accounts(self):
-        iam_service = discovery.build(
-            'iam', 'v1', credentials=self.credentials, cache_discovery=False)
+        iam_service = discovery.build('iam',
+                                      'v1',
+                                      credentials=self.credentials,
+                                      cache_discovery=False)
         for account_email in self.list_service_accounts(iam_service):
             account_name = account_email.split('@')[0]
             if self._should_delete(account_name):

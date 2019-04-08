@@ -38,8 +38,9 @@ class AuthClient(object):
         # we use "gcloud app deploy" to deploy a Django app to app-engine. It
         # requires "gcloud auth login".
         command = ['gcloud', 'auth', 'login', '-q']
-        subprocess.check_call(
-            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call(command,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL)
 
         return AuthClient.get_default_credentials()
 
@@ -71,8 +72,8 @@ class AuthClient(object):
         assert gcloud_path, 'gcloud could not be found'
 
         command = [gcloud_path, 'info', '--format=value(config.account)']
-        return subprocess.check_output(
-            command, universal_newlines=True).rstrip()
+        return subprocess.check_output(command,
+                                       universal_newlines=True).rstrip()
 
     @staticmethod
     def _get_active_account_adc_path() -> str:

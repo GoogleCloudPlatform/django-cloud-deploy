@@ -41,8 +41,8 @@ _DISPLAYABLE_EXCEPTIONS = [UserError]
 _ISSUE_LABEL = 'crash handler'
 
 with open(
-        os.path.join(
-            os.path.dirname(__file__), 'template', 'issue_template.txt')) as f:
+        os.path.join(os.path.dirname(__file__), 'template',
+                     'issue_template.txt')) as f:
     _ISSUE_TEMPLATE = f.read()
 
 

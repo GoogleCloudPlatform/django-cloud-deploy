@@ -32,11 +32,10 @@ class BillingClient(object):
     @classmethod
     def from_credentials(cls, credentials: credentials.Credentials):
         return cls(
-            discovery.build(
-                'cloudbilling',
-                'v1',
-                credentials=credentials,
-                cache_discovery=False))
+            discovery.build('cloudbilling',
+                            'v1',
+                            credentials=credentials,
+                            cache_discovery=False))
 
     def check_billing_enabled(self, project_id: str) -> bool:
         """Check is billing enabled for the given project.
@@ -73,8 +72,8 @@ class BillingClient(object):
         response = request.execute(num_retries=5)
         return response
 
-    def list_billing_accounts(
-            self, only_open_accounts: bool = False) -> List[Dict[str, Any]]:
+    def list_billing_accounts(self, only_open_accounts: bool = False
+                             ) -> List[Dict[str, Any]]:
         """List billing accounts the user has.
 
         Args:

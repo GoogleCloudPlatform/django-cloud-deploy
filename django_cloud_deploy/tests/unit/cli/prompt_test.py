@@ -823,8 +823,9 @@ class DjangoSettingsPathPromptTest(absltest.TestCase):
     def test_settings_file_invalid(self):
         test_io = io.TestIO()
 
-        invalid_settings_path = os.path.join(
-            self.project_dir, self.project_name, 'settings_invalid.py')
+        invalid_settings_path = os.path.join(self.project_dir,
+                                             self.project_name,
+                                             'settings_invalid.py')
         expected_settings_path = os.path.join(self.project_dir,
                                               self.project_name, 'settings.py')
         shutil.copyfile(expected_settings_path, invalid_settings_path)

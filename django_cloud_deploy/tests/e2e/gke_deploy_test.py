@@ -72,8 +72,9 @@ class GKEDeployAndUpdateE2ETest(test_base.ResourceCleanUp):
                 self.reset_iam_policy(member, self._CLOUDSQL_ROLES), \
                 self.clean_up_sql_instance(django_project_name + '-instance'):
 
-            test_io = e2e_utils.create_new_command_io(
-                self.project_id, self.project_dir, django_project_name)
+            test_io = e2e_utils.create_new_command_io(self.project_id,
+                                                      self.project_dir,
+                                                      django_project_name)
 
             fake_service_accounts = {
                 'cloud_sql': [self._FAKE_CLOUDSQL_SERVICE_ACCOUNT]

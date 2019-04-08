@@ -20,8 +20,9 @@ from django_cloud_deploy.cli import io
 import requests
 
 
-@backoff.on_exception(
-    backoff.expo, requests.exceptions.ConnectionError, max_tries=5)
+@backoff.on_exception(backoff.expo,
+                      requests.exceptions.ConnectionError,
+                      max_tries=5)
 def get_with_retry(url: str) -> requests.models.Response:
     return requests.get(url)
 

@@ -186,8 +186,9 @@ class Docker(Requirement):
         """Return True if Docker is useable, False otherwise."""
 
         command = ['docker', 'image', 'ls']
-        return subprocess.call(
-            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
+        return subprocess.call(command,
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL) == 0
 
     @staticmethod
     def _is_missing_group_membership():
@@ -301,11 +302,10 @@ class CloudSqlProxy(Requirement):
         command = [
             gcloud_path, '-q', 'components', 'install', 'cloud_sql_proxy'
         ]
-        install_result = subprocess.run(
-            command,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            universal_newlines=True)
+        install_result = subprocess.run(command,
+                                        stdout=subprocess.DEVNULL,
+                                        stderr=subprocess.PIPE,
+                                        universal_newlines=True)
         if install_result.returncode != 0:
             if 'gcloud components update' in install_result.stderr:
                 raise UnableToAutomaticallyInstallError(cls.NAME,

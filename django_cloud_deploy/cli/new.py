@@ -46,35 +46,30 @@ def add_arguments(parser):
         help='Name of the GCP Billing account name to be associated with the '
         'project.')
 
-    parser.add_argument(
-        '--database-password',
-        dest='database_password',
-        help='The password for the default database user.')
+    parser.add_argument('--database-password',
+                        dest='database_password',
+                        help='The password for the default database user.')
 
-    parser.add_argument(
-        '--django-project-name',
-        dest='django_project_name',
-        help='The name of the Django project e.g. "mysite".')
+    parser.add_argument('--django-project-name',
+                        dest='django_project_name',
+                        help='The name of the Django project e.g. "mysite".')
 
-    parser.add_argument(
-        '--django-app-name',
-        dest='django_app_name',
-        help='The name of the Django app e.g. "poll".')
+    parser.add_argument('--django-app-name',
+                        dest='django_app_name',
+                        help='The name of the Django app e.g. "poll".')
 
     parser.add_argument(
         '--django-superuser-login',
         dest='django_superuser_login',
         help='The login name of the Django superuser e.g. "admin".')
 
-    parser.add_argument(
-        '--django-superuser-password',
-        dest='django_superuser_password',
-        help='The password of the Django superuser.')
+    parser.add_argument('--django-superuser-password',
+                        dest='django_superuser_password',
+                        help='The password of the Django superuser.')
 
-    parser.add_argument(
-        '--django-superuser-email',
-        dest='django_superuser_email',
-        help='The e-mail address of the Django superuser.')
+    parser.add_argument('--django-superuser-email',
+                        dest='django_superuser_email',
+                        help='The e-mail address of the Django superuser.')
 
     parser.add_argument(
         '--use-existing-project',
@@ -82,13 +77,12 @@ def add_arguments(parser):
         action='store_true',
         help='Flag to indicate using a new or existing project.')
 
-    parser.add_argument(
-        '--backend',
-        dest='backend',
-        type=str,
-        default='gae',
-        choices=['gae', 'gke'],
-        help='The desired backend to deploy the Django App on.')
+    parser.add_argument('--backend',
+                        dest='backend',
+                        type=str,
+                        default='gae',
+                        choices=['gae', 'gke'],
+                        help='The desired backend to deploy the Django App on.')
 
     parser.add_argument(
         '--credentials',
@@ -96,11 +90,10 @@ def add_arguments(parser):
         help=('The file path of the credentials file to use for deployment. '
               'Test only, do not use.'))
 
-    parser.add_argument(
-        '--bucket-name',
-        dest='bucket_name',
-        help=('Name of the GCS bucket to serve static content. '
-              'Test only, do not use.'))
+    parser.add_argument('--bucket-name',
+                        dest='bucket_name',
+                        help=('Name of the GCS bucket to serve static content. '
+                              'Test only, do not use.'))
 
     parser.add_argument(
         '--service-accounts',
@@ -109,12 +102,11 @@ def add_arguments(parser):
         help=('Service account objects to create for deployment. '
               'Test only, do not use.'))
 
-    parser.add_argument(
-        '--services',
-        dest='services',
-        nargs='+',
-        help=('Services necessary for the deployment. '
-              'Test only, do not use.'))
+    parser.add_argument('--services',
+                        dest='services',
+                        nargs='+',
+                        help=('Services necessary for the deployment. '
+                              'Test only, do not use.'))
 
     parser.add_argument(
         '--appengine-service-name',
