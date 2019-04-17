@@ -41,7 +41,7 @@ def add_arguments(parser):
         'stored.')
 
     parser.add_argument(
-        '--billing_account_name',
+        '--billing-account-name',
         dest='billing_account_name',
         help='Name of the GCP Billing account name to be associated with the '
         'project.')
@@ -84,11 +84,10 @@ def add_arguments(parser):
                         choices=['gae', 'gke'],
                         help='The desired backend to deploy the Django App on.')
 
-    parser.add_argument(
-        '--credentials',
-        dest='credentials',
-        help=('The file path of the credentials file to use for deployment. '
-              'Test only, do not use.'))
+    parser.add_argument('--credentials',
+                        dest='credentials',
+                        help=('The credentials object to use for deployment. '
+                              'Test only, do not use.'))
 
     parser.add_argument('--bucket-name',
                         dest='bucket_name',

@@ -30,7 +30,7 @@ def add_arguments(parser):
 
     parser.add_argument(
         '--project-path',
-        dest='django_directory_path',
+        dest='django_directory_path_update',
         help='The location where the generated Django project code should be '
         'stored.')
 
@@ -38,11 +38,10 @@ def add_arguments(parser):
                         dest='database_password',
                         help='The password for the default database user.')
 
-    parser.add_argument(
-        '--credentials',
-        dest='credentials',
-        help=('The file path of the credentials file to use for update. '
-              'Test only, do not use.'))
+    parser.add_argument('--credentials',
+                        dest='credentials',
+                        help=('The credentials object to use for deployment. '
+                              'Test only, do not use.'))
 
     parser.add_argument(
         '--database-instance-name',
