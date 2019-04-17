@@ -18,5 +18,3 @@ coverage.xml
 *,cover
 *.log
 .git
-static
-staticfiles
