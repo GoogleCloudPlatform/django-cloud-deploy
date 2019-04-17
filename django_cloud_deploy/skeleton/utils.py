@@ -18,10 +18,6 @@ import re
 from typing import Optional
 
 
-class ProjectContentError(Exception):
-    """An error thrown when Django project name cannot be determined."""
-
-
 def parse_settings_module(file_path: str) -> Optional[str]:
     """Parse the Django settings module from the given file.
 
@@ -93,7 +89,7 @@ def get_local_settings_module(django_directory_path: str) -> Optional[str]:
     return parse_settings_module(manage_py_path)
 
 
-def get_django_project_name(django_directory_path: str):
+def get_django_project_name(django_directory_path: str) -> Optional[str]:
     """Returns Django project name given a Django project directory.
 
     In manage.py, there is a line as the follows:
@@ -104,18 +100,11 @@ def get_django_project_name(django_directory_path: str):
 
     Args:
         django_directory_path: Absolute path of django project directory.
-
-    Raises:
-        ProjectContentError: When the function cannot find Django project name.
     """
 
     settings_module = get_local_settings_module(django_directory_path)
     if not settings_module:
-        raise ProjectContentError(
-            ('manage.py does not exist under Django project directory or it '
-             'exists but does not contain the settings module. '
-             'e.g. "mysite.settings". The project name cannot be determined.'))
-
+        return None
     return settings_module.split('.')[0]
 
 
@@ -130,8 +119,16 @@ def is_valid_django_project(django_directory_path: str) -> bool:
     """
 
     # TODO: handle more complex cases.
-    local_settings_module = get_local_settings_module(django_directory_path)
-    return bool(local_settings_module)
+    manage_py_path = os.path.join(django_directory_path, 'manage.py')
+    if not os.path.exists(manage_py_path):
+        return False
+    with open(manage_py_path) as f:
+        file_content = f.read()
+        settings_module_line = re.search(
+            r'os\.environ\.setdefault\([^\)]+,[^\)]+\)', file_content)
+        if not settings_module_line:
+            return False
+    return True
 
 
 def guess_requirements_path(django_directory_path: str,

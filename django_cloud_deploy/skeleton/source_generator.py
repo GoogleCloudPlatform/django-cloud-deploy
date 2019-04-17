@@ -14,6 +14,7 @@
 """Generate source files of a django app ready to be deployed to GKE."""
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -24,7 +25,6 @@ from django.core.management import utils as django_utils
 from django.utils import version
 from django_cloud_deploy import crash_handling
 from django_cloud_deploy.skeleton import requirements_parser
-from django_cloud_deploy.skeleton import utils
 import jinja2
 
 
@@ -225,14 +225,19 @@ class _DjangoProjectFileGenerator(_Jinja2FileGenerator):
             new_settings_module: The new settings module to replace the old one.
                 For example, mysite.cloud_settings.
         """
-        old_settings_module = utils.parse_settings_module(file_path)
-        if old_settings_module:
-            with open(file_path) as f:
-                content = f.read()
-                content = content.replace(old_settings_module,
-                                          new_settings_module)
-            with open(file_path, 'w') as f:
-                f.write(content)
+        with open(file_path) as f:
+            file_content = f.read()
+
+        with open(file_path, 'wt') as f:
+            settings_module_line = re.search(
+                r'os\.environ\.setdefault\([^\)]+,[^\)]+\)', file_content)
+            if settings_module_line:
+                new_settings_module_line = (
+                    'os.environ.setdefault(\'DJANGO_SETTINGS_MODULE\''
+                    ', \'{}\')').format(new_settings_module)
+                file_content = file_content.replace(
+                    settings_module_line.group(0), new_settings_module_line)
+                f.write(file_content)
 
 
 class _DjangoAppFileGenerator(_Jinja2FileGenerator):

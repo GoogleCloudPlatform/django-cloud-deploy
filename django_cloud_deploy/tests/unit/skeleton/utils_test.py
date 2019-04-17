@@ -50,8 +50,7 @@ class GetDjangoProjectNameTest(unittest.TestCase):
     def test_get_project_name_no_manage_py(self):
         # Create a temporary directory to put Django project files
         project_dir = tempfile.mkdtemp()
-        with self.assertRaises(utils.ProjectContentError):
-            utils.get_django_project_name(project_dir)
+        self.assertIsNone(utils.get_django_project_name(project_dir))
         shutil.rmtree(project_dir)
 
     def test_manage_py_uses_variable_for_settings_module(self):
@@ -65,8 +64,7 @@ class GetDjangoProjectNameTest(unittest.TestCase):
                                                 'module_variable')
         with open(manage_py_path, 'wt') as f:
             f.write(file_content)
-        with self.assertRaises(utils.ProjectContentError):
-            utils.get_django_project_name(project_dir)
+        self.assertIsNone(utils.get_django_project_name(project_dir))
         shutil.rmtree(project_dir)
 
     def test_get_project_name_invalid_manage_py(self):
@@ -77,8 +75,7 @@ class GetDjangoProjectNameTest(unittest.TestCase):
         os.remove(manage_py_path)
         with open(manage_py_path, 'w') as f:
             f.write('12345')
-        with self.assertRaises(utils.ProjectContentError):
-            utils.get_django_project_name(project_dir)
+        self.assertIsNone(utils.get_django_project_name(project_dir))
         shutil.rmtree(project_dir)
 
 
@@ -95,6 +92,16 @@ class IsValidDjangoProjectTest(unittest.TestCase):
     def test_invalid_django_project(self):
         # Create a temporary directory to put Django project files
         project_dir = tempfile.mkdtemp()
+        self.assertFalse(utils.is_valid_django_project(project_dir))
+        shutil.rmtree(project_dir)
+
+    def test_invalid_manage_py(self):
+        project_dir = tempfile.mkdtemp()
+        management.call_command('startproject', 'mysite', project_dir)
+        manage_py_path = os.path.join(project_dir, 'manage.py')
+        os.remove(manage_py_path)
+        with open(manage_py_path, 'w') as f:
+            f.write('12345')
         self.assertFalse(utils.is_valid_django_project(project_dir))
         shutil.rmtree(project_dir)
 
@@ -242,3 +249,15 @@ class GuessSettingsPath(unittest.TestCase):
 
         path = utils.guess_settings_path(self.project_dir)
         self.assertEqual(path, prod_settings_path)
+
+    def test_use_variable_for_settings_module(self):
+        manage_py_path = os.path.join(self.project_dir, 'manage.py')
+        with open(manage_py_path) as f:
+            file_content = f.read()
+
+        with open(manage_py_path, 'wt') as f:
+            file_content = file_content.replace(
+                '\'{}.settings\''.format(self.project_name), 'module_variable')
+            f.write(file_content)
+        path = utils.guess_settings_path(self.project_dir)
+        self.assertIsNone(path)
