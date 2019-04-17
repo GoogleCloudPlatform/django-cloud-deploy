@@ -847,12 +847,15 @@ class BillingPrompt(TemplatePrompt):
             ValueError: if the input string is not valid.
         """
 
-        billing_accounts = self.billing_client.list_billing_accounts()
+        billing_accounts = self.billing_client.list_billing_accounts(
+            only_open_accounts=True)
         billing_account_names = [
             account['name'] for account in billing_accounts
         ]
         if s not in billing_account_names:
-            raise ValueError('The provided billing account does not exist.')
+            raise ValueError(
+                'The provided billing account does not exist or is not eligible to use.'
+            )
 
 
 class PostgresPasswordPrompt(TemplatePrompt):
