@@ -13,6 +13,7 @@
 # limitations under the License.
 """Integration tests for module django_cloud_deploy.cloudlib."""
 
+from django_cloud_deploy.cloudlib import cloudbuild
 from django_cloud_deploy.cloudlib import cloud_source
 from django_cloud_deploy.cloudlib import container
 from django_cloud_deploy.cloudlib import database
@@ -116,6 +117,49 @@ class ContainerClientIntegrationTest(test_base.ResourceCleanUp):
             for _ in range(2):
                 self._container_client.create_cluster_sync(
                     self.project_id, cluster_name)
+
+
+class CloudBuildClientIntegrationTest(test_base.ResourceCleanUp,
+                                      test_base.ResourceList):
+    """Integration test for django_cloud_deploy.cloudlib.cloudbuild."""
+
+    def setUp(self):
+        super().setUp()
+        self._cloudbuild_client = cloudbuild.CloudBuildClient.from_credentials(
+            self.credentials)
+
+    def test_create_trigger(self):
+        fake_repo_name = utils.get_resource_name(resource_type='repo')
+        branch_regexp = 'fake-branch'
+        env_vars = {
+            'MY_ENV_VAR1': utils.get_resource_name(resource_type='envvar'),
+            'MY_ENV_VAR2': utils.get_resource_name(resource_type='envvar')
+        }
+        with self.clean_up_cloudbuild_trigger(fake_repo_name):
+            self._cloudbuild_client.create_trigger(self.project_id,
+                                                   fake_repo_name,
+                                                   branch_regexp, env_vars)
+            service = discovery.build('cloudbuild',
+                                      'v1',
+                                      credentials=self.credentials,
+                                      cache_discovery=False)
+            request = service.projects().triggers().list(
+                projectId=self.project_id)
+            triggers = []
+            while request:
+                response = request.execute()
+                triggers += response.get('triggers', [])
+                request = service.projects().triggers().list_next(
+                    previous_request=request, previous_response=response)
+            trigger_repo_names = [
+                trigger.get('triggerTemplate').get('repoName')
+                for trigger in triggers
+            ]
+            self.assertIn(fake_repo_name, trigger_repo_names)
+            for trigger in triggers:
+                repo_name = trigger.get('triggerTemplate').get('repoName')
+                if repo_name == fake_repo_name:
+                    self.assertDictEqual(env_vars, trigger.get('substitutions'))
 
 
 class CloudSourceRepositoryClientIntegrationTest(test_base.ResourceCleanUp):

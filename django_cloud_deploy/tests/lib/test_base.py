@@ -560,6 +560,36 @@ class ResourceCleanUp(BaseTest):
             self._clean_up_database(instance_name, database_name)
 
     @contextlib.contextmanager
+    def clean_up_cloudbuild_trigger(self, repo_name: str):
+        try:
+            yield
+        finally:
+            service = discovery.build('cloudbuild',
+                                      'v1',
+                                      credentials=self.credentials,
+                                      cache_discovery=False)
+            request = service.projects().triggers().list(
+                projectId=self.project_id)
+            triggers = []
+            while request:
+                response = request.execute()
+                triggers += response.get('triggers', [])
+                request = service.projects().triggers().list_next(
+                    previous_request=request, previous_response=response)
+            victim_ids = [
+                trigger.get('id')
+                for trigger in triggers
+                if trigger.get('triggerTemplate').get('repoName') == repo_name
+            ]
+            for victim_id in victim_ids:
+                request = service.projects().triggers().delete(
+                    projectId=self.project_id, triggerId=victim_id)
+                try:
+                    request.execute(num_retries=5)
+                except errors.HttpError:
+                    pass
+
+    @contextlib.contextmanager
     def clean_up_repo(self, repo_name: str):
         """A context manager to delete the given Cloud Source Repository.
 
