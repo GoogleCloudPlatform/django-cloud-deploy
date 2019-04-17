@@ -96,6 +96,12 @@ def add_arguments(parser):
                         help=('The credentials object to use for deployment. '
                               'Test only, do not use.'))
 
+    parser.add_argument(
+        '--credentials-path',
+        dest='credentials_path',
+        help=('The absolute path of the credentials file to use for '
+              'deployment.'))
+
     parser.add_argument('--bucket-name',
                         dest='bucket_name',
                         help=('Name of the GCS bucket to serve static content. '

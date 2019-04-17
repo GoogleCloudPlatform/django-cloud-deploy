@@ -44,6 +44,12 @@ def add_arguments(parser):
                               'Test only, do not use.'))
 
     parser.add_argument(
+        '--credentials-path',
+        dest='credentials_path',
+        help=('The absolute path of the credentials file to use for '
+              'deployment.'))
+
+    parser.add_argument(
         '--database-instance-name',
         dest='database_instance_name',
         nargs='+',

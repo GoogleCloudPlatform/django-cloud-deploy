@@ -24,6 +24,7 @@ import string
 import sys
 import time
 from typing import Any, Callable, Dict, List, Optional
+import warnings
 
 from django_cloud_deploy import workflow
 from django_cloud_deploy.cli import io
@@ -32,6 +33,7 @@ from django_cloud_deploy.cloudlib import billing
 from django_cloud_deploy.cloudlib import project
 from django_cloud_deploy.skeleton import utils
 from django_cloud_deploy.utils import webbrowser
+from google.oauth2 import service_account
 
 
 class Command(enum.Enum):
@@ -678,6 +680,22 @@ class CredentialsPrompt(TemplatePrompt):
         if self._is_valid_passed_arg(console, step,
                                      args.get(self.PARAMETER), lambda x: x):
             return new_args
+
+        if args.get('credentials_path'):
+            credentials_path = args.get('credentials_path')
+            try:
+                credentials = (
+                    service_account.Credentials.from_service_account_file(
+                        credentials_path,
+                        scopes=[
+                            'https://www.googleapis.com/auth/cloud-platform'
+                        ]))
+                new_args['credentials'] = credentials
+                return new_args
+            except Exception as e:
+                warnings.warn(
+                    ('File "{}" does not exist or is not a valid credentials '
+                     'file.\n{}'.format(credentials_path, e)))
 
         console.tell(
             ('{} In order to deploy your application, you must allow Django '
