@@ -558,3 +558,28 @@ class ResourceCleanUp(BaseTest):
             yield
         finally:
             self._clean_up_database(instance_name, database_name)
+
+    @contextlib.contextmanager
+    def clean_up_repo(self, repo_name: str):
+        """A context manager to delete the given Cloud Source Repository.
+
+        Args:
+            repo_name: Name of the cloud source repository.
+
+        Yields:
+            None
+        """
+        try:
+            yield
+        finally:
+            service = discovery.build('sourcerepo',
+                                      'v1',
+                                      credentials=self.credentials,
+                                      cache_discovery=False)
+            resource_name = 'projects/{}/repos/{}'.format(
+                self.project_id, repo_name)
+            request = service.projects().repos().delete(name=resource_name)
+            try:
+                request.execute(num_retries=5)
+            except errors.HttpError:
+                pass
