@@ -294,7 +294,9 @@ class _DjangoAdminOverwriteGenerator(_Jinja2FileGenerator):
         Args:
             project_dir: Destination path to hold files.
         """
-        templates_destination = os.path.join(project_dir, 'templates')
+        templates_destination = os.path.join(project_dir,
+                                             self.ADMIN_OVERWRITE_APP_NAME,
+                                             'templates')
         self._generate_files(self.TEMPLATES_TEMPLATE_FOLDER,
                              templates_destination)
 
@@ -304,7 +306,9 @@ class _DjangoAdminOverwriteGenerator(_Jinja2FileGenerator):
         Args:
             project_dir: Destination path to hold files.
         """
-        static_destination = os.path.join(project_dir, 'staticfiles')
+        static_destination = os.path.join(project_dir,
+                                          self.ADMIN_OVERWRITE_APP_NAME,
+                                          'staticfiles')
         self._generate_files(self.STATIC_TEMPLATE_FOLDER, static_destination)
 
 

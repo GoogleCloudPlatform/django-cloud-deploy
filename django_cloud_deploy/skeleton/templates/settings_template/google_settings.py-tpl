@@ -24,9 +24,8 @@ INSTALLED_APPS += [
 if 'TEMPLATES' not in locals():
     TEMPLATES = [
         {
-            # Add the templates required by CloudAdminSite.
             'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': [],
+            'DIRS': [os.path.join(BASE_DIR, 'templates')],
             'APP_DIRS': True,
             'OPTIONS': {
                 'context_processors': [
@@ -44,7 +43,7 @@ if 'TEMPLATES' not in locals():
 for template in TEMPLATES:
     if template.get('BACKEND') == 'django.template.backends.django.DjangoTemplates':
         template['DIRS'] = template.get('DIRS', [])
-        template_path = os.path.join(BASE_DIR, 'templates')
+        template_path = os.path.join(BASE_DIR, 'cloud_admin', 'templates')
         if template_path not in template['DIRS']:
             template['DIRS'].append(template_path)
 
@@ -52,3 +51,12 @@ for template in TEMPLATES:
 # https://docs.djangoproject.com/en/{{ docs_version }}/howto/static-files/
 
 STATIC_ROOT = 'static'
+
+if 'STATICFILES_DIRS' not in locals():
+    STATICFILES_DIRS = []
+
+# Sometimes STATICFILES_DIRS has type tuple
+STATICFILES_DIRS = list(STATICFILES_DIRS)
+STATICFILES_DIRS += [
+    os.path.join(BASE_DIR, 'cloud_admin', 'staticfiles')
+]
