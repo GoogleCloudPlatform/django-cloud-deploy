@@ -22,5 +22,9 @@
     {
         "title": "Stackdriver Monitoring API",
         "name": "monitoring.googleapis.com"
+    },
+    {
+        "title": "Cloud Build API",
+        "name": "cloudbuild.googleapis.com"
     }
 ]
