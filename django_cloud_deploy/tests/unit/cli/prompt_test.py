@@ -180,6 +180,17 @@ class DjangoAppNamePromptTest(absltest.TestCase):
         self.assertEqual(name, 'djangoapp')
         self.assertEqual(len(test_io.answers), 0)  # All answers used.
 
+    def test_prompt_same_name_as_project(self):
+        test_io = io.TestIO()
+
+        test_io.answers.append('djangoproject')
+        test_io.answers.append('djangoapp')
+        args = {'django_project_name': 'djangoproject'}
+        args = self.django_app_name_prompt.prompt(test_io, '[1/2]', args)
+        name = args['django_app_name']
+        self.assertEqual(name, 'djangoapp')
+        self.assertEqual(len(test_io.answers), 0)  # All answers used.
+
 
 class DjangoSuperuserLoginPromptTest(absltest.TestCase):
     """Tests for prompt.DjangoSuperuserLoginPrompt."""

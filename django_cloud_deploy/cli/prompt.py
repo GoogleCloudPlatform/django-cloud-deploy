@@ -1121,18 +1121,30 @@ class DjangoAppNamePrompt(StringTemplatePrompt):
     MESSAGE = '{} Enter a Django app name or leave blank to use'
     DEFAULT_VALUE = 'home'
 
-    def _validate(self, s: str):
+    def prompt(self, console: io.IO, step: str,
+               args: Dict[str, Any]) -> Dict[str, Any]:
+        django_project_name = args.get('django_project_name', None)
+        self._validate = functools.partial(self._validate, django_project_name)
+        return super().prompt(console, step, args)
+
+    def _validate(self, s: str, django_project_name: str):
         """Validates that a string is a valid Django project name.
 
         Args:
             s: The string to validate.
+            django_project_name: Project name must be different from app name.
 
         Raises:
             ValueError: if the input string is not valid.
         """
         if not s.isidentifier():
-            raise ValueError(('Invalid Django project name "{}": '
+            raise ValueError(('Invalid Django app name "{}": '
                               'must be a valid Python identifier').format(s))
+
+        if django_project_name == s:
+            raise ValueError(
+                ('Invalid Django project name "{}": '
+                 'must be different than Django project name').format(s))
 
 
 class DjangoSuperuserLoginPrompt(StringTemplatePrompt):
