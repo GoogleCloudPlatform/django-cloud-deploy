@@ -12,15 +12,6 @@ if 'INSTALLED_APPS' not in locals():
 # Sometimes INSTALLED_APPS has type tuple
 INSTALLED_APPS = list(INSTALLED_APPS)
 
-# Use admin overwrite instead of the default admin
-for app_name in INSTALLED_APPS:
-    if app_name.startswith('django.contrib.admin'):
-        INSTALLED_APPS.remove(app_name)
-
-INSTALLED_APPS += [
-    'cloud_admin.apps.CloudAdminConfig',
-]
-
 if 'TEMPLATES' not in locals():
     TEMPLATES = [
         {
@@ -38,14 +29,6 @@ if 'TEMPLATES' not in locals():
         },
     ]
 
-# Add the templates required by CloudAdminSite if 'TEMPLATES' is already defined
-# in settings file.
-for template in TEMPLATES:
-    if template.get('BACKEND') == 'django.template.backends.django.DjangoTemplates':
-        template['DIRS'] = template.get('DIRS', [])
-        template_path = os.path.join(BASE_DIR, 'cloud_admin', 'templates')
-        if template_path not in template['DIRS']:
-            template['DIRS'].append(template_path)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/{{ docs_version }}/howto/static-files/
@@ -57,6 +40,3 @@ if 'STATICFILES_DIRS' not in locals():
 
 # Sometimes STATICFILES_DIRS has type tuple
 STATICFILES_DIRS = list(STATICFILES_DIRS)
-STATICFILES_DIRS += [
-    os.path.join(BASE_DIR, 'cloud_admin', 'staticfiles')
-]

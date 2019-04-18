@@ -1,5 +1,0 @@
-from django.contrib.admin.apps import AdminConfig
-
-
-class CloudAdminConfig(AdminConfig):
-    default_site = 'cloud_admin.admin.CloudAdminSite'

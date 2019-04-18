@@ -238,8 +238,7 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         module = importlib.import_module(project_name + '.local_settings')
 
         # Test local settings imports google_settings
-        self.assertIn('cloud_admin.apps.CloudAdminConfig',
-                      getattr(module, 'INSTALLED_APPS'))
+        self.assertIn('django.contrib.admin', getattr(module, 'INSTALLED_APPS'))
 
         # Test local settings use sqlite
         self.assertIn('sqlite3',
@@ -264,8 +263,7 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         module = importlib.import_module(project_name + '.cloud_settings')
 
         # Test remote settings imports google_settings
-        self.assertIn('cloud_admin.apps.CloudAdminConfig',
-                      getattr(module, 'INSTALLED_APPS'))
+        self.assertIn('django.contrib.admin', getattr(module, 'INSTALLED_APPS'))
 
         # Test remote settings use postgresql
         self.assertIn('postgresql',
@@ -316,8 +314,7 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         module = importlib.import_module(project_name + '.cloud_settings')
 
         # Test remote settings imports google_settings
-        self.assertIn('cloud_admin.apps.CloudAdminConfig',
-                      getattr(module, 'INSTALLED_APPS'))
+        self.assertIn('django.contrib.admin', getattr(module, 'INSTALLED_APPS'))
 
         # Test remote settings use postgresql
         self.assertIn('postgresql',
@@ -358,8 +355,7 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         module = importlib.import_module(project_name + '.local_settings')
 
         # Test local settings imports google_settings
-        self.assertIn('cloud_admin.apps.CloudAdminConfig',
-                      getattr(module, 'INSTALLED_APPS'))
+        self.assertIn('django.contrib.admin', getattr(module, 'INSTALLED_APPS'))
 
         # Test local settings use sqlite
         self.assertIn('sqlite3',
@@ -375,8 +371,7 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         module = importlib.import_module(project_name + '.cloud_settings')
 
         # Test remote settings imports google_settings
-        self.assertIn('cloud_admin.apps.CloudAdminConfig',
-                      getattr(module, 'INSTALLED_APPS'))
+        self.assertIn('django.contrib.admin', getattr(module, 'INSTALLED_APPS'))
 
         # Test remote settings use postgresql
         self.assertIn('postgresql',
