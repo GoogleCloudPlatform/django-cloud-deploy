@@ -121,6 +121,16 @@ def e2e_test_gae_cloudify(session, python_version):
 
 
 @nox.session
+@nox.parametrize('python_version', ['3.5'])
+def e2e_test_gke_cloudify(session, python_version):
+    """Run the e2e test suite."""
+
+    session.interpreter = 'python{}'.format(python_version)
+    session.install(*PACKAGES)
+    session.run('py.test', 'tests/e2e/gke_cloudify_test.py', '--timeout=1800')
+
+
+@nox.session
 def resource_cleanup(session):
     """Cleanup GCP resources used by tests."""
     session.interpreter = 'python3.5'
