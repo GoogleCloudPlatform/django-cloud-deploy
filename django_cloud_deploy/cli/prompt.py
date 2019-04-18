@@ -1127,7 +1127,7 @@ class DjangoAppNamePrompt(StringTemplatePrompt):
         self._validate = functools.partial(self._validate, django_project_name)
         return super().prompt(console, step, args)
 
-    def _validate(self, s: str, django_project_name: str):
+    def _validate(self, django_project_name: str, s: str):
         """Validates that a string is a valid Django project name.
 
         Args:
