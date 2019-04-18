@@ -374,7 +374,6 @@ class StringTemplatePrompt(TemplatePrompt):
 class GoogleProjectName(TemplatePrompt):
 
     PARAMETER = 'project_name'
-
     MESSAGE = '{} Enter a Google Cloud Platform project name'
 
     def __init__(self, project_client: project.ProjectClient):
