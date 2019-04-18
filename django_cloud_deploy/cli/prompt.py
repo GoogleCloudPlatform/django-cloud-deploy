@@ -280,6 +280,7 @@ class TemplatePrompt(Prompt):
     # Parameter must be set for dictionary key
     PARAMETER = None
     MESSAGE = ''
+    MESSAGE_DEFAULT = 'or leave blank to use [{}]: '
 
     def prompt(self, console: io.IO, step: str,
                args: Dict[str, Any]) -> Dict[str, Any]:
@@ -317,7 +318,7 @@ class TemplatePrompt(Prompt):
             console.error(e)
             quit()
 
-        msg = '{}{}'.format(self.MESSAGE.format(step), value)
+        msg = '{}: {}'.format(self.MESSAGE.format(step), value)
         console.tell(msg)
         return True
 
@@ -358,7 +359,7 @@ class StringTemplatePrompt(TemplatePrompt):
 
         base_message = self.MESSAGE.format(step)
         if self.DEFAULT_VALUE:
-            default_message = '[{}]: '.format(self.DEFAULT_VALUE)
+            default_message = self.MESSAGE_DEFAULT.format(self.DEFAULT_VALUE)
             msg = '\n'.join([base_message, default_message])
         else:
             msg = base_message
@@ -373,6 +374,8 @@ class StringTemplatePrompt(TemplatePrompt):
 class GoogleProjectName(TemplatePrompt):
 
     PARAMETER = 'project_name'
+
+    MESSAGE = '{} Enter a Google Cloud Platform project name'
 
     def __init__(self, project_client: project.ProjectClient):
         self.project_client = project_client
@@ -402,9 +405,8 @@ class GoogleProjectName(TemplatePrompt):
 
     def _handle_new_project(self, console: io.IO, step: str, args: [str, Any]):
         default_answer = 'Django Project'
-        msg_base = ('{} Enter a Google Cloud Platform project name, or leave '
-                    'blank to use').format(step)
-        msg_default = '[{}]: '.format(default_answer)
+        msg_base = self.MESSAGE.format(step)
+        msg_default = self.MESSAGE_DEFAULT.format(default_answer)
         msg = '\n'.join([msg_base, msg_default])
         project_id = args.get('project_id', None)
         mode = args.get('project_creation_mode', None)
@@ -462,6 +464,7 @@ class GoogleNewProjectId(TemplatePrompt):
     """Handles Project ID for new projects."""
 
     PARAMETER = 'project_id'
+    MESSAGE = '{} Enter a Google Cloud Platform Project id'
 
     def _validate(self, s: str):
         """Validates that a string is a valid project id.
@@ -507,9 +510,8 @@ class GoogleNewProjectId(TemplatePrompt):
 
         project_name = args.get('project_name', None)
         default_answer = self._generate_default_project_id(project_name)
-        msg_base = ('{} Enter a Google Cloud Platform Project ID, '
-                    'or leave blank to use').format(step)
-        msg_default = '[{}]: '.format(default_answer)
+        msg_base = self.MESSAGE.format(step)
+        msg_default = self.MESSAGE_DEFAULT.format(default_answer)
         msg = '\n'.join([msg_base, msg_default])
         answer = _ask_prompt(msg,
                              console,
@@ -554,6 +556,7 @@ class GoogleExistingProjectId(TemplatePrompt):
     """Handles Project ID for existing projects."""
 
     PARAMETER = 'project_id'
+    MESSAGE = '{} Enter the <b>existing</b> Google Cloud Platform Project ID'
 
     def __init__(self, project_client: project.ProjectClient,
                  active_account: str):
@@ -578,8 +581,7 @@ class GoogleExistingProjectId(TemplatePrompt):
                                      args.get(self.PARAMETER, None), validate):
             return new_args
 
-        msg = ('{} Enter the <b>existing</b> Google Cloud Platform Project ID '
-               'to use: ').format(step)
+        msg = '{}: '.format(self.MESSAGE.format(step))
         answer = _ask_prompt(msg, console, validate)
         new_args[self.PARAMETER] = answer
         return new_args
@@ -722,6 +724,7 @@ class BillingPrompt(TemplatePrompt):
     """Allow the user to select a billing account to use for deployment."""
 
     PARAMETER = 'billing_account_name'
+    MESSAGE = '{} Enter a billing account'
 
     def __init__(self, billing_client: billing.BillingClient = None):
         self.billing_client = billing_client
@@ -862,6 +865,7 @@ class PostgresPasswordPrompt(TemplatePrompt):
     """Allow the user to enter a Django Postgres password."""
 
     PARAMETER = 'database_password'
+    MESSAGE = '{} Enter a password for the default database user "postgres"'
 
     def prompt(self, console: io.IO, step: str,
                args: Dict[str, Any]) -> Dict[str, Any]:
@@ -880,9 +884,7 @@ class PostgresPasswordPrompt(TemplatePrompt):
                                      self._validate):
             return new_args
 
-        msg = 'Enter a password for the default database user "postgres"'
-        question = '{} {}'.format(step, msg)
-        password = _password_prompt(question, console)
+        password = _password_prompt(self.MESSAGE.format(step), console)
         new_args[self.PARAMETER] = password
         return new_args
 
@@ -894,6 +896,7 @@ class DjangoFilesystemPath(TemplatePrompt):
     """Allow the user to indicate the file system path for their project."""
 
     PARAMETER = 'django_directory_path'
+    MESSAGE = '{} Enter a new directory path to store project source'
 
     def _ask_to_replace(self, console, directory):
         msg = (('The directory \'{}\' already exists, '
@@ -901,8 +904,6 @@ class DjangoFilesystemPath(TemplatePrompt):
         return binary_prompt(msg, console, default=False)
 
     def _ask_for_directory(self, console, step, args) -> str:
-        base_msg = ('{} Enter a new directory path to store project source, '
-                    'or leave blank to use').format(step)
 
         home_dir = os.path.expanduser('~')
         # TODO: Remove filesystem-unsafe characters. Implement a validation
@@ -911,9 +912,9 @@ class DjangoFilesystemPath(TemplatePrompt):
             home_dir,
             args.get('project_name',
                      'django-project').lower().replace(' ', '-'))
-        default_msg = '[{}]: '.format(default_dir)
-
-        msg = '\n'.join([base_msg, default_msg])
+        msg_base = self.MESSAGE.format(step)
+        msg_default = self.MESSAGE_DEFAULT.format(default_dir)
+        msg = '\n'.join([msg_base, msg_default])
         return _ask_prompt(msg, console, default=default_dir)
 
     def prompt(self, console: io.IO, step: str,
@@ -950,10 +951,9 @@ class DjangoFilesystemPathUpdate(TemplatePrompt):
     """Allow the user to indicate the file system path for their project."""
 
     PARAMETER = 'django_directory_path_update'
+    MESSAGE = '{} Enter the django project directory path'
 
     def _ask_for_directory(self, console, step, args) -> str:
-        base_msg = ('{} Enter the django project directory path '
-                    'or leave blank to use').format(step)
 
         home_dir = os.path.expanduser('~')
         # TODO: Remove filesystem-unsafe characters. Implement a validation
@@ -962,9 +962,10 @@ class DjangoFilesystemPathUpdate(TemplatePrompt):
             home_dir,
             args.get('project_name',
                      'django-project').lower().replace(' ', '-'))
-        default_msg = '[{}]: '.format(default_dir)
 
-        msg = '\n'.join([base_msg, default_msg])
+        msg_base = self.MESSAGE.format(step)
+        msg_default = self.MESSAGE_DEFAULT.format(default_dir)
+        msg = '\n'.join([msg_base, msg_default])
         return _ask_prompt(msg, console, default=default_dir)
 
     def prompt(self, console: io.IO, step: str,
@@ -1139,7 +1140,7 @@ class DjangoSuperuserLoginPrompt(StringTemplatePrompt):
     """Allow the user to enter a Django superuser login."""
 
     PARAMETER = 'django_superuser_login'
-    MESSAGE = '{} Enter a Django superuser login name or leave blank to use'
+    MESSAGE = '{} Enter a Django superuser login name'
     DEFAULT_VALUE = 'admin'
 
     def _validate(self, s: str):
@@ -1160,6 +1161,7 @@ class DjangoSuperuserPasswordPrompt(TemplatePrompt):
     """Allow the user to enter a password for the Django superuser."""
 
     PARAMETER = 'django_superuser_password'
+    MESSAGE = '{} Enter a password for the Django superuser'
 
     def _get_prompt_message(self, arguments: Dict[str, Any]) -> str:
         if 'django_superuser_login' in arguments:
@@ -1307,8 +1309,7 @@ class DjangoRequirementsPathPrompt(StringTemplatePrompt):
     """Allow the user to enter the path of requirements.txt of Django project."""
 
     PARAMETER = 'django_requirements_path'
-    MESSAGE = ('{} Enter the path of the requirements.txt that should be used '
-               'for deployment: ')
+    MESSAGE = '{} Enter the path of the requirements.txt'
 
     def prompt(self, console: io.IO, step: str,
                args: Dict[str, Any]) -> Dict[str, Any]:
