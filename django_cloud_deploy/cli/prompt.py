@@ -1131,17 +1131,13 @@ class DjangoAppNamePrompt(TemplatePrompt):
         validate = functools.partial(self._validate, django_project_name)
         new_args = dict(args)
         if self._is_valid_passed_arg(console, step,
-                                     args.get(self.PARAMETER, None),
-                                     validate):
+                                     args.get(self.PARAMETER, None), validate):
             return new_args
 
         base_message = self.MESSAGE.format(step)
         default_message = self.MESSAGE_DEFAULT.format(self.DEFAULT_VALUE)
         msg = '\n'.join([base_message, default_message])
-        answer = _ask_prompt(msg,
-                             console,
-                             validate,
-                             default=self.DEFAULT_VALUE)
+        answer = _ask_prompt(msg, console, validate, default=self.DEFAULT_VALUE)
         new_args[self.PARAMETER] = answer
         return new_args
 
