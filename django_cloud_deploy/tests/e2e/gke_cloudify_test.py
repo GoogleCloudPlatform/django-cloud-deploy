@@ -63,6 +63,7 @@ class GKECloudifyAndUpdateE2ETest(test_base.ResourceCleanUp):
         cloud_storage_bucket_name = utils.get_resource_name('bucket')
         database_instance_name = utils.get_resource_name('sql-instance')
         service_name = utils.get_resource_name('svc', delimiter='')
+        cluster_name = utils.get_resource_name('cluster')
 
         # Generate names we hardcode for users
         service_account_email = '{}@{}.iam.gserviceaccount.com'.format(
@@ -71,7 +72,8 @@ class GKECloudifyAndUpdateE2ETest(test_base.ResourceCleanUp):
 
         settings_path = os.path.join(self.project_dir, 'mysite', 'settings.py')
         requirements_path = os.path.join(self.project_dir, 'requirements.txt')
-        with self.clean_up_bucket(cloud_storage_bucket_name), \
+        with self.clean_up_cluster(cluster_name), \
+                self.clean_up_bucket(cloud_storage_bucket_name), \
                 self.delete_service_account(service_account_email), \
                 self.reset_iam_policy(member, self._CLOUDSQL_ROLES), \
                 self.clean_up_sql_instance(database_instance_name), \
@@ -91,6 +93,7 @@ class GKECloudifyAndUpdateE2ETest(test_base.ResourceCleanUp):
                 bucket_name=cloud_storage_bucket_name,
                 service_accounts=fake_service_accounts,
                 appengine_service_name=service_name,
+                cluster_name=cluster_name,
                 database_instance_name=database_instance_name,
                 backend='gke')
             url = cloudify.main(arguments, test_io)
@@ -145,6 +148,7 @@ class GKECloudifyAndUpdateE2ETest(test_base.ResourceCleanUp):
                 view_file.write(file_content)
             arguments = types.SimpleNamespace(
                 credentials=self.credentials,
+                cluster_name=cluster_name,
                 database_instance_name=database_instance_name)
 
             update.main(arguments, test_io)

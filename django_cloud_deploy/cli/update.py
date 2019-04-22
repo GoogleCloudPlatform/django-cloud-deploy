@@ -50,6 +50,13 @@ def add_arguments(parser):
               'deployment.'))
 
     parser.add_argument(
+        '--cluster-name',
+        dest='cluster_name',
+        nargs='+',
+        help=('Name of the cluster to use for deploying on GKE. Test only, do '
+              'not use.'))
+
+    parser.add_argument(
         '--database-instance-name',
         dest='database_instance_name',
         nargs='+',
@@ -60,6 +67,7 @@ def add_arguments(parser):
 def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
 
     actual_parameters = {
+        'cluster_name': getattr(args, 'cluster_name', None),
         'database_instance_name': getattr(args, 'database_instance_name', None),
     }
     prompt_args = {**vars(args), **actual_parameters}
@@ -87,6 +95,7 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
     workflow_manager.update_project(
         django_directory_path=actual_parameters['django_directory_path_update'],
         database_password=actual_parameters['database_password'],
+        cluster_name=actual_parameters['cluster_name'],
         database_instance_name=actual_parameters['database_instance_name'])
 
 

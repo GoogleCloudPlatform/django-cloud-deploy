@@ -127,6 +127,13 @@ def add_arguments(parser):
         help=('App engine service name. Test only, do not use.'))
 
     parser.add_argument(
+        '--cluster-name',
+        dest='cluster_name',
+        nargs='+',
+        help=('Name of the cluster to use for deploying on GKE. Test only, do '
+              'not use.'))
+
+    parser.add_argument(
         '--database-instance-name',
         dest='database_instance_name',
         nargs='+',
@@ -145,6 +152,7 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
         'service_accounts': getattr(args, 'service_accounts', None),
         'services': getattr(args, 'services', None),
         'appengine_service_name': getattr(args, 'appengine_service_name', None),
+        'cluster_name': getattr(args, 'cluster_name', None),
         'database_instance_name': getattr(args, 'database_instance_name', None),
     }
 
@@ -173,6 +181,7 @@ def main(args: argparse.Namespace, console: io.IO = io.ConsoleIO()):
                 'django_requirements_path'),
             django_settings_path=actual_parameters['django_settings_path'],
             database_password=actual_parameters['database_password'],
+            cluster_name=actual_parameters['cluster_name'],
             database_instance_name=actual_parameters['database_instance_name'],
             required_services=actual_parameters['services'],
             required_service_accounts=actual_parameters['service_accounts'],

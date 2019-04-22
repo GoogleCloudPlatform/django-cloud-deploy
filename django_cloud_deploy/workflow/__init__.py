@@ -86,6 +86,7 @@ class WorkflowManager(object):
             django_superuser_password: str,
             django_directory_path: str,
             database_password: str,
+            cluster_name: Optional[str] = None,
             database_instance_name: Optional[str] = None,
             django_app_name: Optional[str] = None,
             django_requirements_path: Optional[str] = None,
@@ -120,6 +121,7 @@ class WorkflowManager(object):
             django_directory_path: The location where the generated Django
                 project code should be stored.
             database_password: The password for the default database user.
+            cluster_name: Name of the cluster to use when deploying on GKE.
             database_instance_name: Name of the Cloud SQL instance to use for
                 deployment
             django_app_name: The name of the Django app e.g. "poll". This is not
@@ -170,7 +172,7 @@ class WorkflowManager(object):
                                     'files-{}'.format(project_id))
 
         sanitized_django_project_name = self._sanitize_name(django_project_name)
-        cluster_name = sanitized_django_project_name
+        cluster_name = cluster_name or sanitized_django_project_name
         database_name = sanitized_django_project_name + '-db'
         database_instance_name = (database_instance_name or
                                   sanitized_django_project_name + '-instance')
@@ -323,6 +325,7 @@ class WorkflowManager(object):
     def update_project(self,
                        django_directory_path: str,
                        database_password: str,
+                       cluster_name: Optional[str] = None,
                        database_instance_name: Optional[str] = None,
                        cloud_sql_proxy_path: str = 'cloud_sql_proxy',
                        region: str = 'us-west1',
@@ -333,6 +336,7 @@ class WorkflowManager(object):
             django_directory_path: The location where the generated Django
                 project code should be stored.
             database_password: The password for the default database user.
+            cluster_name: Name of the cluster to use when deploying on GKE.
             database_instance_name: Name of the Cloud SQL instance to use for
                 deployment
             cloud_sql_proxy_path: The command to run your cloud sql proxy.
@@ -368,7 +372,7 @@ class WorkflowManager(object):
         database_username = 'postgres'
         cloud_storage_bucket_name = project_id
         sanitized_django_project_name = self._sanitize_name(django_project_name)
-        cluster_name = sanitized_django_project_name
+        cluster_name = cluster_name or sanitized_django_project_name
         database_instance_name = (database_instance_name or
                                   sanitized_django_project_name + '-instance')
         image_name = '/'.join(
