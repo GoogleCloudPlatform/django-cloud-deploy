@@ -28,7 +28,10 @@ with open(os.path.join(here, 'README.md'), 'r') as fh:
 
 
 install_requires = [
-    'urllib3>=1.23,<2',
+    # "requests" is one of our implicit dependency, which has dependency
+    # "urllib3<1.25".
+    # See https://github.com/kennethreitz/requests/blob/master/setup.py#L47
+    'urllib3>=1.23,<1.25',
     'oauth2client>=4.1.2',
     'django>=2.1.5,<2.2',
     'backoff>=1.8.0',
