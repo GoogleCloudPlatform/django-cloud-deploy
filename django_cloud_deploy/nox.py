@@ -29,7 +29,7 @@ PACKAGES = [
     'kubernetes==6.0.0',
     'google-cloud-container==0.1.1',
     'grpcio==1.14.1',
-    'google-cloud.storage==1.10.0',
+    'google-cloud-storage==1.10.0',
     'pexpect==4.6.0',
     'psycopg2-binary==2.7.5',
     'google-api-python-client==1.7.4',
@@ -39,6 +39,7 @@ PACKAGES = [
     'progressbar2>=3.38.0',
     'portpicker==1.2.0',
     'django-storages==1.7.1',
+    'urllib3==1.24.2',
 ]
 
 
