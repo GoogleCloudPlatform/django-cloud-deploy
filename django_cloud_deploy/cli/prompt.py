@@ -946,55 +946,12 @@ class DjangoFilesystemPath(TemplatePrompt):
         return new_args
 
 
-class DjangoFilesystemPathUpdate(TemplatePrompt):
+class DjangoFilesystemPathUpdate(StringTemplatePrompt):
     """Allow the user to indicate the file system path for their project."""
 
     PARAMETER = 'django_directory_path_update'
     MESSAGE = '{} Enter the django project directory path'
-
-    def _ask_for_directory(self, console, step, args) -> str:
-
-        home_dir = os.path.expanduser('~')
-        # TODO: Remove filesystem-unsafe characters. Implement a validation
-        # method that checks for these.
-        default_dir = os.path.join(
-            home_dir,
-            args.get('project_name',
-                     'django-project').lower().replace(' ', '-'))
-
-        msg_base = self.MESSAGE.format(step)
-        msg_default = self.MESSAGE_DEFAULT.format(default_dir)
-        msg = '\n'.join([msg_base, msg_default])
-        return _ask_prompt(msg, console, default=default_dir)
-
-    def prompt(self, console: io.IO, step: str,
-               args: Dict[str, Any]) -> Dict[str, Any]:
-        """Extracts user arguments through the command-line.
-
-        Args:
-            console: Object to use for user I/O.
-            step: Message to present to user regarding what step they are on.
-            args: Dictionary holding prompts answered by user and set up
-                command-line arguments.
-
-        Returns: A Copy of args + the new parameter collected.
-        """
-        new_args = dict(args)
-        if self._is_valid_passed_arg(console, step, args.get(self.PARAMETER),
-                                     self._validate):
-            return new_args
-
-        while True:
-            directory = self._ask_for_directory(console, step, args)
-            try:
-                self._validate(directory)
-            except ValueError as e:
-                console.error(e)
-                continue
-            break
-
-        new_args[self.PARAMETER] = directory
-        return new_args
+    DEFAULT_VALUE = os.path.abspath(os.path.expanduser('.'))
 
     def _validate(self, s: str):
         """Validates that a string is a valid Django project path.
@@ -1019,7 +976,8 @@ class DjangoFilesystemPathCloudify(StringTemplatePrompt):
 
     PARAMETER = 'django_directory_path_cloudify'
     MESSAGE = ('{} Enter the directory of the Django project you want to '
-               'deploy: ')
+               'deploy')
+    DEFAULT_VALUE = os.path.abspath(os.path.expanduser('.'))
 
     def _validate(self, s: str):
         """Validates that a string is a valid Django project path.
