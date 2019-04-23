@@ -100,26 +100,12 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
 
             # Test wsgi uses cloud settings.
             self.assertIn(project_name + '.cloud_settings', content)
-        with open(os.path.join(self._project_dir, 'manage.py')) as f:
-            content = f.read()
 
-            # Test manage.py uses local settings.
-            self.assertIn(project_name + '.local_settings', content)
-
-    def test_manage_py_and_wsgi_py_uses_variable_for_settings_module(self):
+    def test_wsgi_py_uses_variable_for_settings_module(self):
         project_name = 'mysite'
         management.call_command('startproject', project_name, self._project_dir)
         settings_path = os.path.join(self._project_dir, project_name,
                                      'settings.py')
-        self._generator.generate_from_existing(project_name, self._project_dir,
-                                               settings_path)
-        manage_py_path = os.path.join(self._project_dir, 'manage.py')
-        with open(manage_py_path) as f:
-            file_content = f.read()
-        with open(manage_py_path, 'wt') as f:
-            file_content = file_content.replace(
-                '\'{}.settings\''.format(project_name), 'module_variable')
-            f.write(file_content)
         wsgi_path = os.path.join(self._project_dir, project_name, 'wsgi.py')
         with open(wsgi_path) as f:
             file_content = f.read()
@@ -127,16 +113,12 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
             file_content = file_content.replace(
                 '\'{}.settings\''.format(project_name), 'module_variable')
             f.write(file_content)
+        self._generator.generate_from_existing(project_name, self._project_dir,
+                                               settings_path)
         with open(wsgi_path) as f:
             content = f.read()
-
             # Test wsgi uses cloud settings.
             self.assertIn(project_name + '.cloud_settings', content)
-        with open(manage_py_path) as f:
-            content = f.read()
-
-            # Test manage.py uses local settings.
-            self.assertIn(project_name + '.local_settings', content)
 
     def test_settings_file_not_in_default_location(self):
         """Settings file is at <project_dir>/<project_name>/settings/dev.py."""
@@ -157,11 +139,6 @@ class DjangoProjectFileGeneratorTest(FileGeneratorTest):
 
             # Test wsgi uses cloud settings.
             self.assertIn('mysite.settings.cloud_settings', content)
-        with open(os.path.join(self._project_dir, 'manage.py')) as f:
-            content = f.read()
-
-            # Test manage.py uses local settings.
-            self.assertIn('mysite.settings.local_settings', content)
 
 
 class DjangoAppFileGeneratorTest(FileGeneratorTest):
@@ -208,8 +185,8 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
     def setUpClass(cls):
         cls._generator = source_generator._SettingsFileGenerator()
 
-    def test_base_settings(self):
-        project_id = project_name = 'test_base_settings'
+    def test_settings(self):
+        project_id = project_name = 'test_settings'
         cloud_sql_connection_string = ('{}:{}:{}'.format(
             project_id, 'us-west', 'instance'))
         self._generator.generate_new(project_id, project_name,
@@ -217,37 +194,19 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
                                      cloud_sql_connection_string)
 
         sys.path.append(self._project_dir)
-        module = importlib.import_module(project_name + '.base_settings')
+        module = importlib.import_module(project_name + '.settings')
 
-        # Test base settings generate secret keys.
+        # Test settings generate secret keys.
         self.assertIn('SECRET_KEY', dir(module))
 
-        # Test base settings does not setup database.
-        self.assertNotIn('DATABASES', dir(module))
-
-    def test_local_settings(self):
-        project_id = project_name = 'test_local_settings'
-        cloud_sql_connection_string = ('{}:{}:{}'.format(
-            project_id, 'us-west', 'instance'))
-
-        self._generator.generate_new(project_id, project_name,
-                                     self._project_dir,
-                                     cloud_sql_connection_string)
-
-        sys.path.append(self._project_dir)
-        module = importlib.import_module(project_name + '.local_settings')
-
-        # Test local settings imports google_settings
-        self.assertIn('django.contrib.admin', getattr(module, 'INSTALLED_APPS'))
-
-        # Test local settings use sqlite
+        # Test settings use sqlite
         self.assertIn('sqlite3',
                       getattr(module, 'DATABASES')['default']['ENGINE'])
 
-        # Test local settings use DEBUG mode
+        # Test settings use DEBUG mode
         self.assertEqual(getattr(module, 'DEBUG'), True)
 
-        # Test local settings use local file systems to serve static files
+        # Test settings use local file systems to serve static files
         self.assertEqual(getattr(module, 'STATIC_URL'), '/static/')
 
     def test_cloud_settings_gke(self):
@@ -261,9 +220,6 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
 
         sys.path.append(self._project_dir)
         module = importlib.import_module(project_name + '.cloud_settings')
-
-        # Test remote settings imports google_settings
-        self.assertIn('django.contrib.admin', getattr(module, 'INSTALLED_APPS'))
 
         # Test remote settings use postgresql
         self.assertIn('postgresql',
@@ -313,9 +269,6 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
         sys.path.append(self._project_dir)
         module = importlib.import_module(project_name + '.cloud_settings')
 
-        # Test remote settings imports google_settings
-        self.assertIn('django.contrib.admin', getattr(module, 'INSTALLED_APPS'))
-
         # Test remote settings use postgresql
         self.assertIn('postgresql',
                       getattr(module, 'DATABASES')['default']['ENGINE'])
@@ -344,48 +297,64 @@ class SettingsFileGeneratorTest(FileGeneratorTest):
                                                cloud_sql_connection_string,
                                                django_settings_path)
 
-        expected_settings_files = ('base_settings.py', 'local_settings.py',
-                                   'cloud_settings.py', 'google_settings.py')
+        expected_settings_files = ('settings.py', 'cloud_settings.py')
         files_list = os.listdir(os.path.join(self._project_dir, project_name))
         self.assertContainsSubset(expected_settings_files, files_list)
 
         sys.path.append(self._project_dir)
 
-        # Test local settings
-        module = importlib.import_module(project_name + '.local_settings')
+        # Test base settings
+        module = importlib.import_module(project_name + '.settings')
 
-        # Test local settings imports google_settings
-        self.assertIn('django.contrib.admin', getattr(module, 'INSTALLED_APPS'))
-
-        # Test local settings use sqlite
+        # Test base settings use sqlite
         self.assertIn('sqlite3',
                       getattr(module, 'DATABASES')['default']['ENGINE'])
 
-        # Test local settings use DEBUG mode
+        # Test base settings use DEBUG mode
         self.assertEqual(getattr(module, 'DEBUG'), True)
 
-        # Test local settings use local file systems to serve static files
+        # Test base settings use local file systems to serve static files
         self.assertEqual(getattr(module, 'STATIC_URL'), '/static/')
 
-        # Test remote settings
+        # Test cloud settings
         module = importlib.import_module(project_name + '.cloud_settings')
 
-        # Test remote settings imports google_settings
-        self.assertIn('django.contrib.admin', getattr(module, 'INSTALLED_APPS'))
-
-        # Test remote settings use postgresql
+        # Test cloud settings use postgresql
         self.assertIn('postgresql',
                       getattr(module, 'DATABASES')['default']['ENGINE'])
 
-        # Test remote settings use the default database name
+        # Test cloud settings use the default database name
         self.assertEqual(project_name + '-db',
                          getattr(module, 'DATABASES')['default']['NAME'])
 
-        # Test remote settings use default GCS buckets to serve static files
+        # Test cloud settings use default GCS buckets to serve static files
         self.assertIn(project_id + '/static', getattr(module, 'STATIC_URL'))
 
-        # Test remote settings does not use DEBUG mode
+        # Test cloud settings does not use DEBUG mode
         self.assertEqual(getattr(module, 'DEBUG'), False)
+
+    def test_cloud_settings_inherit_correct_settings(self):
+        project_name = 'test_generate_from_existing_settings'
+        project_id = project_name + 'project_id'
+        cloud_sql_connection_string = ('{}:{}:{}'.format(
+            project_id, 'us-west', 'instance'))
+
+        # Generate Django project files
+        management.call_command('startproject', project_name, self._project_dir)
+        django_settings_path = os.path.join(self._project_dir, project_name,
+                                            'settings.py')
+        new_settings_path = os.path.join(self._project_dir, project_name,
+                                         'local_settings.py')
+        cloud_settings_path = os.path.join(self._project_dir, project_name,
+                                           'cloud_settings.py')
+        shutil.move(django_settings_path, new_settings_path)
+        self._generator.generate_from_existing(project_id, project_name,
+                                               cloud_sql_connection_string,
+                                               new_settings_path)
+        with open(cloud_settings_path) as settings:
+            settings_content = settings.read()
+            # Test cloud sql connection string is in host for GAE
+            self.assertIn('from .local_settings import *', settings_content)
 
 
 class DockerfileGeneratorTest(FileGeneratorTest):
@@ -665,8 +634,7 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         source_generator._DependencyFileGenerator._REQUIREMENTS_GOOGLE,
         source_generator._DependencyFileGenerator._REQUIREMENTS)
     PROJECT_ROOT_FOLDER_FILES = ('manage.py',)
-    SETTINGS_FILES = ('base_settings.py', 'local_settings.py',
-                      'cloud_settings.py')
+    SETTINGS_FILES = ('settings.py', 'cloud_settings.py')
 
     @classmethod
     def setUpClass(cls):
@@ -685,7 +653,7 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         self.assertContainsSubset(self.SETTINGS_FILES, files_list)
 
     @unittest.mock.patch('subprocess.call')
-    def test_generate_all_source_files(self, ununsed_mock):
+    def test_generate_all_source_files(self, unused_mock):
         project_id = project_name = 'test_generate_all_source_file'
         app_name = 'polls'
         self._generator.generate_new(project_id, project_name, app_name,
@@ -694,7 +662,7 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         self._test_project_structure(project_name, app_name, self._project_dir)
 
     @unittest.mock.patch('subprocess.call')
-    def test_delete_existing_files(self, ununsed_mock):
+    def test_delete_existing_files(self, unused_mock):
         project_id = project_name = 'test_delete_existing_files1'
         app_name = 'polls1'
         self._generator.generate_new(project_id, project_name, app_name,
@@ -709,7 +677,7 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         self.assertNotIn(project_name, files_list)
 
     @unittest.mock.patch('subprocess.call')
-    def test_file_generation_same_place(self, ununsed_mock):
+    def test_file_generation_same_place(self, unused_mock):
         project_id = project_name = 'test_file_generation_same_place'
         app_name = 'polls'
 
@@ -722,7 +690,7 @@ class DjangoSourceFileGeneratorTest(FileGeneratorTest):
         self._test_project_structure(project_name, app_name, self._project_dir)
 
     @unittest.mock.patch('subprocess.call')
-    def test_file_generation_directory_not_exist(self, ununsed_mock):
+    def test_file_generation_directory_not_exist(self, unused_mock):
         project_id = project_name = 'test_file_generation_same_place'
         app_name = 'polls'
 

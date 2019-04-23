@@ -1,8 +1,10 @@
 import json
+import os
 from google.cloud import storage
 from google.oauth2 import service_account
 
-from .google_settings import *
+from .{{ settings_module }} import *
+
 
 def get_database_password():
     client = storage.Client()
@@ -10,6 +12,7 @@ def get_database_password():
     blob = bucket.get_blob('secrets/cloudsql.json')
     creds = json.loads(blob.download_as_string())
     return creds['password']
+
 
 def get_gs_credentials():
     if os.getenv('GAE_APPLICATION', None):
@@ -65,9 +68,14 @@ else:
         }
     }
 
-STATIC_URL = 'https://storage.googleapis.com/{{ bucket_name }}/static/'
 
 DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
 GS_BUCKET_NAME = '{{ file_bucket_name }}'
 GS_FILE_OVERWRITE = False
 GS_CREDENTIALS = get_gs_credentials()
+
+if 'STATIC_ROOT' not in locals():
+    _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    STATIC_ROOT = os.path.join(_BASE_DIR, 'static')
+
+STATIC_URL = 'https://storage.googleapis.com/{{ bucket_name }}/static/'
