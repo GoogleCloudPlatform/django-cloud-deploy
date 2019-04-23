@@ -21,18 +21,18 @@ $ django-cloud-deploy new
 [<b>1/11</b>] In order to deploy your application, you must allow Django Deploy to access your Google account.
 Press [Enter] to open a browser window to allow access
 [<b>2/11</b>] Enter a Google Cloud Platform Project ID, or leave blank to use
-[django-799931]: my-cool-site 
+[django-799931]: my-cool-site
 [<b>3/11</b>] Enter a Google Cloud Platform project name, or leave blank to use
 [Django Project]: My Cool Site
 [<b>4/11</b>] In order to deploy your application, you must enable billing for your Google Cloud Project.
-You have the following existing billing accounts: 
+You have the following existing billing accounts:
 1. My Billing Account
 Please enter your numeric choice or press [Enter] to create a new billing account: 1
 [<b>5/11</b>] Enter a password for the default database user "postgres"
-Password: 
-Password (again): 
+Password:
+Password (again):
 [<b>6/11</b>] Enter a new directory path to store project source, or leave blank to use
-[/usr/local/google/home/bquinlan/my-cool-site]: 
+[/usr/local/google/home/bquinlan/my-cool-site]:
 [<b>7/11</b>] Enter a Django project name, or leave blank to use
 [mysite]: mycoolsite
 [<b>8/11</b>] Enter a Django app name, or leave blank to use
@@ -40,8 +40,8 @@ Password (again):
 [<b>9/11</b>] Enter a name for the Django superuser, or leave blank to use
 [admin]: myname
 [<b>10/11</b>] Enter a password for the Django superuser "myname"
-Password: 
-Password (again): 
+Password:
+Password (again):
 [<b>11/11</b>] Enter a e-mail address for the Django superuser, or leave blank to use
 [test@example.com]: myname@example.com
 </pre>
@@ -51,6 +51,11 @@ Password (again):
 For the fastest path to a working Django application running in the cloud,
 see the
 [Quickstart](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/QUICKSTART.md).
+
+# Deploy an existing application
+
+For detailed instructions on how to deploy an existing Django project, see the
+[HOWTO](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/CLOUDIFY_HOWTO.md).
 
 # Building a new application
 

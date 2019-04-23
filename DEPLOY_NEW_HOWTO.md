@@ -6,7 +6,7 @@ and then redeploy it.
 
 ## Before you begin
 
-Before running this guide, you must install the Cloud SDK, Cloud SQK Proxy
+Before running this guide, you must install the Cloud SDK, Cloud SQL Proxy
 and setup your development environment.
 
 1. Download and install the
@@ -22,7 +22,7 @@ and setup your development environment.
    later, pip and virtualenv installed on your system. For instructions, refer
    to the [Python Development Environment Setup Guide](https://cloud.google.com/python/setup).
 
-5. If you don't already one, you need to create a 
+5. If you don't already one, you need to create a
    [Google Cloud Platform billing account](https://console.cloud.google.com/billing).
    If you are new to Google Cloud Platform, you may be able to take advantage of
    a [free trial](https://cloud.google.com/free/).
@@ -172,7 +172,7 @@ When you are done testing your code locally, you can redeploy to the cloud.
    ...
    ```
 
-2. Follow the prompts displayed in the terminal. 
+2. Follow the prompts displayed in the terminal.
 
 3. Once you have answered all of the prompts, your Django project will be
    updated.
