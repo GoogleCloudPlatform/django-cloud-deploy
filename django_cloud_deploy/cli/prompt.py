@@ -714,6 +714,13 @@ class CredentialsPrompt(TemplatePrompt):
             creds = self.auth_client.create_default_credentials()
         else:
             creds = self.auth_client.get_default_credentials()
+            if not creds:
+                console.ask(
+                    ('Warning: You are using a service account to authenticate '
+                     'gcloud, or your credentials file is missing, or it '
+                     'exists but does not have the correct format. Press Enter '
+                     'to create a new credential.'))
+                creds = self.auth_client.create_default_credentials()
 
         new_args[self.PARAMETER] = creds
         return new_args

@@ -62,7 +62,7 @@ class AuthClient(object):
                 return creds
 
         # If credentials file not found or it is invalid.
-        except (ValueError, FileNotFoundError):
+        except (AttributeError, ValueError, FileNotFoundError):
             return None
 
     @staticmethod
