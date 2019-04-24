@@ -252,11 +252,11 @@ class DatabaseClient(object):
         process = popen_spawn.PopenSpawn([cloud_sql_proxy_path, instance_flag])
         try:
             # Make sure cloud sql proxy is started before doing the real work
-            process.expect('Ready for new connections', timeout=5)
+            process.expect('Ready for new connections', timeout=60)
             yield
         except pexpect.exceptions.TIMEOUT:
             raise DatabaseError(
-                ('Cloud SQL Proxy was unable to start after 5 seconds. Output '
+                ('Cloud SQL Proxy was unable to start after 60 seconds. Output '
                  'of cloud_sql_proxy: \n{}').format(process.before))
         except pexpect.exceptions.EOF:
             raise DatabaseError(
