@@ -33,7 +33,7 @@ install_requires = [
     # See https://github.com/kennethreitz/requests/blob/master/setup.py#L47
     'urllib3>=1.23,<1.25',
     'oauth2client>=4.1.2',
-    'django>=2.1.5,<2.2',
+    'django>=2.1.5',
     'backoff>=1.8.0',
     'jinja2>=2.10',
     'docker>=3.4.1',
