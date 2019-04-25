@@ -1,0 +1,4 @@
+from {{ project_name }}.wsgi import application
+
+
+app = application

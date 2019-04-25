@@ -399,6 +399,7 @@ class _AppEngineFileGenerator(_Jinja2FileGenerator):
         """
         self._generate_ignore(project_dir)
         self._generate_yaml(project_dir, project_name, service_name)
+        self._generate_main(project_dir, project_name)
 
     def generate_from_existing(self,
                                project_name: str,
@@ -406,6 +407,15 @@ class _AppEngineFileGenerator(_Jinja2FileGenerator):
                                service_name: Optional[str] = 'default'):
         # TODO: Handle generation based on existing app.yaml
         self.generate_new(project_name, project_dir, service_name)
+
+    def _generate_main(self, project_dir: str, project_name: str):
+        file_name = 'main.py-tpl'
+        output_file_name = 'main.py'
+        options = {'project_name': project_name}
+        template_path = os.path.join(self._get_template_folder_path(),
+                                     file_name)
+        output_path = os.path.join(project_dir, output_file_name)
+        self._render_file(template_path, output_path, options)
 
     def _generate_ignore(self, project_dir: str):
         file_name = '.gcloudignore'

@@ -2,7 +2,7 @@
 instance_class: F2
 service: {{ service_name }}
 runtime: python37
-entrypoint: gunicorn -b :$PORT --access-logfile - --error-logfile - {{ project_name }}.wsgi
+entrypoint: gunicorn -b :$PORT --access-logfile - --error-logfile - main:app
 
 env_variables:
   DATABASE_USER: "postgres"
