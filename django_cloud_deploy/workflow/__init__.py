@@ -197,50 +197,49 @@ class WorkflowManager(object):
             self._billing_client.enable_project_billing(project_id,
                                                         billing_account_name)
 
-        with self._console_io.progressbar(
-                60, '[3/{}]: Django Source Generation'.format(
-                    self._TOTAL_NEW_STEPS)):
-            # Source generation requires service account ids.
-            required_service_accounts = (
-                required_service_accounts or
-                self._service_account_workflow.load_service_accounts())
-            cloud_sql_secrets, django_secrets = self._load_secret_names(
-                required_service_accounts)
-            if deploy_existing_django_project:
-                self._source_generator.generate_from_existing(
-                    project_id=project_id,
-                    project_name=django_project_name,
-                    project_dir=django_directory_path,
-                    database_user=database_username,
-                    database_password=database_password,
-                    django_requirements_path=django_requirements_path,
-                    django_settings_path=django_settings_path,
-                    instance_name=database_instance_name,
-                    database_name=database_name,
-                    cloud_sql_proxy_port=cloud_sql_proxy_port,
-                    cloud_storage_bucket_name=cloud_storage_bucket_name,
-                    file_storage_bucket_name=file_storage_bucket_name,
-                    cloudsql_secrets=cloud_sql_secrets,
-                    django_secrets=django_secrets,
-                    service_name=appengine_service_name,
-                    image_tag=image_name)
-            else:
-                self._source_generator.generate_new(
-                    project_id=project_id,
-                    project_name=django_project_name,
-                    app_name=django_app_name,
-                    project_dir=django_directory_path,
-                    database_user=database_username,
-                    database_password=database_password,
-                    instance_name=database_instance_name,
-                    database_name=database_name,
-                    cloud_sql_proxy_port=cloud_sql_proxy_port,
-                    cloud_storage_bucket_name=cloud_storage_bucket_name,
-                    file_storage_bucket_name=file_storage_bucket_name,
-                    cloudsql_secrets=cloud_sql_secrets,
-                    django_secrets=django_secrets,
-                    service_name=appengine_service_name,
-                    image_tag=image_name)
+        self._console_io.tell('[3/{}]: Django Source Generation'.format(
+            self._TOTAL_NEW_STEPS))
+        # Source generation requires service account ids.
+        required_service_accounts = (
+            required_service_accounts or
+            self._service_account_workflow.load_service_accounts())
+        cloud_sql_secrets, django_secrets = self._load_secret_names(
+            required_service_accounts)
+        if deploy_existing_django_project:
+            self._source_generator.generate_from_existing(
+                project_id=project_id,
+                project_name=django_project_name,
+                project_dir=django_directory_path,
+                database_user=database_username,
+                database_password=database_password,
+                django_requirements_path=django_requirements_path,
+                django_settings_path=django_settings_path,
+                instance_name=database_instance_name,
+                database_name=database_name,
+                cloud_sql_proxy_port=cloud_sql_proxy_port,
+                cloud_storage_bucket_name=cloud_storage_bucket_name,
+                file_storage_bucket_name=file_storage_bucket_name,
+                cloudsql_secrets=cloud_sql_secrets,
+                django_secrets=django_secrets,
+                service_name=appengine_service_name,
+                image_tag=image_name)
+        else:
+            self._source_generator.generate_new(
+                project_id=project_id,
+                project_name=django_project_name,
+                app_name=django_app_name,
+                project_dir=django_directory_path,
+                database_user=database_username,
+                database_password=database_password,
+                instance_name=database_instance_name,
+                database_name=database_name,
+                cloud_sql_proxy_port=cloud_sql_proxy_port,
+                cloud_storage_bucket_name=cloud_storage_bucket_name,
+                file_storage_bucket_name=file_storage_bucket_name,
+                cloudsql_secrets=cloud_sql_secrets,
+                django_secrets=django_secrets,
+                service_name=appengine_service_name,
+                image_tag=image_name)
 
         with self._console_io.progressbar(
                 300, '[4/{}]: Database Set Up'.format(self._TOTAL_NEW_STEPS)):
