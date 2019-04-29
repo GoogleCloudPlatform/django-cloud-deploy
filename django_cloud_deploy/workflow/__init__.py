@@ -19,6 +19,7 @@ import shutil
 import socket
 from typing import Any, Dict, List, Optional, Tuple
 
+from django.conf import settings
 from django_cloud_deploy import config
 from django_cloud_deploy.cli import io
 from django_cloud_deploy.cloudlib import billing
@@ -182,7 +183,6 @@ class WorkflowManager(object):
             django_directory_path, 'requirements.txt')
         image_name = '/'.join(
             ['gcr.io', project_id, sanitized_django_project_name])
-        static_content_dir = os.path.join(django_directory_path, 'static')
 
         cloud_sql_proxy_port = portpicker.pick_unused_port()
 
@@ -265,6 +265,7 @@ class WorkflowManager(object):
             self._enable_service_workflow.enable_required_services(
                 project_id, required_services)
 
+        static_content_dir = settings.STATIC_ROOT
         with self._console_io.progressbar(
                 300, '[6/{}]: Static Content Serve Set Up'.format(
                     self._TOTAL_NEW_STEPS)):
@@ -376,13 +377,13 @@ class WorkflowManager(object):
                                   sanitized_django_project_name + '-instance')
         image_name = '/'.join(
             ['gcr.io', project_id, sanitized_django_project_name])
-        static_content_dir = os.path.join(django_directory_path, 'static')
-
         self._source_generator.setup_django_environment(django_directory_path,
                                                         database_username,
                                                         database_password,
                                                         django_settings_path,
                                                         cloud_sql_proxy_port)
+
+        static_content_dir = settings.STATIC_ROOT
         with self._console_io.progressbar(
                 120,
                 '[1/{}]: Database Migration'.format(self._TOTAL_UPDATE_STEPS)):
