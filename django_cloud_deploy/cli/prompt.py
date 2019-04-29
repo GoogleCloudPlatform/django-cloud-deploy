@@ -1008,7 +1008,7 @@ class DjangoProjectNamePrompt(StringTemplatePrompt):
     """Allow the user to enter a Django project name."""
 
     PARAMETER = 'django_project_name'
-    MESSAGE = '{} Enter a Django project name or leave blank to use'
+    MESSAGE = '{} Enter a Django project name'
     DEFAULT_VALUE = 'mysite'
 
     def _validate(self, s: str):
@@ -1033,7 +1033,7 @@ class DjangoProjectNamePromptCloudify(TemplatePrompt):
     """
 
     PARAMETER = 'django_project_name_cloudify'
-    MESSAGE = '{} Enter the Django project name: '
+    MESSAGE = '{} Enter the Django project name'
 
     def prompt(self, console: io.IO, step: str,
                args: Dict[str, Any]) -> Dict[str, Any]:
@@ -1087,7 +1087,7 @@ class DjangoAppNamePrompt(TemplatePrompt):
     """
 
     PARAMETER = 'django_app_name'
-    MESSAGE = '{} Enter a Django app name or leave blank to use'
+    MESSAGE = '{} Enter a Django app name'
     DEFAULT_VALUE = 'home'
 
     def prompt(self, console: io.IO, step: str,
@@ -1191,8 +1191,7 @@ class DjangoSuperuserEmailPrompt(StringTemplatePrompt):
     """Allow the user to enter a Django email address."""
 
     PARAMETER = 'django_superuser_email'
-    MESSAGE = ('{} Enter an email adress for the Django superuser '
-               'or leave blank to use')
+    MESSAGE = ('{} Enter an email adress for the Django superuser')
     DEFAULT_VALUE = 'test@example.com'
 
     def _validate(self, s: str):
