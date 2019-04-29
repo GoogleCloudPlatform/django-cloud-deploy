@@ -96,13 +96,19 @@ django-cloud-deploy new
 
 Code modifications will be reflected in the next run of `django-cloud-deploy`.
 
+## Issues
+
+If you encounter any technical issues during the process you will be asked to submit a ticket to our [issue tracker](https://github.com/GoogleCloudPlatform/django-cloud-deploy/issues).
+
+Please also use the [issue tracker](https://github.com/GoogleCloudPlatform/django-cloud-deploy/issues) for feedback and/or feature request.
+
 ## Contribute
 
 Check out our [CONTRIBUTING](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/CONTRIBUTING.md) to find out how you can help.
 
 ## License
 
-This project is licensed under the Apache License - see the [LICENSE](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/LICENSE) file for details
+This project is licensed under the Apache License - see the [LICENSE](https://github.com/GoogleCloudPlatform/django-cloud-deploy/blob/master/LICENSE) file for details.
 
 This is not an officially supported Google product.
 
