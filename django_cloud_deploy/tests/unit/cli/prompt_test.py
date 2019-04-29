@@ -29,6 +29,7 @@ from django_cloud_deploy.cli import io
 from django_cloud_deploy.cli import prompt
 from django_cloud_deploy.cloudlib import billing
 from django_cloud_deploy.cloudlib import project
+import psycopg2
 
 from google.auth import credentials
 
@@ -928,6 +929,166 @@ class DjangoRequirementsPathPromptTest(absltest.TestCase):
         requirements_path = args.get('django_requirements_path', None)
         self.assertEqual(requirements_path, expected_requirements_path)
         self.assertEmpty(test_io.answers)  # All answers used.
+
+
+class GroupingPromptTest(absltest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.grouping_prompt = prompt.GroupingPrompt()
+
+    def test_parse_step_info(self):
+        step = '<b>[2/12]</b>'
+        current_step, total_steps = self.grouping_prompt.parse_step_info(step)
+        self.assertEqual(current_step, '2')
+        self.assertEqual(total_steps, '12')
+
+
+class NewDatabaseInformationPromptTest(absltest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.db_prompt = prompt.NewDatabaseInformationPrompt()
+
+    def test_valid_db_info(self):
+        test_io = io.TestIO()
+        expected_user = 'admin'
+        expected_password = 'fake_password'
+        test_io.answers.append(expected_user)
+        test_io.password_answers.append(expected_password)
+        test_io.password_answers.append(expected_password)
+        args = self.db_prompt.prompt(
+            test_io,
+            '[1/12]',
+            {},
+        )
+        user = args.get('database_username')
+        password = args.get('database_password')
+        self.assertEqual(user, expected_user)
+        self.assertEqual(password, expected_password)
+        self.assertEmpty(test_io.answers)
+        self.assertEmpty(test_io.password_answers)  # All answers used.
+
+    def test_invalid_password(self):
+        test_io = io.TestIO()
+
+        expected_user = 'admin'
+        bad_password = '123'
+        expected_password = 'fake_password'
+        test_io.answers.append(expected_user)
+        test_io.password_answers.append(bad_password)
+        test_io.password_answers.append(bad_password)
+        test_io.password_answers.append(expected_password)
+        test_io.password_answers.append(expected_password)
+        args = self.db_prompt.prompt(test_io, '[1/2]', {})
+        user = args.get('database_username')
+        password = args.get('database_password')
+        self.assertEqual(user, expected_user)
+        self.assertEqual(password, expected_password)
+        self.assertEmpty(test_io.answers)
+        self.assertEmpty(test_io.password_answers)  # All answers used.
+
+    def test_invalid_user(self):
+        test_io = io.TestIO()
+
+        bad_user = '_@9jqads]]]'
+        expected_user = 'admin'
+        expected_password = 'fake_password'
+        test_io.answers.append(bad_user)
+        test_io.answers.append(expected_user)
+        test_io.password_answers.append(expected_password)
+        test_io.password_answers.append(expected_password)
+        args = self.db_prompt.prompt(test_io, '[1/2]', {})
+        user = args.get('database_username')
+        password = args.get('database_password')
+        self.assertEqual(user, expected_user)
+        self.assertEqual(password, expected_password)
+        self.assertEmpty(test_io.answers)
+        self.assertEmpty(test_io.password_answers)  # All answers used.
+
+
+class ExistingDatabaseInformationPrompt(absltest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.db_prompt = prompt.ExistingDatabaseInformationPrompt()
+
+    @mock.patch('psycopg2.connect')
+    def test_valid_db_info(self, unused_mock):
+        test_io = io.TestIO()
+        expected_host = '127.0.0.1'
+        expected_port = 5432
+        expected_user = 'admin'
+        expected_password = 'fake_password'
+        expected_db_name = 'mydb'
+        test_io.answers.append(expected_host)
+        test_io.answers.append(expected_port)
+        test_io.answers.append(expected_user)
+        test_io.answers.append(expected_db_name)
+        test_io.password_answers.append(expected_password)
+        test_io.password_answers.append(expected_password)
+        args = self.db_prompt.prompt(
+            test_io,
+            '[1/12]',
+            {},
+        )
+        host = args.get('database_host')
+        port = args.get('database_port')
+        user = args.get('database_username')
+        password = args.get('database_password')
+        database = args.get('database_name')
+        self.assertEqual(user, expected_user)
+        self.assertEqual(host, expected_host)
+        self.assertEqual(port, expected_port)
+        self.assertEqual(database, expected_db_name)
+        self.assertEqual(password, expected_password)
+        self.assertEmpty(test_io.answers)
+        self.assertEmpty(test_io.password_answers)  # All answers used.
+
+    @mock.patch('psycopg2.connect')
+    def test_fail_to_connect_db(self, mock_connect):
+        mock_connect.side_effect = [
+            psycopg2.OperationalError('Invalid Password'),
+            mock.Mock(psycopg2.extensions.connection)
+        ]
+        test_io = io.TestIO()
+        expected_host = '127.0.0.1'
+        expected_port = 5432
+        expected_user = 'admin'
+        expected_password = 'fake_password'
+        expected_db_name = 'mydb'
+        test_io.answers.append(expected_host)
+        test_io.answers.append(expected_port)
+        test_io.answers.append(expected_user)
+        test_io.answers.append(expected_db_name)
+        test_io.password_answers.append('bad_password')
+        test_io.password_answers.append('bad_password')
+        test_io.answers.append(expected_host)
+        test_io.answers.append(expected_port)
+        test_io.answers.append(expected_user)
+        test_io.answers.append(expected_db_name)
+        test_io.password_answers.append(expected_password)
+        test_io.password_answers.append(expected_password)
+        args = self.db_prompt.prompt(
+            test_io,
+            '[1/12]',
+            {},
+        )
+        host = args.get('database_host')
+        port = args.get('database_port')
+        user = args.get('database_username')
+        password = args.get('database_password')
+        database = args.get('database_name')
+        self.assertEqual(user, expected_user)
+        self.assertEqual(host, expected_host)
+        self.assertEqual(port, expected_port)
+        self.assertEqual(database, expected_db_name)
+        self.assertEqual(password, expected_password)
+        self.assertEmpty(test_io.answers)
+        self.assertEmpty(test_io.password_answers)  # All answers used.
 
 
 class DjangoProjectNamePromptCloudifyTest(absltest.TestCase):

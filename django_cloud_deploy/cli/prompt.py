@@ -23,7 +23,7 @@ import re
 import string
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 import warnings
 
 from django_cloud_deploy import workflow
@@ -34,6 +34,7 @@ from django_cloud_deploy.cloudlib import project
 from django_cloud_deploy.skeleton import utils
 from django_cloud_deploy.utils import webbrowser
 from google.oauth2 import service_account
+import psycopg2
 
 
 class Command(enum.Enum):
@@ -230,6 +231,28 @@ def _password_validate(s):
                          'use letters, numbers and punctuation')
 
     return
+
+
+def _database_username_validate(s):
+    """Validates that a string is a valid database user name.
+
+    A valid user name should contain 1 to 63 characters. Only numbers, letters
+    and _ are accepted. It should start with a letter.
+
+    Args:
+        s: The string to validate.
+
+    Raises:
+        ValueError: if the input string is not valid.
+    """
+    if len(s) < 1 or len(s) > 63:
+        raise ValueError('Database user name must be 1 to 63 characters long')
+    if s[0] not in string.ascii_letters:
+        raise ValueError('Database user name must start with a letter')
+    allowed_characters = frozenset(string.ascii_letters + string.digits + '_')
+    if frozenset(s).issuperset(allowed_characters):
+        raise ValueError('Invalid character in database user name. Only '
+                         'numbers, letters, and _ are acceptable.')
 
 
 class Prompt(abc.ABC):
@@ -865,6 +888,205 @@ class BillingPrompt(TemplatePrompt):
             raise ValueError(
                 'The provided billing account does not exist or is not eligible to use.'
             )
+
+
+class GroupingPrompt(TemplatePrompt):
+    """A prompt which groups other prompts."""
+
+    def parse_step_info(self, step: str) -> Tuple[str]:
+        """Get the current step and total steps from the given step string.
+
+        Step string should look like "<b>[2/12]</b>"
+
+        Args:
+            step: A string represents a step.
+
+        Returns:
+            The tuple (current_step, total_step)
+        """
+        step_info = re.findall(r'\[[^\[\]]+\]', step)[0][1:-1].split('/')
+        return step_info[0], step_info[1]
+
+
+class NewDatabaseInformationPrompt(GroupingPrompt):
+    """Allow the user to enter the information about the database."""
+
+    def prompt(self, console: io.IO, step: str,
+               args: Dict[str, Any]) -> Dict[str, Any]:
+        """Extracts user arguments through the command-line.
+
+        Args:
+            console: Object to use for user I/O.
+            step: Message to present to user regarding what step they are on.
+            args: Dictionary holding prompts answered by user and set up
+                command-line arguments.
+
+        Returns:
+            A Copy of args + the new parameter collected.
+        """
+        new_args = dict(args)
+        database_arguments = self._try_get_database_arguments(new_args)
+        if self._is_valid_passed_arg(console, step, database_arguments,
+                                     self._validate):
+            return new_args
+
+        current_step, total_steps = self.parse_step_info(step)
+        msg = '[{}.a/{}] Enter the master user name for the database: '.format(
+            current_step, total_steps)
+        username = _ask_prompt(msg, console, _database_username_validate)
+        msg = '[{}.b/{}] Enter a password for the database user "{}"'.format(
+            current_step, total_steps, username)
+        password = _password_prompt(msg, console)
+        new_args['is_new_database'] = True
+        new_args['database_username'] = username
+        new_args['database_password'] = password
+        return new_args
+
+    def _try_get_database_arguments(self, args: Dict[str, Any]
+                                   ) -> Optional[Dict[str, Any]]:
+        try:
+            return {
+                'password': args['database_password'],
+                'database': args['database_name'],
+            }
+        except KeyError:
+            return None
+
+    def _validate(self, database_arguments: Dict[str, Any]):
+        user = database_arguments.get('database_username')
+        password = database_arguments.get('database_password')
+        _database_username_validate(user)
+        _password_validate(password)
+
+
+class ExistingDatabaseInformationPrompt(GroupingPrompt):
+    """Allow the user to enter the information about an existing database."""
+
+    def prompt(self, console: io.IO, step: str,
+               args: Dict[str, Any]) -> Dict[str, Any]:
+        """Extracts user arguments through the command-line.
+
+        Args:
+            console: Object to use for user I/O.
+            step: Message to present to user regarding what step they are on.
+            args: Dictionary holding prompts answered by user and set up
+                command-line arguments.
+
+        Returns:
+            A Copy of args + the new parameter collected.
+        """
+        new_args = dict(args)
+        database_arguments = self._try_get_database_arguments(new_args)
+        if self._is_valid_passed_arg(console, step, database_arguments,
+                                     self._validate):
+            return new_args
+
+        current_step, total_steps = self.parse_step_info(step)
+        while True:
+            msg = ('[{}.a/{}] Enter the public ip or host name of your '
+                   'database: ').format(current_step, total_steps)
+            host = _ask_prompt(msg, console)
+            default_port = 5432
+            msg = ('[{}.b/{}] Enter the port number of your database or '
+                   'press Enter to use "{}":').format(current_step, total_steps,
+                                                      default_port)
+            port = _ask_prompt(msg, console, default=default_port)
+            msg = ('[{}.c/{}] Enter the master user name for the '
+                   'database: ').format(current_step, total_steps)
+            username = _ask_prompt(msg, console, _database_username_validate)
+            msg = '[{}.d/{}] Enter password for the database user "{}"'.format(
+                current_step, total_steps, username)
+            password = _password_prompt(msg, console)
+            msg = '[{}.e/{}] Enter the name of your database: '.format(
+                current_step, total_steps)
+            database_name = _ask_prompt(msg, console)
+            new_args['is_new_database'] = False
+            new_args['database_username'] = username
+            new_args['database_password'] = password
+            new_args['database_host'] = host
+            new_args['database_port'] = int(port)
+            new_args['database_name'] = database_name
+            try:
+                self._validate(new_args)
+                break
+            except ValueError as e:
+                console.error(e)
+
+        return new_args
+
+    def _try_get_database_arguments(self, args: Dict[str, Any]
+                                   ) -> Optional[Dict[str, Any]]:
+        try:
+            return {
+                'host': args['database_host'],
+                'port': args['database_port'],
+                'user': args['database_username'],
+                'password': args['database_password'],
+                'database': args['database_name'],
+            }
+        except KeyError:
+            return None
+
+    def _validate(self, database_arguments: Dict[str, Any]):
+        """Validate the given database info by connecting to it.
+
+        Args:
+            database_arguments: Dictionary holding the information of database.
+
+        Raises:
+            ValueError: If failed to connect to the provided database.
+        """
+
+        host = database_arguments.get('database_host')
+        port = database_arguments.get('database_port')
+        user = database_arguments.get('database_username')
+        password = database_arguments.get('database_password')
+        database = database_arguments.get('database_name')
+        conn = None
+        try:
+            conn = psycopg2.connect(host=host,
+                                    database=database,
+                                    user=user,
+                                    password=password,
+                                    port=port)
+        except psycopg2.Error as e:
+            raise ValueError(
+                ('Error: Failed to connect to the provided database.\n'
+                 '{}').format(e))
+        finally:
+            if conn:
+                conn.close()
+
+
+class DatabasePrompt(TemplatePrompt):
+    """Allow the user to enter the information about the db for deployment."""
+
+    PARAMETER = 'database_information'
+
+    def prompt(self, console: io.IO, step: str,
+               args: Dict[str, Any]) -> Dict[str, Any]:
+        """Extracts user arguments through the command-line.
+
+        Args:
+            console: Object to use for user I/O.
+            step: Message to present to user regarding what step they are on.
+            args: Dictionary holding prompts answered by user and set up
+                command-line arguments.
+
+        Returns:
+            A Copy of args + the new parameter collected.
+        """
+        new_args = dict(args)
+        msg = ('{} Do you want to create a new database or use an existing '
+               'database for deployment? [y/N]: ').format(step)
+        use_existing_database = binary_prompt(msg, console, default=False)
+
+        if use_existing_database:
+            return ExistingDatabaseInformationPrompt().prompt(
+                console, step, new_args)
+        else:
+            return NewDatabaseInformationPrompt().prompt(
+                console, step, new_args)
 
 
 class PostgresPasswordPrompt(TemplatePrompt):
