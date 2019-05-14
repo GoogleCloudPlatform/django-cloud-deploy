@@ -15,7 +15,7 @@ _setup_environment:
     name: Install Nox
     command: |
       sudo apt-get -qqy install python3-pip
-      sudo python3 -m pip install --upgrade nox-automation
+      sudo python3 -m pip install --upgrade nox
   install_cloud_sql_proxy: &install_cloud_sql_proxy
     name: Install Cloud SQL Proxy
     command: |
@@ -32,29 +32,30 @@ _setup_environment:
 version: 2
 jobs:
   Unit Test:
-    docker:
-      - image: googleapis/nox:0.18.2
+    machine:
+      image: ubuntu-1604:201903-01
 
     steps:
       - checkout
+      - run: *install_nox
       - run:
           command: |
+            pyenv global 2.7.12 3.6.5
             nox -f django_cloud_deploy/nox.py -s unit_test
   Lint:
-    docker:
-      - image: googleapis/nox:0.18.2
+    machine:
+      image: ubuntu-1604:201903-01
 
     steps:
       - checkout
+      - run: *install_nox
       - run:
           command: |
+            pyenv global 2.7.12 3.6.5
             nox -f django_cloud_deploy/nox.py -s lint
   Integration Test:
-    # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
-    # Using machine newer than circleci/classic:201710-01 will make "apt-get"
-    # fail to install packages
     machine:
-      image: circleci/classic:201710-01
+      image: ubuntu-1604:201903-01
 
     steps:
       - checkout
@@ -65,16 +66,13 @@ jobs:
       - run:
           name: Run Test
           command: |
-            pyenv global 2.7.12 3.5.2
+            pyenv global 2.7.12 3.6.5
             nox -f django_cloud_deploy/nox.py -s integration_test
           # Timeout of integration test is set to 30 minutes
           no_output_timeout: 30m
   GKE E2E Test:
-    # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
-    # Using machine newer than circleci/classic:201710-01 will make "apt-get"
-    # fail to install packages
     machine:
-      image: circleci/classic:201710-01
+      image: ubuntu-1604:201903-01
 
     steps:
       - checkout
@@ -85,16 +83,13 @@ jobs:
       - run:
           name: Run Test
           command: |
-            pyenv global 2.7.12 3.5.2
+            pyenv global 2.7.12 3.6.5
             nox -f django_cloud_deploy/nox.py -s e2e_test_gke
           # Timeout of e2e test is set to 30 minutes
           no_output_timeout: 30m
   GAE E2E Test:
-    # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
-    # Using machine newer than circleci/classic:201710-01 will make "apt-get"
-    # fail to install packages
     machine:
-      image: circleci/classic:201710-01
+      image: ubuntu-1604:201903-01
 
     steps:
       - checkout
@@ -106,17 +101,14 @@ jobs:
           name: Run Test
           command: |
             source /home/circleci/.bashrc
-            pyenv global 2.7.12 3.5.2
+            pyenv global 2.7.12 3.6.5
             nox -f django_cloud_deploy/nox.py -s e2e_test_gae
           # Timeout of e2e test is set to 30 minutes
           no_output_timeout: 30m
 
   GAE Cloudify E2E Test:
-    # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
-    # Using machine newer than circleci/classic:201710-01 will make "apt-get"
-    # fail to install packages
     machine:
-      image: circleci/classic:201710-01
+      image: ubuntu-1604:201903-01
 
     steps:
       - checkout
@@ -128,17 +120,14 @@ jobs:
           name: Run Test
           command: |
             source /home/circleci/.bashrc
-            pyenv global 2.7.12 3.5.2
+            pyenv global 2.7.12 3.6.5
             nox -f django_cloud_deploy/nox.py -s e2e_test_gae_cloudify
           # Timeout of e2e test is set to 30 minutes
           no_output_timeout: 30m
 
   GKE Cloudify E2E Test:
-    # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
-    # Using machine newer than circleci/classic:201710-01 will make "apt-get"
-    # fail to install packages
     machine:
-      image: circleci/classic:201710-01
+      image: ubuntu-1604:201903-01
 
     steps:
       - checkout
@@ -150,17 +139,14 @@ jobs:
           name: Run Test
           command: |
             source /home/circleci/.bashrc
-            pyenv global 2.7.12 3.5.2
+            pyenv global 2.7.12 3.6.5
             nox -f django_cloud_deploy/nox.py -s e2e_test_gke_cloudify
           # Timeout of e2e test is set to 30 minutes
           no_output_timeout: 30m
 
   Resource Clean Up:
-    # Based on https://discuss.circleci.com/t/cannot-install-php-7-1-on-machine-because-of-locked-var-lib-dpkg-lock-file/24639/18
-    # Using machine newer than circleci/classic:201710-01 will make "apt-get"
-    # fail to install packages
     machine:
-      image: circleci/classic:201710-01
+      image: ubuntu-1604:201903-01
 
     steps:
       - checkout
@@ -171,7 +157,7 @@ jobs:
       - run:
           name: Run Clean Up
           command: |
-            pyenv global 2.7.12 3.5.2
+            pyenv global 2.7.12 3.6.5
             nox -f django_cloud_deploy/nox.py -s resource_cleanup
 
   Release:

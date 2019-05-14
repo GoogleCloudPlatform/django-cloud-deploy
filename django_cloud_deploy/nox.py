@@ -43,30 +43,23 @@ PACKAGES = [
 ]
 
 
-# Kokoro Ubuntu images only have python3.4 and python3.5
-@nox.session
-@nox.parametrize('python_version', ['3.5'])
-def unit_test(session, python_version):
+@nox.session(python=['3.6'])
+def unit_test(session):
     """Run the unit test suite."""
-
-    # Run unit tests against all supported versions of Python.
-    session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
     session.run('py.test', 'tests/unit', '--timeout=120')
 
 
-@nox.session
+@nox.session(python=['3.6'])
 def lint(session):
     """Run linters."""
-    session.interpreter = 'python3.5'
     session.install('yapf')
-    session.run('yapf', '--diff', '-r', '.')
+    session.run('python3', '-m', 'yapf', '--diff', '-r', '.')
 
 
-@nox.session
+@nox.session(python=['3.6'])
 def type_check(session):
     """Run type checking using pytype."""
-    session.interpreter = 'python3.5'
     session.install('..', 'pytype')
     session.run(
         'pytype',
@@ -81,59 +74,43 @@ def type_check(session):
         success_codes=range(256))
 
 
-@nox.session
-@nox.parametrize('python_version', ['3.5'])
-def integration_test(session, python_version):
+@nox.session(python=['3.6'])
+def integration_test(session):
     """Run the integration test suite."""
-
-    session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
     session.run('py.test', 'tests/integration', '--forked', '--timeout=1800')
 
 
-@nox.session
-@nox.parametrize('python_version', ['3.5'])
-def e2e_test_gke(session, python_version):
+@nox.session(python=['3.6'])
+def e2e_test_gke(session):
     """Run the e2e test suite."""
-
-    session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
     session.run('py.test', 'tests/e2e/gke_deploy_test.py', '--timeout=1800')
 
 
-@nox.session
-@nox.parametrize('python_version', ['3.5'])
-def e2e_test_gae(session, python_version):
+@nox.session(python=['3.6'])
+def e2e_test_gae(session):
     """Run the e2e test suite."""
-
-    session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
     session.run('py.test', 'tests/e2e/gae_deploy_test.py', '--timeout=1800')
 
 
-@nox.session
-@nox.parametrize('python_version', ['3.5'])
-def e2e_test_gae_cloudify(session, python_version):
+@nox.session(python=['3.6'])
+def e2e_test_gae_cloudify(session):
     """Run the e2e test suite."""
-
-    session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
     session.run('py.test', 'tests/e2e/gae_cloudify_test.py', '--timeout=1800')
 
 
-@nox.session
-@nox.parametrize('python_version', ['3.5'])
-def e2e_test_gke_cloudify(session, python_version):
+@nox.session(python=['3.6'])
+def e2e_test_gke_cloudify(session):
     """Run the e2e test suite."""
-
-    session.interpreter = 'python{}'.format(python_version)
     session.install(*PACKAGES)
     session.run('py.test', 'tests/e2e/gke_cloudify_test.py', '--timeout=1800')
 
 
-@nox.session
+@nox.session(python=['3.6'])
 def resource_cleanup(session):
     """Cleanup GCP resources used by tests."""
-    session.interpreter = 'python3.5'
     session.install(*PACKAGES)
     session.run('py.test', 'tests/cleanup/resource_cleanup.py')
