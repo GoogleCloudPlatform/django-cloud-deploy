@@ -122,7 +122,7 @@ class DatabaseClient(object):
             if response['state'] == 'RUNNABLE':
                 return
             elif response['state'] == 'PENDING_CREATE':
-                time.sleep(2)
+                time.sleep(5)
                 continue
             else:
                 raise DatabaseError(
