@@ -17,10 +17,11 @@ from absl.testing import absltest
 
 from django_cloud_deploy.cloudlib import _utils
 
+
 class AuthorizedHttpFake(object):
     """Fakes the google_auth_httplib2.AuthorizedHttp Class"""
-    def request(self, uri, method='GET', body=None, headers=None,
-                **kwargs):
+
+    def request(self, uri, method='GET', body=None, headers=None, **kwargs):
         """Mock Implementation of httplib2's Http.request."""
         user_agent = None
         if headers:
@@ -39,4 +40,3 @@ class UtilsTestCase(absltest.TestCase):
         self.assertIsNone(self.mockHttp.request(None)[1])
         self.mockHttp = _utils.set_user_agent(self.mockHttp, user_agent)
         self.assertEquals(user_agent, self.mockHttp.request(None)[1])
-

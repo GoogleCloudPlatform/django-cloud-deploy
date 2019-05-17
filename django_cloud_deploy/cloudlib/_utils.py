@@ -13,6 +13,7 @@
 # limitations under the License.
 """Helper file for common functionality within cloublib."""
 
+
 def set_user_agent(http, user_agent):
     """Set the user-agent on every request.
 
@@ -35,7 +36,10 @@ def set_user_agent(http, user_agent):
     default_max_redirects = 5
 
     # The closure that will replace 'httplib2.Http.request'.
-    def new_request(uri, method='GET', body=None, headers=None,
+    def new_request(uri,
+                    method='GET',
+                    body=None,
+                    headers=None,
                     redirections=default_max_redirects,
                     connection_type=None):
         """Modify the request headers to add the user-agent."""
@@ -46,7 +50,10 @@ def set_user_agent(http, user_agent):
             headers['user-agent'] = user_agent + ' ' + headers['user-agent']
         else:
             headers['user-agent'] = user_agent
-        resp, content = request_orig(uri, method, body, headers,
+        resp, content = request_orig(uri,
+                                     method,
+                                     body,
+                                     headers,
                                      redirections=redirections,
                                      connection_type=connection_type)
         return resp, content
