@@ -1,4 +1,4 @@
-# Copyright 2018 Google LLC
+# Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 See https://gcloud-python.readthedocs.io/en/latest/resource-manager/api.html
 """
 
-from django_cloud_deploy.cloudlib import _utils
 from django_cloud_deploy import __version__
 from typing import Any, Dict, List
 
@@ -24,6 +23,7 @@ import backoff
 import google_auth_httplib2
 
 from googleapiclient import discovery
+from googleapiclient import http
 from google.auth import credentials
 from googleapiclient import errors
 
@@ -53,7 +53,7 @@ class ProjectClient(object):
     def from_credentials(cls, credentials: credentials.Credentials):
         auth_http = google_auth_httplib2.AuthorizedHttp(credentials)
         user_agent = '/'.join(['django-cloud-deploy', __version__.__version__])
-        auth_http = _utils.set_user_agent(auth_http, user_agent)
+        auth_http = http.set_user_agent(auth_http, user_agent)
         return cls(
             discovery.build('cloudresourcemanager',
                             'v1',
