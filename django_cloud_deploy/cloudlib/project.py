@@ -53,7 +53,7 @@ class ProjectClient(object):
     def from_credentials(cls, credentials: credentials.Credentials):
         auth_http = google_auth_httplib2.AuthorizedHttp(credentials)
         user_agent = '/'.join(['django-cloud-deploy', __version__.__version__])
-        auth_http = http.set_user_agent(auth_http, user_agent)
+        http.set_user_agent(auth_http, user_agent)
         return cls(
             discovery.build('cloudresourcemanager',
                             'v1',
