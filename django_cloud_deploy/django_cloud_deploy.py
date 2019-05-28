@@ -18,6 +18,7 @@ import warnings
 
 import django_cloud_deploy.crash_handling
 from django_cloud_deploy.cli import cloudify
+from django_cloud_deploy.cli import manage
 from django_cloud_deploy.cli import new
 from django_cloud_deploy.cli import update
 
@@ -49,6 +50,11 @@ def _cloudify(args):
             e, 'django-cloud-deploy cloudify')
 
 
+def _manage(args):
+    """Run Django management commands."""
+    manage.main(args)
+
+
 def main():
     warnings.filterwarnings(
         'ignore',
@@ -75,6 +81,12 @@ def main():
                      'and deploys it to the cloud.'))
     cloudify_parser.set_defaults(func=_cloudify)
     cloudify.add_arguments(cloudify_parser)
+    manage_parser = subparsers.add_parser(
+        'manage',
+        description=('Modifies the settings for an existing Django projects'
+                     'and deploys it to the cloud.'))
+    manage_parser.add_argument('command_rest', nargs='+')
+    manage_parser.set_defaults(func=_manage)
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)

@@ -24,6 +24,7 @@ import subprocess
 import time
 from typing import Optional
 
+import django
 from django import db
 from django.core import management
 from django_cloud_deploy import crash_handling
@@ -241,7 +242,14 @@ class DatabaseClient(object):
         Raises:
             DatabaseError: If cloud sql proxy failed to start after 5 seconds.
         """
-        db.close_old_connections()
+        try:
+            db.close_old_connections()
+        except django.core.exceptions.ImproperlyConfigured:
+            # The Django environment is not correctly setup. This might be
+            # because we are calling Django management commands with subprocess
+            # calls. In this case the subprocess we are calling will handle
+            # closing of old connections.
+            pass
         instance_connection_string = '{0}:{1}:{2}'.format(
             project_id, region, instance_name)
         instance_flag = '-instances={}=tcp:{}'.format(

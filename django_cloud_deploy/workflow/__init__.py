@@ -312,6 +312,7 @@ class WorkflowManager(object):
         attributes = {
             'project_id': project_id,
             'django_project_name': django_project_name,
+            'database_instance_name': database_instance_name,
             'backend': backend,
             'django_settings_path': relative_settings_path,
         }
