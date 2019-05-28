@@ -14,6 +14,7 @@
 """Integration tests for module django_cloud_deploy.cloudlib."""
 
 from django_cloud_deploy.cloudlib import cloudbuild
+from django_cloud_deploy.cloudlib import cloudkms
 from django_cloud_deploy.cloudlib import cloud_source
 from django_cloud_deploy.cloudlib import container
 from django_cloud_deploy.cloudlib import database
@@ -171,3 +172,36 @@ class CloudSourceRepositoryClientIntegrationTest(test_base.ResourceCleanUp):
             cur_repos = self._cloudsource_client.list_repos(self.project_id)
             repo_names = [repo.get('name') for repo in cur_repos]
             self.assertIn(full_repo_name, repo_names)
+
+
+class CloudKmsClientIntegrationTest(test_base.ResourceCleanUp):
+
+    def setUp(self):
+        super().setUp()
+        self._cloudkms_client = cloudkms.CloudKmsClient.from_credentials(
+            self.credentials)
+
+    def test_create_keyring_and_key(self):
+        # Keyrings and keys cannot be deleted. And they do not have billable
+        # costs or quota limitations. So no resource cleanup is here. See
+        # https://cloud.google.com/kms/docs/object-hierarchy#lifetime
+        keyring_name = utils.get_resource_name(resource_type='keyring')
+        key_name = utils.get_resource_name(resource_type='key')
+        self._cloudkms_client.create_keyring(self.project_id, keyring_name)
+        keyrings = self._cloudkms_client.list_keyrings(self.project_id)
+        self.assertIn(keyring_name, keyrings)
+        self._cloudkms_client.create_key(self.project_id, keyring_name,
+                                         key_name)
+        keys = self._cloudkms_client.list_keys(self.project_id, keyring_name)
+        self.assertIn(key_name, keys)
+
+    def test_encrypt_and_decrypt(self):
+        keyring_name = 'integration-test'
+        key_name = 'integration-test-key'
+        expected_plaintext = 'This is plain text'
+        ciphertext = self._cloudkms_client.encrypt(expected_plaintext,
+                                                   self.project_id, key_name,
+                                                   keyring_name)
+        plaintext = self._cloudkms_client.decrypt(ciphertext, self.project_id,
+                                                  key_name, keyring_name)
+        self.assertEqual(expected_plaintext, plaintext)
