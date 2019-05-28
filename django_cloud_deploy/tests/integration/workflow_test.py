@@ -213,12 +213,12 @@ class ProjectWorkflowIntegrationTest(test_base.BaseTest):
 
 class StaticContentServeWorkflowIntegrationTest(
         test_base.DjangoFileGeneratorTest, test_base.ResourceCleanUp):
-    """Integration test for django_gke.workflow._static_content_serve."""
+    """Integration test for django_gke.workflow._storage."""
 
     def setUp(self):
         super().setUp()
-        self._static_content_serve_workflow = (
-            _static_content_serve.StaticContentServeWorkflow(self.credentials))
+        self._static_content_serve_workflow = \
+            _static_content_serve.StaticContentServeWorkflow(self.credentials)
 
     def test_serve_static_content(self):
         bucket_name = utils.get_resource_name('bucket')

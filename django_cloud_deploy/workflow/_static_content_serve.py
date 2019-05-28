@@ -13,7 +13,7 @@
 # limitations under the License.
 """Workflow for serving static content of Django projects."""
 
-from django_cloud_deploy.cloudlib import static_content_serve
+from django_cloud_deploy.cloudlib import storage
 
 from google.auth import credentials
 
@@ -21,10 +21,12 @@ from google.auth import credentials
 class StaticContentServeWorkflow(object):
     """A class to control the workflow of serving static content."""
 
+    # The directory in Google Cloud Storage bucket to save static content
+    GCS_STATIC_FILE_DIR = 'static'
+
     def __init__(self, credentials: credentials.Credentials):
-        self._static_content_serve_client = (
-            static_content_serve.StaticContentServeClient.from_credentials(
-                credentials))
+        self._storage_client = (
+            storage.StorageClient.from_credentials(credentials))
 
     def serve_static_content(self, project_id: str, bucket_name: str,
                              static_content_dir: str):
@@ -39,14 +41,14 @@ class StaticContentServeWorkflow(object):
                 content.
         """
 
-        self._static_content_serve_client.collect_static_content()
-        self._static_content_serve_client.create_bucket(project_id, bucket_name)
-        self._static_content_serve_client.make_bucket_public(bucket_name)
-        self._static_content_serve_client.upload_content(
-            bucket_name, static_content_dir)
+        self._storage_client.collect_static_content()
+        self._storage_client.create_bucket(project_id, bucket_name)
+        self._storage_client.make_bucket_public(bucket_name)
+        self._storage_client.upload_content(bucket_name, static_content_dir,
+                                            self.GCS_STATIC_FILE_DIR)
 
     def set_cors_policy(self, bucket_name: str, origin: str):
-        self._static_content_serve_client.set_cors_policy(bucket_name, origin)
+        self._storage_client.set_cors_policy(bucket_name, origin)
 
     def serve_secret_content(self, project_id: str, bucket_name: str,
                              secrec_content_dir: str):
@@ -61,9 +63,9 @@ class StaticContentServeWorkflow(object):
                 content.
         """
 
-        self._static_content_serve_client.create_bucket(project_id, bucket_name)
-        self._static_content_serve_client.upload_content(
-            bucket_name, secrec_content_dir, gcs_folder_root='secrets')
+        self._storage_client.create_bucket(project_id, bucket_name)
+        self._storage_client.upload_content(bucket_name, secrec_content_dir,
+                                            'secrets')
 
     def update_static_content(self, bucket_name: str, static_content_dir: str):
         """Update GCS bucket after user modified the Django app.
@@ -73,6 +75,6 @@ class StaticContentServeWorkflow(object):
             static_content_dir: Absolute path of the directory for static
                 content.
         """
-        self._static_content_serve_client.collect_static_content()
-        self._static_content_serve_client.upload_content(
-            bucket_name, static_content_dir)
+        self._storage_client.collect_static_content()
+        self._storage_client.upload_content(bucket_name, static_content_dir,
+                                            self.GCS_STATIC_FILE_DIR)

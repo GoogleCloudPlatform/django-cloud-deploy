@@ -18,37 +18,34 @@ from django_cloud_deploy.cloudlib import cloud_source
 from django_cloud_deploy.cloudlib import container
 from django_cloud_deploy.cloudlib import database
 from django_cloud_deploy.cloudlib import service_account
-from django_cloud_deploy.cloudlib import static_content_serve
+from django_cloud_deploy.cloudlib import storage
 from django_cloud_deploy.tests.lib import test_base
 from django_cloud_deploy.tests.lib import utils
 
 from googleapiclient import discovery
 
 
-class StaticContentServeClientIntegrationTest(test_base.DjangoFileGeneratorTest,
-                                              test_base.ResourceCleanUp):
-    """Integration test for django_gke.cloudlib.static_content_serve."""
+class StorageClientIntegrationTest(test_base.DjangoFileGeneratorTest,
+                                   test_base.ResourceCleanUp):
+    """Integration test for django_gke.cloudlib.storage."""
 
     def setUp(self):
         super().setUp()
-        self._static_content_serve_client = (
-            static_content_serve.StaticContentServeClient.from_credentials(
-                self.credentials))
+        self._storage_client = (storage.StorageClient.from_credentials(
+            self.credentials))
 
     def test_reuse_bucket(self):
         bucket_name = utils.get_resource_name('bucket')
         with self.clean_up_bucket(bucket_name):
             for _ in range(3):
-                self._static_content_serve_client.create_bucket(
-                    self.project_id, bucket_name)
+                self._storage_client.create_bucket(self.project_id, bucket_name)
 
     def test_set_cors_policy(self):
         bucket_name = utils.get_resource_name('bucket')
         with self.clean_up_bucket(bucket_name):
-            self._static_content_serve_client.create_bucket(
-                self.project_id, bucket_name)
+            self._storage_client.create_bucket(self.project_id, bucket_name)
             url = 'http://www.example.com'
-            self._static_content_serve_client.set_cors_policy(bucket_name, url)
+            self._storage_client.set_cors_policy(bucket_name, url)
             client = discovery.build('storage',
                                      'v1',
                                      credentials=self.credentials,

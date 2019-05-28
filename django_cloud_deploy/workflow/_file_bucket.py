@@ -13,7 +13,7 @@
 # limitations under the License.
 """Workflow for creating the bucket used for file uploads."""
 
-from django_cloud_deploy.cloudlib import static_content_serve
+from django_cloud_deploy.cloudlib import storage
 
 from google.auth import credentials
 
@@ -22,9 +22,8 @@ class FileBucketCreationWorkflow(object):
     """A class to control the workflow of serving static content."""
 
     def __init__(self, credentials: credentials.Credentials):
-        self._static_content_serve_client = (
-            static_content_serve.StaticContentServeClient.from_credentials(
-                credentials))
+        self._storage_client = (
+            storage.StorageClient.from_credentials(credentials))
 
     def create_file_bucket(self, project_id: str, bucket_name: str):
         """Create bucket and assign correct permissions.
@@ -39,4 +38,4 @@ class FileBucketCreationWorkflow(object):
                 files-project id.
         """
 
-        self._static_content_serve_client.create_bucket(project_id, bucket_name)
+        self._storage_client.create_bucket(project_id, bucket_name)

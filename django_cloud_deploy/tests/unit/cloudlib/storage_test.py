@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests for the cloudlib.static_content_serve module."""
+"""Tests for the cloudlib.storage module."""
 
 import os
 import tempfile
 
 from absl.testing import absltest
-from django_cloud_deploy.cloudlib import static_content_serve
+from django_cloud_deploy.cloudlib import storage
 from django_cloud_deploy.tests.unit.cloudlib.lib import http_fake
 from googleapiclient import errors
 
@@ -112,59 +112,55 @@ class StorageServiceFake(object):
         return self.objects_fake
 
 
-class StaticContentServeClientTest(absltest.TestCase):
-    """Test case for static_content_serve.StaticContentServeClient."""
+class StorageClientTest(absltest.TestCase):
+    """Test case for storage.StorageClient."""
 
     def setUp(self):
         self._storage_service_fake = StorageServiceFake()
-        self._static_content_serve_client = (
-            static_content_serve.StaticContentServeClient(
-                self._storage_service_fake))
+        self._storage_client = (storage.StorageClient(
+            self._storage_service_fake))
 
     def test_create_bucket_success(self):
-        self._static_content_serve_client.create_bucket(PROJECT_ID, BUCKET_NAME)
+        self._storage_client.create_bucket(PROJECT_ID, BUCKET_NAME)
         self.assertIn(BUCKET_NAME, self._storage_service_fake.buckets().buckets)
 
     def test_create_bucket_no_permission(self):
         project_id = 'project_no_permission'
-        with self.assertRaises(static_content_serve.StaticContentServeError):
-            self._static_content_serve_client.create_bucket(
-                project_id, BUCKET_NAME)
+        with self.assertRaises(storage.CloudStorageError):
+            self._storage_client.create_bucket(project_id, BUCKET_NAME)
         self.assertNotIn(BUCKET_NAME,
                          self._storage_service_fake.buckets().buckets)
 
     def test_create_bucket_invalid_response(self):
         bucket_name = 'invalid'
-        with self.assertRaises(static_content_serve.StaticContentServeError):
-            self._static_content_serve_client.create_bucket(
-                PROJECT_ID, bucket_name)
+        with self.assertRaises(storage.CloudStorageError):
+            self._storage_client.create_bucket(PROJECT_ID, bucket_name)
         self.assertNotIn(bucket_name,
                          self._storage_service_fake.buckets().buckets)
 
     def test_reuse_bucket_already_exist(self):
-        self._static_content_serve_client.create_bucket(PROJECT_ID,
-                                                        EXISTING_BUCKET_NAME)
+        self._storage_client.create_bucket(PROJECT_ID, EXISTING_BUCKET_NAME)
         self.assertIn(EXISTING_BUCKET_NAME,
                       self._storage_service_fake.buckets().buckets)
 
     def test_make_bucket_public_success(self):
-        self._static_content_serve_client.make_bucket_public(BUCKET_NAME)
+        self._storage_client.make_bucket_public(BUCKET_NAME)
         self.assertIn(
             PUBLIC_READ_BINDING,
             self._storage_service_fake.buckets().iam_policy['bindings'])
 
     def test_make_bucket_public_no_permission(self):
         bucket_name = 'bucket_no_permission'
-        with self.assertRaises(static_content_serve.StaticContentServeError):
-            self._static_content_serve_client.make_bucket_public(bucket_name)
+        with self.assertRaises(storage.CloudStorageError):
+            self._storage_client.make_bucket_public(bucket_name)
         self.assertNotIn(
             PUBLIC_READ_BINDING,
             self._storage_service_fake.buckets().iam_policy['bindings'])
 
     def test_make_bucket_public_invalid_response(self):
         bucket_name = 'invalid'
-        with self.assertRaises(static_content_serve.StaticContentServeError):
-            self._static_content_serve_client.make_bucket_public(bucket_name)
+        with self.assertRaises(storage.CloudStorageError):
+            self._storage_client.make_bucket_public(bucket_name)
         self.assertNotIn(
             PUBLIC_READ_BINDING,
             self._storage_service_fake.buckets().iam_policy['bindings'])
@@ -184,12 +180,10 @@ class StaticContentServeClientTest(absltest.TestCase):
             with open(tmp_file_path, 'w') as tmp_file:
                 tmp_file.write('file2')
 
-            self._static_content_serve_client.upload_content(
-                BUCKET_NAME, tmp_dir_root)
-            file1_gcs_path = os.path.join(
-                self._static_content_serve_client.GCS_ROOT, 'file1')
-            file2_gcs_path = os.path.join(
-                self._static_content_serve_client.GCS_ROOT, 'dir1', 'file2')
+            self._storage_client.upload_content(BUCKET_NAME, tmp_dir_root,
+                                                'static')
+            file1_gcs_path = os.path.join('static', 'file1')
+            file2_gcs_path = os.path.join('static', 'dir1', 'file2')
             self.assertIn(
                 file1_gcs_path,
                 self._storage_service_fake.objects().bucket_files[BUCKET_NAME])
