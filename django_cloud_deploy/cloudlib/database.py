@@ -185,6 +185,34 @@ class DatabaseClient(object):
                 'unexpected database status after creation: {!r} [{!r}]'.format(
                     response['status'], response))
 
+    def create_database_user(self, project_id: str, instance: str, user: str,
+                             password: str):
+        """Create a new database user.
+
+        Args:
+            project_id: The id of the project for the database user.
+            instance: The name of the instance for the database user.
+            user: The name of the database user e.g. "postgres".
+            password: The new password to set.
+
+        Raises:
+            DatabaseError: if unable to create the database user.
+        """
+        # See:
+        # https://cloud.google.com/sql/docs/mysql/admin-api/v1beta4/users/insert
+
+        request = self._sqladmin_service.users().insert(project=project_id,
+                                                        instance=instance,
+                                                        body={
+                                                            'name': user,
+                                                            'password': password
+                                                        })
+        response = request.execute(num_retries=5)
+        if response['status'] not in ['DONE', 'RUNNING']:
+            raise DatabaseError(
+                ('Unexpected database status after user creation: '
+                 '{!r} [{!r}]').format(response['status'], response))
+
     def set_database_password(self, project_id: str, instance: str, user: str,
                               password: str):
         """Set the password for a database user.
