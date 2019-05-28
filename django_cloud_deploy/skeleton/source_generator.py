@@ -332,8 +332,9 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
         database_name = database_name or project_name + '-db'
         cloud_storage_bucket_name = cloud_storage_bucket_name or project_id
 
-        settings_templates_dir = os.path.join(self._get_template_folder_path(),
-                                              self._SETTINGS_TEMPLATE_DIRECTORY)
+        cloud_settings_template = os.path.join(
+            self._get_template_folder_path(), self._SETTINGS_TEMPLATE_DIRECTORY,
+            'cloud_settings.py-tpl')
         settings_dir = os.path.dirname(settings_path)
         root, _ = os.path.splitext(settings_path)
         module_relative_path = os.path.relpath(root, settings_dir)
@@ -350,9 +351,11 @@ class _SettingsFileGenerator(_Jinja2FileGenerator):
             'file_bucket_name': file_storage_bucket_name,
             'cloud_sql_connection': cloud_sql_connection
         }
-        self._render_directory(settings_templates_dir,
-                               settings_dir,
-                               options=options)
+
+        settings_output_path = os.path.join(settings_dir, 'cloud_settings.py')
+        self._render_file(cloud_settings_template,
+                          settings_output_path,
+                          options=options)
 
 
 class _DockerfileGenerator(_Jinja2FileGenerator):
