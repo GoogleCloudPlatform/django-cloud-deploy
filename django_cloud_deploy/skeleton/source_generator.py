@@ -530,6 +530,11 @@ class _DependencyFileGenerator(_Jinja2FileGenerator):
         if existing_requirements:
             google_requirements -= existing_requirements
 
+            # We expect the existing requirements.txt is valid. So if it is
+            # valid, then it must explicitly or implicitly have "Django" as an
+            # dependency. We do not need to list "Django" as dependency again.
+            google_requirements.discard('django')
+
         with open(template_path) as requirements_file:
             lines = [
                 line for line in requirements_file.read().splitlines()
